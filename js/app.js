@@ -1,6 +1,9 @@
 // Arranque y enrutado básico. De momento: login + pantalla de bienvenida.
 import { ctx, signIn, signOut, loadContext, getSession, onAuthChange } from './auth.js';
 
+window.addEventListener('error', e => alert('Error: ' + e.message));
+window.addEventListener('unhandledrejection', e => alert('Fallo: ' + (e.reason?.message || e.reason)));
+
 const $ = (id) => document.getElementById(id);
 
 const vistaLogin = $('vista-login');
