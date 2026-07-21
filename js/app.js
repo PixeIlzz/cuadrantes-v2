@@ -1,8 +1,6 @@
-// Arranque y enrutado básico. De momento: login + pantalla de bienvenida.
+// Arranque y enrutado básico. Versión con diagnóstico visible.
 import { ctx, signIn, signOut, loadContext, getSession, onAuthChange } from './auth.js';
-
-window.addEventListener('error', e => alert('Error: ' + e.message));
-window.addEventListener('unhandledrejection', e => alert('Fallo: ' + (e.reason?.message || e.reason)));
+import { sb } from './supabase.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -12,23 +10,34 @@ const formLogin  = $('form-login');
 const errorLogin = $('login-error');
 const btnEntrar  = $('btn-entrar');
 
+// Muestra el progreso en el hueco del error, para no depender de la consola.
+function paso(txt) {
+  console.log('[paso]', txt);
+  errorLogin.style.color = '#9aa4c7';
+  errorLogin.textContent = txt;
+}
+function fallo(txt) {
+  console.error('[fallo]', txt);
+  errorLogin.style.color = '#d9534f';
+  errorLogin.textContent = txt;
+}
+
 /* ---------- Arranque ---------- */
 arrancar();
 
 async function arrancar() {
   try {
+    paso('Comprobando sesión…');
     const session = await getSession();
     if (session) {
       await entrarEnLaApp();
     } else {
       mostrarLogin();
+      errorLogin.textContent = '';
     }
   } catch (err) {
-    console.error(err);
-    $('cargando').innerHTML =
-      '<div class="tarjeta"><h2>No se pudo iniciar</h2>' +
-      '<p class="error">' + (err.message || err) + '</p></div>';
-    return;                 // deja el mensaje visible
+    fallo('Arranque: ' + (err.message || err));
+    mostrarLogin();
   }
   $('cargando').hidden = true;
 }
@@ -36,14 +45,14 @@ async function arrancar() {
 /* ---------- Login ---------- */
 formLogin.addEventListener('submit', async (e) => {
   e.preventDefault();
-  errorLogin.textContent = '';
   btnEntrar.disabled = true;
   btnEntrar.textContent = 'Entrando…';
   try {
+    paso('Autenticando…');
     await signIn($('email').value, $('password').value);
     await entrarEnLaApp();
   } catch (err) {
-    errorLogin.textContent = err.message;
+    fallo(err.message || String(err));
   } finally {
     btnEntrar.disabled = false;
     btnEntrar.textContent = 'Entrar';
@@ -62,33 +71,49 @@ function mostrarLogin() {
 }
 
 async function entrarEnLaApp() {
-  const ok = await loadContext();
-  if (!ok) {
-    errorLogin.textContent =
-      'Tu cuenta no está asociada a ningún negocio. Pide un código de invitación al gestor.';
-    await signOut();
-    mostrarLogin();
-    return;
+  paso('Sesión correcta. Buscando tu negocio…');
+
+  // Consulta en dos pasos: si algo falla, sabemos exactamente cuál.
+  const { data: mem, error: e1 } = await sb
+    .from('memberships')
+    .select('role, business_id');
+
+  if (e1) throw new Error('Al leer memberships: ' + e1.message);
+  if (!mem || mem.length === 0) {
+    throw new Error('Tu cuenta no está asociada a ningún negocio (0 memberships).');
   }
 
+  paso('Membresía encontrada (' + mem[0].role + '). Cargando negocio…');
+
+  const { data: biz, error: e2 } = await sb
+    .from('businesses')
+    .select('id, name, config')
+    .eq('id', mem[0].business_id)
+    .single();
+
+  if (e2) throw new Error('Al leer businesses: ' + e2.message);
+
+  ctx.role = mem[0].role;
+  ctx.business = biz;
+  const { data: u } = await sb.auth.getUser();
+  ctx.user = u.user;
+
+  errorLogin.textContent = '';
   vistaLogin.hidden = true;
   vistaApp.hidden = false;
 
-  $('negocio-nombre').textContent = ctx.business.name;
+  $('negocio-nombre').textContent = biz.name;
   $('usuario-email').textContent = ctx.user.email;
   $('usuario-rol').textContent = ctx.role === 'manager' ? 'Gestor' : 'Empleado';
 
-  // Comprobación de que la configuración viaja bien desde la base de datos
-  const cfg = ctx.business.config || {};
-  $('debug-dias').textContent   = (cfg.days  || []).map(d => d.label).join(' · ');
-  $('debug-puestos').textContent = (cfg.roles || [])
-    .map(r => `${r.label} (mín. ${r.min})`).join(' · ');
+  const cfg = biz.config || {};
+  $('debug-dias').textContent    = (cfg.days  || []).map(d => d.label).join(' · ');
+  $('debug-puestos').textContent = (cfg.roles || []).map(r => `${r.label} (mín. ${r.min})`).join(' · ');
   const pub = cfg.publish || {};
   const nombresDia = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
   $('debug-pub').textContent = `${nombresDia[pub.weekday ?? 0]} a las ${pub.time || '18:00'}`;
 }
 
-/* Si la sesión se cierra en otra pestaña, recargamos para no quedar en un estado raro. */
 onAuthChange((event) => {
   if (event === 'SIGNED_OUT') location.reload();
 });
