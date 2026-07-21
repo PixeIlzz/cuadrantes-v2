@@ -13,11 +13,19 @@ const btnEntrar  = $('btn-entrar');
 arrancar();
 
 async function arrancar() {
-  const session = await getSession();
-  if (session) {
-    await entrarEnLaApp();
-  } else {
-    mostrarLogin();
+  try {
+    const session = await getSession();
+    if (session) {
+      await entrarEnLaApp();
+    } else {
+      mostrarLogin();
+    }
+  } catch (err) {
+    console.error(err);
+    $('cargando').innerHTML =
+      '<div class="tarjeta"><h2>No se pudo iniciar</h2>' +
+      '<p class="error">' + (err.message || err) + '</p></div>';
+    return;                 // deja el mensaje visible
   }
   $('cargando').hidden = true;
 }
