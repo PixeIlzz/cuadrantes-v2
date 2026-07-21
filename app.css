@@ -1,0 +1,68 @@
+/* Base visual. Paleta heredada de la v1. */
+:root{
+  --bg:#151a2b;
+  --panel:#1e2540;
+  --panel-2:#262f52;
+  --linea:#333d63;
+  --txt:#eef1fa;
+  --txt-sub:#9aa4c7;
+  --azul:#2a5cd7;
+  --azul-claro:#3b73f0;
+  --rojo:#d9534f;
+  --radio:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  background:var(--bg); color:var(--txt);
+  font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+h1,h2{margin:0 0 .6rem; font-size:1.25rem}
+.sub{color:var(--txt-sub); font-size:.85rem}
+
+.centro{
+  min-height:100dvh; display:flex; align-items:center; justify-content:center;
+  padding:1.2rem;
+}
+.tarjeta{
+  background:var(--panel); border:1px solid var(--linea);
+  border-radius:var(--radio); padding:1.4rem;
+  width:100%; max-width:380px;
+}
+.logo{width:56px; height:56px; border-radius:14px; display:block; margin:0 auto .8rem}
+
+label{display:block; margin:.9rem 0 .3rem; font-size:.85rem; color:var(--txt-sub)}
+input{
+  width:100%; padding:.7rem .8rem; font-size:1rem;
+  background:var(--panel-2); color:var(--txt);
+  border:1px solid var(--linea); border-radius:10px;
+}
+input:focus{outline:2px solid var(--azul-claro); outline-offset:1px}
+
+button{
+  font:inherit; cursor:pointer; border:0; border-radius:10px;
+  padding:.75rem 1rem; background:var(--azul); color:#fff; width:100%;
+  margin-top:1.2rem;
+}
+button:hover{background:var(--azul-claro)}
+button:disabled{opacity:.6; cursor:default}
+button.ghost{
+  width:auto; margin:0; background:transparent; color:var(--txt-sub);
+  border:1px solid var(--linea); padding:.45rem .9rem; font-size:.85rem;
+}
+button.ghost:hover{background:var(--panel-2); color:var(--txt)}
+
+.error{color:var(--rojo); font-size:.85rem; min-height:1.2em; margin:.8rem 0 0}
+
+.barra{
+  display:flex; align-items:center; justify-content:space-between; gap:1rem;
+  padding:.8rem 1rem; background:var(--panel); border-bottom:1px solid var(--linea);
+  padding-top:calc(.8rem + env(safe-area-inset-top));
+}
+.barra .sub{display:block}
+.contenido{padding:1.2rem; max-width:900px; margin:0 auto}
+
+.debug{margin:.8rem 0 0; display:grid; grid-template-columns:auto 1fr; gap:.4rem 1rem}
+.debug dt{color:var(--txt-sub); font-size:.85rem}
+.debug dd{margin:0; font-size:.9rem}
