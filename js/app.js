@@ -10,7 +10,6 @@ const formLogin  = $('form-login');
 const errorLogin = $('login-error');
 const btnEntrar  = $('btn-entrar');
 
-// Muestra el progreso en el hueco del error, para no depender de la consola.
 function paso(txt) {
   console.log('[paso]', txt);
   errorLogin.style.color = '#9aa4c7';
@@ -30,7 +29,7 @@ async function arrancar() {
     paso('Comprobando sesión…');
     const session = await getSession();
     if (session) {
-      await entrarEnLaApp();
+      await entrarEnLaApp(session);
     } else {
       mostrarLogin();
       errorLogin.textContent = '';
@@ -50,7 +49,8 @@ formLogin.addEventListener('submit', async (e) => {
   try {
     paso('Autenticando…');
     await signIn($('email').value, $('password').value);
-    await entrarEnLaApp();
+    const session = await getSession();
+    await entrarEnLaApp(session);
   } catch (err) {
     fallo(err.message || String(err));
   } finally {
@@ -70,10 +70,9 @@ function mostrarLogin() {
   vistaApp.hidden = true;
 }
 
-async function entrarEnLaApp() {
+async function entrarEnLaApp(session) {
   paso('Sesión correcta. Buscando tu negocio…');
 
-  // Consulta en dos pasos: si algo falla, sabemos exactamente cuál.
   const { data: mem, error: e1 } = await sb
     .from('memberships')
     .select('role, business_id');
@@ -94,10 +93,11 @@ async function entrarEnLaApp() {
   if (e2) throw new Error('Al leer businesses: ' + e2.message);
   if (!biz) throw new Error('El negocio no se pudo cargar (RLS o id inexistente).');
 
+  // Usamos el usuario de la sesión que ya tenemos en memoria.
+  // (Evitamos sb.auth.getUser(), que puede quedarse colgado.)
   ctx.role = mem[0].role;
   ctx.business = biz;
-  const { data: u } = await sb.auth.getUser();
-  ctx.user = u.user;
+  ctx.user = session.user;
 
   errorLogin.textContent = '';
   vistaLogin.hidden = true;
