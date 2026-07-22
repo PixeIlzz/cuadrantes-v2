@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnóstico Cuadrantes v2</title>
+<style>
+  body{background:#151a2b;color:#eef1fa;font:14px/1.5 system-ui,sans-serif;margin:0;padding:1rem}
+  h1{font-size:1.1rem}
+  #log div{padding:.35rem .6rem;border-bottom:1px solid #333d63;white-space:pre-wrap;word-break:break-all}
+  .ok{color:#6fcf97}.err{color:#eb5757}.warn{color:#f2c94c}.info{color:#9aa4c7}
+  input,button{font:inherit;padding:.5rem;margin:.2rem;border-radius:8px;border:1px solid #333d63;background:#1e2540;color:#eef1fa}
+  button{cursor:pointer;background:#2a5cd7;border:0}
+</style>
+</head>
+<body>
+<h1>Diagnóstico Cuadrantes v2</h1>
+<div id="login" style="display:none">
+  <input id="email" type="email" placeholder="email">
+  <input id="pass" type="password" placeholder="contraseña">
+  <button id="btn">Probar login + consultas</button>
+</div>
+<div id="log"></div>
+
+<script type="module">
+const SUPABASE_URL = 'https://vheebrkmgptruprxiaxu.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_-rBNkb2CA-xaUSpN7HBNzg_jTTLWG3Q';
+
+const log = document.getElementById('log');
+function out(cls, txt){
+  const d = document.createElement('div');
+  d.className = cls; d.textContent = txt; log.appendChild(d);
+}
+window.addEventListener('error', e => out('err', '💥 Error global: ' + e.message + ' @ ' + e.filename + ':' + e.lineno));
+window.addEventListener('unhandledrejection', e => out('err', '💥 Promesa sin capturar: ' + (e.reason?.message || e.reason)));
+
+function timeout(p, ms, nombre){
+  return Promise.race([
+    p.then(v => ({v})),
+    new Promise(r => setTimeout(() => r({timedOut:true}), ms))
+  ]).then(r => {
+    if (r.timedOut) throw new Error(nombre + ' superó ' + ms + ' ms (COLGADO)');
+    return r.v;
+  });
+}
+async function paso(n, nombre, fn, ms=5000){
+  const t0 = performance.now();
+  try {
+    const v = await timeout(fn(), ms, nombre);
+    out('ok', '✅ ' + n + '. ' + nombre + ' — ' + Math.round(performance.now()-t0) + ' ms' + (v!==undefined ? ' → ' + v : ''));
+    return {ok:true};
+  } catch (e) {
+    out('err', '❌ ' + n + '. ' + nombre + ' — ' + (e.message || e));
+    return {ok:false};
+  }
+}
+
+out('info', 'Navegador: ' + navigator.userAgent);
+
+let createClient, sb, session = null;
+
+await paso(1, 'Importar supabase-js (jsdelivr 2.45.4)', async () => {
+  const m = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm');
+  createClient = m.createClient;
+  return 'ok';
+});
+
+await paso(2, 'createClient (lock no bloqueante)', async () => {
+  sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession:true, autoRefreshToken:true,
+            lock: async (_n,_t,fn) => await fn() },
+  });
+  return 'ok';
+});
+
+await paso(3, 'auth.getSession()', async () => {
+  const { data } = await sb.auth.getSession();
+  session = data.session;
+  return session ? ('hay sesión: ' + session.user.email) : 'sin sesión';
+}, 4000);
+
+await paso(4, 'fetch directo REST (sin librería) a businesses', async () => {
+  const r = await fetch(SUPABASE_URL + '/rest/v1/businesses?select=id,name', {
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: 'Bearer ' + (session ? session.access_token : SUPABASE_KEY),
+    },
+  });
+  const body = await r.text();
+  return 'HTTP ' + r.status + ' · ' + body.slice(0,120);
+}, 6000);
+
+async function consultasLibreria(pref){
+  await paso(pref+'a', 'sb.from(memberships).select()', async () => {
+    const { data, error } = await sb.from('memberships').select('role, business_id');
+    if (error) throw new Error(error.message);
+    return JSON.stringify(data).slice(0,120);
+  }, 6000);
+  await paso(pref+'b', 'sb.from(businesses).eq().maybeSingle()', async () => {
+    const { data: mem } = await sb.from('memberships').select('business_id');
+    if (!mem || !mem.length) return 'sin membresía, salto';
+    const { data, error } = await sb.from('businesses')
+      .select('id,name,config').eq('id', mem[0].business_id).maybeSingle();
+    if (error) throw new Error(error.message);
+    return data ? data.name : 'null';
+  }, 6000);
+}
+
+if (session) {
+  await consultasLibreria(5);
+  out('info', '— Fin del diagnóstico (con sesión previa) —');
+} else {
+  out('warn', 'No hay sesión guardada. Introduce credenciales y pulsa el botón para probar login + consultas.');
+  document.getElementById('login').style.display = 'block';
+  document.getElementById('btn').onclick = async () => {
+    await paso(5, 'auth.signInWithPassword()', async () => {
+      const { data, error } = await sb.auth.signInWithPassword({
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('pass').value,
+      });
+      if (error) throw new Error(error.message);
+      session = data.session;
+      return 'sesión de ' + data.user.email;
+    }, 8000);
+    if (session) {
+      await consultasLibreria(6);
+      out('info', '— Fin del diagnóstico (tras login) —');
+    }
+  };
+}
+</script>
+</body>
+</html>
