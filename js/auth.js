@@ -1,5 +1,5 @@
-// Sesión y contexto. v6
-import { sb } from './supabase.js?v=6';
+// Sesión y contexto. v7
+import { sb } from './supabase.js?v=7';
 
 export const ctx = { user: null, business: null, role: null, workerId: null };
 

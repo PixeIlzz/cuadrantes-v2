@@ -1,9 +1,10 @@
-// Arranque, login y navegación por pestañas. v6
-import { ctx, signIn, signOut, getSession } from './auth.js?v=6';
-import { sb } from './supabase.js?v=6';
-import { toast } from './ui/toast.js?v=6';
-import { initEquipo, abrirEquipo } from './ui/equipo.js?v=6';
-import { confirmar } from './ui/confirmar.js?v=6';
+// Arranque, login y navegación por pestañas. v7
+import { ctx, signIn, signOut, getSession } from './auth.js?v=7';
+import { sb } from './supabase.js?v=7';
+import { toast } from './ui/toast.js?v=7';
+import { confirmar } from './ui/confirmar.js?v=7';
+import { initEquipo, abrirEquipo } from './ui/equipo.js?v=7';
+import { initCuadrante, abrirCuadrante } from './ui/cuadrante.js?v=7';
 
 const $ = (id) => document.getElementById(id);
 const errorLogin = $('login-error');
@@ -22,13 +23,14 @@ window.addEventListener('unhandledrejection', (e) =>
 const PESTANAS = ['cuadrante', 'programar', 'equipo', 'solicitudes', 'ajustes'];
 
 function cambiarPestana(nombre) {
-  document.querySelectorAll('.tab-btn').forEach((b) =>
+  document.querySelectorAll('.tab-btn[data-tab]').forEach((b) =>
     b.classList.toggle('active', b.dataset.tab === nombre));
   for (const t of PESTANAS) $('tab-' + t).hidden = (t !== nombre);
-  if (nombre === 'equipo') abrirEquipo();   // recarga de la base de datos al entrar
+  if (nombre === 'equipo') abrirEquipo();
+  if (nombre === 'cuadrante') abrirCuadrante();
 }
 
-document.querySelectorAll('.tab-btn').forEach((btn) => {
+document.querySelectorAll('.tab-btn[data-tab]').forEach((btn) => {
   btn.addEventListener('click', () => cambiarPestana(btn.dataset.tab));
 });
 
@@ -52,6 +54,7 @@ function mostrarApp(session, role, biz) {
     session.user.email + ' · ' + (role === 'manager' ? 'Gestor' : 'Empleado');
 
   initEquipo();
+  initCuadrante();
   cambiarPestana('cuadrante');
 }
 
