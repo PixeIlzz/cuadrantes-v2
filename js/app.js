@@ -3,6 +3,7 @@ import { ctx, signIn, signOut, getSession } from './auth.js?v=6';
 import { sb } from './supabase.js?v=6';
 import { toast } from './ui/toast.js?v=6';
 import { initEquipo, abrirEquipo } from './ui/equipo.js?v=6';
+import { confirmar } from './ui/confirmar.js?v=6';
 
 const $ = (id) => document.getElementById(id);
 const errorLogin = $('login-error');
@@ -88,7 +89,10 @@ $('form-login').addEventListener('submit', async (e) => {
 });
 
 $('btn-salir').addEventListener('click', async () => {
-  if (!confirm('¿Seguro que quieres cerrar la sesión?')) return;
+  const ok = await confirmar('¿Seguro que quieres cerrar la sesión?', {
+    textoOk: 'Cerrar sesión', peligro: true,
+  });
+  if (!ok) return;
   await signOut();
   location.reload();
 });
