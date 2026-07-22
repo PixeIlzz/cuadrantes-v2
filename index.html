@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1a2035">
+<meta name="theme-color" content="#182135">
 <title>Cuadrantes</title>
-<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="app.css?v=6">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
 </head>
@@ -15,41 +15,93 @@
 
 <!-- ============ LOGIN ============ -->
 <section id="vista-login" class="centro" hidden>
-  <form id="form-login" class="tarjeta">
+  <form id="form-login" class="login-card">
     <img src="icon-192.png" alt="" class="logo">
     <h1>Cuadrantes</h1>
     <label for="email">Email</label>
     <input id="email" type="email" autocomplete="username" required>
     <label for="password">Contraseña</label>
     <input id="password" type="password" autocomplete="current-password" required>
-    <button id="btn-entrar" type="submit">Entrar</button>
-    <p id="login-error" class="error" role="alert"></p>
+    <button id="btn-entrar" class="btn primary" type="submit">Entrar</button>
+    <p id="login-error" class="login-msg" role="alert"></p>
   </form>
 </section>
 
 <!-- ============ APP ============ -->
-<section id="vista-app" hidden>
-  <header class="barra">
-    <div>
-      <strong id="negocio-nombre"></strong>
-      <span class="sub"><span id="usuario-rol"></span> · <span id="usuario-email"></span></span>
-    </div>
-    <button id="btn-salir" class="ghost">Salir</button>
-  </header>
+<div id="vista-app" hidden>
+<header>
+  <h1 id="negocio-nombre"></h1>
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="cuadrante">Cuadrante</button>
+    <button class="tab-btn" data-tab="programar">Programadas</button>
+    <button class="tab-btn" data-tab="equipo">Equipo</button>
+    <button class="tab-btn" data-tab="solicitudes">Solicitudes</button>
+    <button class="tab-btn" data-tab="ajustes">Ajustes</button>
+  </nav>
+  <button id="btn-salir" class="tab-btn">Salir</button>
+</header>
 
-  <main class="contenido">
-    <div class="tarjeta">
-      <h2>Conexión correcta</h2>
-      <p class="sub">Estos datos vienen de la base de datos, no del código:</p>
-      <dl class="debug">
-        <dt>Días configurados</dt><dd id="debug-dias"></dd>
-        <dt>Puestos</dt><dd id="debug-puestos"></dd>
-        <dt>Publicación por defecto</dt><dd id="debug-pub"></dd>
-      </dl>
+<main>
+  <!-- ============ TAB CUADRANTE ============ -->
+  <section id="tab-cuadrante">
+    <div class="panel">
+      <h2>Cuadrante</h2>
+      <span class="empty-note">El editor de cuadrante llega en el siguiente paso. Empieza añadiendo a tu equipo en la pestaña Equipo.</span>
     </div>
-  </main>
-</section>
+  </section>
 
-<script type="module" src="js/app.js?v=5"></script>
+  <!-- ============ TAB PROGRAMADAS ============ -->
+  <section id="tab-programar" hidden>
+    <div class="panel">
+      <h2>Semanas programadas</h2>
+      <span class="empty-note">Próximamente.</span>
+    </div>
+  </section>
+
+  <!-- ============ TAB EQUIPO ============ -->
+  <section id="tab-equipo" hidden>
+    <div class="panel">
+      <h2>Añadir trabajador</h2>
+      <div class="add-form">
+        <input type="text" id="new-name" placeholder="Nombre" maxlength="30">
+        <input type="number" id="new-hours" placeholder="Turnos/sem" min="1" max="20">
+        <button class="btn primary" id="btn-add" type="button">Añadir</button>
+      </div>
+      <div class="worker-list" id="worker-list"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Funcionamiento</h2>
+      <div class="setting-row">
+        <span class="note">Cada trabajador tiene un número de turnos semanales. Cada vez que lo colocas en un puesto (día o noche) consume 1 turno. Al completarlos su tarjeta se atenúa, y si se pasa se marca en amarillo. Las vacaciones (🏖) avisan y marcan, pero no bloquean.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAB SOLICITUDES ============ -->
+  <section id="tab-solicitudes" hidden>
+    <div class="panel">
+      <h2>Solicitudes</h2>
+      <span class="empty-note">Próximamente: aquí verás las solicitudes de vacaciones y cambios de tus empleados.</span>
+    </div>
+  </section>
+
+  <!-- ============ TAB AJUSTES ============ -->
+  <section id="tab-ajustes" hidden>
+    <div class="panel">
+      <h2>Cuenta</h2>
+      <div class="setting-row"><span class="note" id="ajustes-cuenta"></span></div>
+    </div>
+    <div class="panel">
+      <h2>Puestos y días</h2>
+      <span class="empty-note">Próximamente: configuración de puestos, días y hora de publicación.</span>
+    </div>
+  </section>
+</main>
+</div>
+
+<div id="toast"></div>
+
+<script type="module" src="js/app.js?v=6"></script>
 </body>
 </html>
