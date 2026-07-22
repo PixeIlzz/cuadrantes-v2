@@ -88,6 +88,7 @@ $('form-login').addEventListener('submit', async (e) => {
 });
 
 $('btn-salir').addEventListener('click', async () => {
+  if (!confirm('¿Seguro que quieres cerrar la sesión?')) return;
   await signOut();
   location.reload();
 });
