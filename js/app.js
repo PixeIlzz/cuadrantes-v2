@@ -89,9 +89,10 @@ async function entrarEnLaApp() {
     .from('businesses')
     .select('id, name, config')
     .eq('id', mem[0].business_id)
-    .single();
+    .maybeSingle();
 
   if (e2) throw new Error('Al leer businesses: ' + e2.message);
+  if (!biz) throw new Error('El negocio no se pudo cargar (RLS o id inexistente).');
 
   ctx.role = mem[0].role;
   ctx.business = biz;
