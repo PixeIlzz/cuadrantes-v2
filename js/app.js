@@ -1,32 +1,45 @@
-// Arranque. v5 — misma estructura que diagnostico.html (probada en verde).
-// Sin onAuthStateChange: era la única diferencia con el diagnóstico y es
-// el principal sospechoso del cuelgue. Se reintroducirá con cuidado después.
-import { ctx, signIn, signOut, getSession } from './auth.js?v=5';
-import { sb } from './supabase.js?v=5';
+// Arranque, login y navegación por pestañas. v6
+import { ctx, signIn, signOut, getSession } from './auth.js?v=6';
+import { sb } from './supabase.js?v=6';
+import { toast } from './ui/toast.js?v=6';
+import { initEquipo, abrirEquipo } from './ui/equipo.js?v=6';
 
 const $ = (id) => document.getElementById(id);
 const errorLogin = $('login-error');
 
-function paso(txt)  { console.log('[paso]', txt); pinta(txt, '#9aa4c7'); }
-function fallo(txt) { console.error('[fallo]', txt); pinta(txt, '#d9534f'); }
+function paso(txt)  { console.log('[paso]', txt); pinta(txt, '#5a6478'); }
+function fallo(txt) { console.error('[fallo]', txt); pinta(txt, '#c62838'); }
 function pinta(txt, color) {
   if (errorLogin) { errorLogin.style.color = color; errorLogin.textContent = txt; }
 }
 
-window.addEventListener('error', (e) => fallo('Error global: ' + e.message));
+window.addEventListener('error', (e) => fallo('Error: ' + e.message));
 window.addEventListener('unhandledrejection', (e) =>
-  fallo('Promesa sin capturar: ' + (e.reason?.message || e.reason)));
+  fallo('Fallo: ' + (e.reason?.message || e.reason)));
 
+/* ---------- Pestañas ---------- */
+const PESTANAS = ['cuadrante', 'programar', 'equipo', 'solicitudes', 'ajustes'];
+
+function cambiarPestana(nombre) {
+  document.querySelectorAll('.tab-btn').forEach((b) =>
+    b.classList.toggle('active', b.dataset.tab === nombre));
+  for (const t of PESTANAS) $('tab-' + t).hidden = (t !== nombre);
+  if (nombre === 'equipo') abrirEquipo();   // recarga de la base de datos al entrar
+}
+
+document.querySelectorAll('.tab-btn').forEach((btn) => {
+  btn.addEventListener('click', () => cambiarPestana(btn.dataset.tab));
+});
+
+/* ---------- Vistas ---------- */
 function mostrarLogin() {
-  paso('mostrarLogin()');
   $('vista-login').hidden = false;
   $('vista-app').hidden = true;
   $('cargando').hidden = true;
-  pinta('', '#9aa4c7');
+  pinta('', '#5a6478');
 }
 
 function mostrarApp(session, role, biz) {
-  paso('mostrarApp()');
   ctx.user = session.user; ctx.role = role; ctx.business = biz;
 
   $('vista-login').hidden = true;
@@ -34,33 +47,27 @@ function mostrarApp(session, role, biz) {
   $('cargando').hidden = true;
 
   $('negocio-nombre').textContent = biz.name;
-  $('usuario-email').textContent = session.user.email;
-  $('usuario-rol').textContent = role === 'manager' ? 'Gestor' : 'Empleado';
+  $('ajustes-cuenta').textContent =
+    session.user.email + ' · ' + (role === 'manager' ? 'Gestor' : 'Empleado');
 
-  const cfg = biz.config || {};
-  $('debug-dias').textContent    = (cfg.days  || []).map(d => d.label).join(' · ');
-  $('debug-puestos').textContent = (cfg.roles || []).map(r => `${r.label} (mín. ${r.min})`).join(' · ');
-  const pub = cfg.publish || {};
-  const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-  $('debug-pub').textContent = `${dias[pub.weekday ?? 0]} a las ${pub.time || '18:00'}`;
+  initEquipo();
+  cambiarPestana('cuadrante');
 }
 
 async function cargarNegocio(session) {
-  paso('Leyendo membresías…');
+  paso('Cargando tu negocio…');
   const { data: mem, error: e1 } = await sb
     .from('memberships').select('role, business_id');
   if (e1) throw new Error('memberships: ' + e1.message);
   if (!mem || mem.length === 0)
     throw new Error('Tu cuenta no está asociada a ningún negocio.');
 
-  paso('Membresía ' + mem[0].role + '. Leyendo negocio…');
   const { data: biz, error: e2 } = await sb
     .from('businesses').select('id, name, config')
     .eq('id', mem[0].business_id).maybeSingle();
   if (e2) throw new Error('businesses: ' + e2.message);
   if (!biz) throw new Error('No se pudo cargar el negocio.');
 
-  paso('Negocio cargado: ' + biz.name);
   mostrarApp(session, mem[0].role, biz);
 }
 
@@ -72,7 +79,6 @@ $('form-login').addEventListener('submit', async (e) => {
   try {
     paso('Autenticando…');
     const session = await signIn($('email').value, $('password').value);
-    paso('Login correcto.');
     await cargarNegocio(session);
   } catch (err) {
     fallo(err.message || String(err));
@@ -86,11 +92,10 @@ $('btn-salir').addEventListener('click', async () => {
   location.reload();
 });
 
-/* ---------- Arranque (nivel de módulo, como el diagnóstico) ---------- */
+/* ---------- Arranque ---------- */
 try {
   paso('Comprobando sesión…');
   const session = await getSession();
-  paso('getSession → ' + (session ? session.user.email : 'sin sesión'));
   if (session) {
     await cargarNegocio(session);
   } else {

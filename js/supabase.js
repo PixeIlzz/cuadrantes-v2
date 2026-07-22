@@ -1,4 +1,4 @@
-// Cliente de Supabase. Único punto donde viven las claves. v5
+// Cliente de Supabase. Único punto donde viven las claves. v6
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 
 const SUPABASE_URL = 'https://vheebrkmgptruprxiaxu.supabase.co';

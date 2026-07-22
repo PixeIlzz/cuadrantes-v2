@@ -1,5 +1,5 @@
-// Sesión y contexto. v5 — estructura mínima, igual que el diagnóstico probado.
-import { sb } from './supabase.js?v=5';
+// Sesión y contexto. v6
+import { sb } from './supabase.js?v=6';
 
 export const ctx = { user: null, business: null, role: null, workerId: null };
 
