@@ -66,3 +66,5 @@ button.ghost:hover{background:var(--panel-2); color:var(--txt)}
 .debug{margin:.8rem 0 0; display:grid; grid-template-columns:auto 1fr; gap:.4rem 1rem}
 .debug dt{color:var(--txt-sub); font-size:.85rem}
 .debug dd{margin:0; font-size:.9rem}
+
+[hidden]{display:none !important}
