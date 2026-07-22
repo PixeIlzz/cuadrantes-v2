@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#182135">
 <title>Cuadrantes</title>
-<link rel="stylesheet" href="app.css?v=6">
+<link rel="stylesheet" href="app.css?v=7">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
 </head>
@@ -31,6 +31,7 @@
 <div id="vista-app" hidden>
 <header>
   <h1 id="negocio-nombre"></h1>
+  <span id="sync-status"></span>
   <nav class="tabs">
     <button class="tab-btn active" data-tab="cuadrante">Cuadrante</button>
     <button class="tab-btn" data-tab="programar">Programadas</button>
@@ -44,9 +45,21 @@
 <main>
   <!-- ============ TAB CUADRANTE ============ -->
   <section id="tab-cuadrante">
-    <div class="panel">
-      <h2>Cuadrante</h2>
-      <span class="empty-note">El editor de cuadrante llega en el siguiente paso. Empieza añadiendo a tu equipo en la pestaña Equipo.</span>
+    <div class="toolbar">
+      <div class="week-picker">
+        <button class="btn small" id="wk-prev" type="button">‹</button>
+        <input type="date" id="wk-date">
+        <button class="btn small" id="wk-next" type="button">›</button>
+        <span id="wk-label"></span>
+        <span id="wk-status" class="status-chip"></span>
+      </div>
+    </div>
+
+    <div class="worker-strip" id="worker-strip"></div>
+    <p class="strip-hint">Toca un trabajador para seleccionarlo y luego toca un puesto para colocarlo. Toca un chip para quitarlo. En escritorio también puedes arrastrar.</p>
+
+    <div class="grid-scroller">
+      <div class="grid" id="grid"></div>
     </div>
   </section>
 
@@ -102,6 +115,6 @@
 
 <div id="toast"></div>
 
-<script type="module" src="js/app.js?v=6"></script>
+<script type="module" src="js/app.js?v=7"></script>
 </body>
 </html>

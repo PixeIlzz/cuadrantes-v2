@@ -116,14 +116,141 @@ button{font:inherit;cursor:pointer}
 }
 #toast.show{opacity:1}
 
-/* ---------- Modal ---------- */
-.modal-bg{
-  position:fixed;inset:0;background:rgba(24,33,53,.55);z-index:90;
-  display:flex;align-items:center;justify-content:center;padding:20px;
+/* =========================================================
+   Editor de cuadrante (portado de la v1). v7
+   ========================================================= */
+
+/* ---------- Indicador de guardado ---------- */
+#sync-status{
+  font-size:.72rem;font-weight:600;color:#9aa4bd;
+  padding:3px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.2);
 }
-.modal{
-  background:#fff;border-radius:14px;padding:20px;max-width:340px;width:100%;
-  text-align:center;
+#sync-status:empty{display:none}
+#sync-status.ok{color:#7fd6a4}
+#sync-status.saving{color:#f2cf7e}
+#sync-status.err{color:#ff9daa;border-color:#ff9daa}
+
+/* ---------- Barra superior del cuadrante ---------- */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.toolbar .week-picker{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:6px 10px;font-size:.88rem;font-weight:600;
 }
-.modal-msg{font-size:.95rem;font-weight:600;margin-bottom:16px}
-.modal .row{display:flex;gap:8px;justify-content:center}
+.week-picker input[type=date]{
+  border:1px solid var(--line);border-radius:7px;padding:5px 6px;font:inherit;background:#fff;
+}
+.status-chip{
+  font-size:.7rem;padding:2px 9px;border-radius:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.03em;
+}
+.status-chip.draft{background:#eef1f6;color:var(--ink-soft)}
+.status-chip.scheduled{background:#fff7dc;color:#8a6a00}
+.status-chip.published{background:var(--coc-bg);color:var(--ok)}
+
+/* ---------- Tira de trabajadores ---------- */
+.worker-strip{
+  position:sticky;top:0;z-index:30;
+  background:var(--paper);
+  padding:8px 0;
+  display:flex;gap:8px;overflow-x:auto;
+  border-bottom:2px solid var(--line);
+  margin-bottom:12px;
+  -webkit-overflow-scrolling:touch;
+}
+.worker-card{
+  flex:0 0 auto;
+  background:var(--card);border:2px solid var(--line);border-radius:var(--radius);
+  padding:8px 12px;min-width:110px;
+  cursor:grab;user-select:none;
+  transition:border-color .12s, box-shadow .12s, opacity .12s;
+}
+.worker-card .w-name{font-weight:700;font-size:.95rem;white-space:nowrap}
+.worker-card .w-hours{font-size:.75rem;color:var(--ink-soft);margin-top:2px}
+.worker-card .w-bar{height:4px;background:var(--line);border-radius:2px;margin-top:6px;overflow:hidden}
+.worker-card .w-bar i{display:block;height:100%;background:var(--accent);border-radius:2px}
+.worker-card.selected{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.worker-card.full{opacity:.55}
+.worker-card.over{border-color:#d9a400;background:#fff7dc;opacity:1}
+.worker-card.over .w-hours{color:#8a6a00;font-weight:700}
+.worker-card.over .w-bar i{background:#d9a400}
+.worker-card.all-card{background:var(--ink);color:#fff;border-color:var(--ink)}
+.worker-card.all-card .w-hours{color:#c8cede}
+.worker-card.all-card.selected{box-shadow:0 0 0 3px #9db4e8}
+.worker-card.vac{border-color:#1d8ea6}
+.worker-card .w-vac{
+  font-size:.68rem;color:#1d8ea6;font-weight:700;margin-top:3px;white-space:nowrap;
+}
+.strip-hint{font-size:.75rem;color:var(--ink-soft);margin:-6px 0 10px}
+
+/* ---------- Grid de días ---------- */
+.grid-scroller{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px}
+.grid{display:flex;gap:10px;min-width:min-content}
+.day-col{
+  flex:0 0 150px;width:150px;
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  overflow:hidden;
+}
+.day-col.night{border-color:#b8c0d4}
+.day-name{
+  background:var(--ink);color:#fff;text-align:center;
+  padding:7px 4px;font-weight:700;font-size:.92rem;text-transform:uppercase;letter-spacing:.05em;
+  font-family:"Arial Narrow","Segoe UI",sans-serif;
+}
+.day-col.night .day-name{background:#3a4460}
+.day-col.vac-day .day-name{background:#1d8ea6}
+.role-block{padding:7px 7px 9px;border-top:1px dashed var(--line)}
+.role-block:first-of-type{border-top:none}
+.role-head{
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+  margin-bottom:5px;
+}
+.role-head .count{
+  font-size:.7rem;padding:1px 7px;border-radius:10px;font-weight:700;
+  background:var(--bad-bg);color:var(--bad);
+}
+.role-head .count.ok{background:var(--coc-bg);color:var(--ok)}
+.role-cam .role-head{color:var(--cam)}
+.role-par .role-head{color:var(--par)}
+.role-coc .role-head{color:var(--coc)}
+.drop-zone{
+  min-height:34px;border-radius:7px;
+  display:flex;flex-direction:column;gap:4px;
+  padding:3px;
+  border:1.5px dashed transparent;
+  transition:border-color .12s, background .12s;
+}
+.role-cam .drop-zone{background:var(--cam-bg)}
+.role-par .drop-zone{background:var(--par-bg)}
+.role-coc .drop-zone{background:var(--coc-bg)}
+.drop-zone.armed{border-color:var(--accent);background:#fff}
+.drop-zone.drag-over{border-color:var(--accent);background:#fff}
+.chip{
+  background:#fff;border:1px solid var(--line);border-radius:6px;
+  padding:4px 8px;font-size:.8rem;font-weight:600;
+  display:flex;justify-content:space-between;align-items:center;gap:6px;
+  cursor:pointer;
+}
+.chip .x{color:var(--bad);font-weight:700;font-size:.85rem;line-height:1}
+.chip.all-chip{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chip.all-chip .x{color:#ff9daa}
+.chip.hl{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.chip.chip-vac{border-color:#1d8ea6;background:#eaf7fa}
+.all-day{
+  padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  min-height:180px;justify-content:center;
+  background:repeating-linear-gradient(-45deg,#f2f4f7 0 8px,#e9edf3 8px 16px);
+}
+.all-day-chip{width:100%;justify-content:center;font-size:.95rem;padding:10px}
+.all-day-chip span:first-child{flex:1;text-align:center}
+.all-day-note{font-size:.72rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em}
+
+/* ---------- Notas por día ---------- */
+.day-note{padding:6px 7px 8px;border-top:1px dashed var(--line)}
+.day-note textarea{
+  width:100%;border:1px solid var(--line);border-radius:7px;
+  padding:5px 7px;font:inherit;font-size:.76rem;resize:vertical;
+  min-height:30px;background:#fffdf2;
+}
+.day-note textarea::placeholder{color:#b9bfcc}
