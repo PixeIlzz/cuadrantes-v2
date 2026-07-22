@@ -115,3 +115,15 @@ button{font:inherit;cursor:pointer}
   max-width:90vw;text-align:center;
 }
 #toast.show{opacity:1}
+
+/* ---------- Modal ---------- */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(24,33,53,.55);z-index:90;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.modal{
+  background:#fff;border-radius:14px;padding:20px;max-width:340px;width:100%;
+  text-align:center;
+}
+.modal-msg{font-size:.95rem;font-weight:600;margin-bottom:16px}
+.modal .row{display:flex;gap:8px;justify-content:center}
