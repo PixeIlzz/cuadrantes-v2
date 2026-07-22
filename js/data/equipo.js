@@ -1,9 +1,7 @@
 // Acceso a datos del equipo (workers + vacations). Sin interfaz aquí.
-import { sb } from '../supabase.js?v=6';
-import { ctx } from '../auth.js?v=6';
+import { sb } from '../supabase.js?v=7';
+import { ctx } from '../auth.js?v=7';
 
-/* Devuelve la lista de trabajadores activos con sus vacaciones ya enlazadas:
-   [{id, name, weekly_shifts, vacs:[{id, start_date, end_date}]}] */
 export async function listarEquipo() {
   const biz = ctx.business.id;
 
@@ -50,7 +48,6 @@ export async function actualizarTrabajador(id, campos) {
   if (error) throw new Error('No se pudo guardar: ' + error.message);
 }
 
-/* Borrado real: assignments del trabajador caen en cascada (FK). */
 export async function borrarTrabajador(id) {
   const { error } = await sb.from('workers').delete().eq('id', id);
   if (error) throw new Error('No se pudo eliminar: ' + error.message);
