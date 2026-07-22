@@ -1,6 +1,6 @@
-// Arranque y enrutado básico. Versión con diagnóstico visible.
-import { ctx, signIn, signOut, loadContext, getSession, onAuthChange } from './auth.js';
-import { sb } from './supabase.js';
+// Arranque y enrutado básico. v4.
+import { ctx, signIn, signOut, getSession, onAuthChange } from './auth.js?v=4';
+import { sb } from './supabase.js?v=4';
 
 const $ = (id) => document.getElementById(id);
 
@@ -48,8 +48,7 @@ formLogin.addEventListener('submit', async (e) => {
   btnEntrar.textContent = 'Entrando…';
   try {
     paso('Autenticando…');
-    await signIn($('email').value, $('password').value);
-    const session = await getSession();
+    const session = await signIn($('email').value, $('password').value);
     await entrarEnLaApp(session);
   } catch (err) {
     fallo(err.message || String(err));
@@ -93,8 +92,6 @@ async function entrarEnLaApp(session) {
   if (e2) throw new Error('Al leer businesses: ' + e2.message);
   if (!biz) throw new Error('El negocio no se pudo cargar (RLS o id inexistente).');
 
-  // Usamos el usuario de la sesión que ya tenemos en memoria.
-  // (Evitamos sb.auth.getUser(), que puede quedarse colgado.)
   ctx.role = mem[0].role;
   ctx.business = biz;
   ctx.user = session.user;

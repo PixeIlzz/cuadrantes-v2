@@ -1,68 +1,80 @@
 // Sesión, rol y negocio activo. Nada de interfaz aquí.
-import { sb } from './supabase.js';
+// v4 — llamadas de auth protegidas con timeout: si la librería se cuelga
+// (bug conocido de supabase-js en algunos navegadores), seguimos sin ella.
+import { sb } from './supabase.js?v=4';
 
-// Contexto de la sesión actual. Lo rellena loadContext().
 export const ctx = {
-  user: null,        // usuario de Supabase Auth
-  business: null,    // {id, name, config}
-  role: null,        // 'manager' | 'employee'
-  workerId: null,    // ficha de trabajador enlazada (null si es gestor puro)
+  user: null,
+  business: null,
+  role: null,
+  workerId: null,
 };
 
+const TIMEOUT_MS = 2500;
+
+function conTimeout(promesa, etiqueta) {
+  return Promise.race([
+    promesa,
+    new Promise((resolve) =>
+      setTimeout(() => resolve({ __timeout: true, etiqueta }), TIMEOUT_MS)
+    ),
+  ]);
+}
+
+/* Login. Devuelve la sesión directamente de la respuesta,
+   sin depender de getSession() después. */
 export async function signIn(email, password) {
   const { data, error } = await sb.auth.signInWithPassword({
     email: email.trim(),
     password,
   });
   if (error) throw new Error(traducirError(error.message));
-  return data.user;
+  return data.session; // trae access_token y user
 }
 
 export async function signOut() {
-  await sb.auth.signOut();
-  ctx.user = null;
-  ctx.business = null;
-  ctx.role = null;
-  ctx.workerId = null;
+  try {
+    await conTimeout(sb.auth.signOut(), 'signOut');
+  } catch (_) { /* da igual: borramos local y recargamos */ }
+  try {
+    const k = claveSesionLocal();
+    if (k) localStorage.removeItem(k);
+  } catch (_) {}
+  ctx.user = null; ctx.business = null; ctx.role = null; ctx.workerId = null;
 }
 
+/* Sesión actual. Primero por la librería (con timeout);
+   si se cuelga, leemos directamente lo que guardó en localStorage. */
 export async function getSession() {
-  const { data } = await sb.auth.getSession();
-  return data.session;
-}
-
-/* Carga negocio y rol del usuario logueado.
-   Devuelve false si la sesión es válida pero no pertenece a ningún negocio. */
-export async function loadContext() {
-  const session = await getSession();
-  if (!session) return false;
-  ctx.user = session.user;
-
-  const { data, error } = await sb
-    .from('memberships')
-    .select('role, businesses ( id, name, config )')
-    .limit(1);
-
-  if (error) throw error;
-  if (!data || data.length === 0) return false;
-
-  ctx.role = data[0].role;
-  ctx.business = data[0].businesses;
-
-  // Si es empleado, buscamos su ficha para "mis turnos" y sus solicitudes.
-  if (ctx.role === 'employee') {
-    const { data: w } = await sb
-      .from('workers')
-      .select('id')
-      .eq('business_id', ctx.business.id)
-      .eq('profile_id', ctx.user.id)
-      .maybeSingle();
-    ctx.workerId = w ? w.id : null;
+  const res = await conTimeout(sb.auth.getSession(), 'getSession');
+  if (!res.__timeout) {
+    console.log('[auth] getSession respondió normal');
+    return res.data.session;
   }
-  return true;
+  console.warn('[auth] getSession se colgó → leyendo sesión de localStorage');
+  return sesionDesdeLocalStorage();
 }
 
-// Reacciona a login/logout abiertos en otra pestaña o a la caducidad del token.
+function claveSesionLocal() {
+  try {
+    return Object.keys(localStorage).find(
+      (k) => k.startsWith('sb-') && k.endsWith('-auth-token')
+    ) || null;
+  } catch (_) { return null; }
+}
+
+function sesionDesdeLocalStorage() {
+  try {
+    const k = claveSesionLocal();
+    if (!k) return null;
+    const s = JSON.parse(localStorage.getItem(k));
+    if (!s || !s.access_token || !s.user) return null;
+    // Si el token está caducado, no sirve: mejor volver al login.
+    if (s.expires_at && s.expires_at * 1000 < Date.now()) return null;
+    return s;
+  } catch (_) { return null; }
+}
+
 export function onAuthChange(cb) {
   sb.auth.onAuthStateChange((event) => cb(event));
 }
