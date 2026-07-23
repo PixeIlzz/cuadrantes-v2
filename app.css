@@ -254,3 +254,22 @@ button{font:inherit;cursor:pointer}
   min-height:30px;background:#fffdf2;
 }
 .day-note textarea::placeholder{color:#b9bfcc}
+
+/* ---------- Modal ---------- */
+.modal-bg{
+  position:fixed;inset:0;z-index:200;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  background:rgba(24,33,53,.45);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+  animation:modal-in .12s ease-out;
+}
+.modal{
+  background:var(--card);border-radius:14px;padding:22px 20px;
+  max-width:340px;width:100%;text-align:center;
+  box-shadow:0 12px 40px rgba(24,33,53,.25);
+}
+.modal-msg{font-size:.95rem;font-weight:600;margin-bottom:18px;line-height:1.4}
+.modal .row{display:flex;gap:8px;justify-content:center}
+.modal .row .btn{flex:1;max-width:150px}
+@keyframes modal-in{from{opacity:0}to{opacity:1}}
