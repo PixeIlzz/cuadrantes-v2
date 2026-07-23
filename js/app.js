@@ -1,10 +1,12 @@
 // Arranque, login y navegación por pestañas. v7
-import { ctx, signIn, signOut, getSession } from './auth.js?v=7';
-import { sb } from './supabase.js?v=7';
-import { toast } from './ui/toast.js?v=7';
-import { confirmar } from './ui/confirmar.js?v=7';
-import { initEquipo, abrirEquipo } from './ui/equipo.js?v=7';
-import { initCuadrante, abrirCuadrante } from './ui/cuadrante.js?v=7';
+import { ctx, signIn, signOut, getSession } from './auth.js?v=8';
+import { sb } from './supabase.js?v=8';
+import { toast } from './ui/toast.js?v=8';
+import { confirmar } from './ui/confirmar.js?v=8';
+import { initEquipo, abrirEquipo } from './ui/equipo.js?v=8';
+import { initCuadrante, abrirCuadrante } from './ui/cuadrante.js?v=8';
+import { initProgramadas, abrirProgramadas } from './ui/programadas.js?v=8';
+import { initAjustes, abrirAjustes } from './ui/ajustes.js?v=8';
 
 const $ = (id) => document.getElementById(id);
 const errorLogin = $('login-error');
@@ -28,6 +30,8 @@ function cambiarPestana(nombre) {
   for (const t of PESTANAS) $('tab-' + t).hidden = (t !== nombre);
   if (nombre === 'equipo') abrirEquipo();
   if (nombre === 'cuadrante') abrirCuadrante();
+  if (nombre === 'programar') abrirProgramadas();
+  if (nombre === 'ajustes') abrirAjustes();
 }
 
 document.querySelectorAll('.tab-btn[data-tab]').forEach((btn) => {
@@ -55,6 +59,11 @@ function mostrarApp(session, role, biz) {
 
   initEquipo();
   initCuadrante();
+  initAjustes();
+  initProgramadas((startIso) => {   // "Editar" desde Programadas abre esa semana
+    cambiarPestana('cuadrante');
+    abrirCuadrante(startIso);
+  });
   cambiarPestana('cuadrante');
 }
 
