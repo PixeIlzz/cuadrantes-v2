@@ -61,12 +61,18 @@
       </div>
     </div>
     <div class="publish-bar">
-      <span id="wk-publish-info" class="pub-info"></span>
-      <span class="pub-manual">
-        <label for="wk-manual">Fecha propia:</label>
-        <input type="datetime-local" id="wk-manual">
-        <button class="btn small" id="btn-manual" type="button">Fijar</button>
-      </span>
+      <div class="pub-estado">
+        <span class="pub-tit">Publicación</span>
+        <span id="wk-publish-info" class="pub-info"></span>
+      </div>
+      <div class="pub-override">
+        <label for="wk-manual">Publicar esta semana el día y hora:</label>
+        <div class="pub-override-row">
+          <input type="datetime-local" id="wk-manual">
+          <button class="btn small" id="btn-manual" type="button">Guardar fecha</button>
+        </div>
+        <span class="pub-ayuda">Solo afecta a esta semana. Si lo dejas vacío y pulsas «Programar», se usa la regla por defecto de Ajustes.</span>
+      </div>
     </div>
 
     <div class="worker-strip" id="worker-strip"></div>
