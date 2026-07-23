@@ -1,6 +1,6 @@
 // Datos para la vista de empleado: semanas publicadas y turnos propios. v9
-import { sb } from '../supabase.js?v=14';
-import { ctx } from '../auth.js?v=14';
+import { sb } from '../supabase.js?v=15';
+import { ctx } from '../auth.js?v=15';
 
 /* Semanas visibles para el empleado. RLS ya filtra por publish_at <= now(),
    así que lo que no toca ver, sencillamente no llega. */

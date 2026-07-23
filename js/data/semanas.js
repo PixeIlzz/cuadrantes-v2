@@ -1,6 +1,6 @@
 // Acceso a datos de semanas y asignaciones. Sin interfaz aquí. v7
-import { sb } from '../supabase.js?v=14';
-import { ctx } from '../auth.js?v=14';
+import { sb } from '../supabase.js?v=15';
+import { ctx } from '../auth.js?v=15';
 
 /* Lunes (ISO yyyy-mm-dd) de la semana a la que pertenece una fecha */
 export function lunesDe(fecha) {
@@ -156,21 +156,25 @@ export function localAIso(valor) {
   return new Date(valor).toISOString();
 }
 
-/* Estado real de una semana. Combina la programación (publish_at) con
-   la visibilidad manual (visibility). La columna `status` ya no se usa
-   para decidir nada: la fecha y la visibilidad son la fuente fiable. */
-export function estadoReal(w) {
-  if (w.visibility === 'hidden') return 'oculta';
-  if (w.visibility === 'shown')  return 'forzada';
+/* Estado de la semana en su ciclo de vida. NO depende de si está oculta:
+   una semana puede estar "Programada" y a la vez oculta a mano. */
+export function estadoBase(w) {
   if (!w.publish_at) return 'draft';
-  const ahora = new Date();
-  if (new Date(w.publish_at) > ahora) return 'scheduled';
-  return semanaTerminada(w.start_date) ? 'archivada' : 'visible';
+  if (new Date(w.publish_at) > new Date()) return 'scheduled';
+  return semanaTerminada(w.start_date) ? 'archivada' : 'publicada';
 }
 
+/* Si el equipo la ve o no. Aquí sí manda la visibilidad manual. */
 export function esVisible(w) {
-  const e = estadoReal(w);
-  return e === 'visible' || e === 'forzada';
+  if (w.visibility === 'hidden') return false;
+  if (w.visibility === 'shown')  return true;
+  const base = estadoBase(w);
+  return base === 'publicada';
+}
+
+/* Modo de visibilidad: automático, forzado a visible, o forzado a oculto */
+export function modoVisibilidad(w) {
+  return (w.visibility === 'hidden' || w.visibility === 'shown') ? w.visibility : 'auto';
 }
 
 export function semanaTerminada(startIso) {
@@ -183,11 +187,30 @@ export function semanaTerminada(startIso) {
 export const ETIQUETA_ESTADO = {
   draft:     'Borrador',
   scheduled: 'Programada',
-  visible:   'Visible',
+  publicada: 'Publicada',
   archivada: 'Archivada',
-  forzada:   'Visible (manual)',
-  oculta:    'Oculta',
 };
+
+/* Icono de ojo (visible) / ojo tachado (oculta), como SVG en línea */
+export function iconoOjo(visible) {
+  return visible
+    ? '<svg class="ico-ojo" viewBox="0 0 24 24" aria-hidden="true">'
+      + '<path d="M12 5c-5 0-9 4.5-10 7 1 2.5 5 7 10 7s9-4.5 10-7c-1-2.5-5-7-10-7z"/>'
+      + '<circle class="pupila" cx="12" cy="12" r="3.2"/></svg>'
+    : '<svg class="ico-ojo" viewBox="0 0 24 24" aria-hidden="true">'
+      + '<path d="M12 5c-5 0-9 4.5-10 7 1 2.5 5 7 10 7s9-4.5 10-7c-1-2.5-5-7-10-7z"/>'
+      + '<circle class="pupila" cx="12" cy="12" r="3.2"/>'
+      + '<line class="tacha" x1="3.5" y1="20.5" x2="20.5" y2="3.5"/></svg>';
+}
+
+/* Texto corto que explica la visibilidad */
+export function textoVisibilidad(w) {
+  const modo = modoVisibilidad(w);
+  const visible = esVisible(w);
+  if (modo === 'hidden') return 'Oculta a mano';
+  if (modo === 'shown')  return 'Visible a mano';
+  return visible ? 'La ve el equipo' : 'No la ve el equipo';
+}
 
 /* Cambia la visibilidad sin tocar la fecha programada */
 export async function setVisibilidad(weekId, modo) {
