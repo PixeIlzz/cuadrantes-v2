@@ -143,16 +143,31 @@ function pintarSelector() {
   st.className = 'status-chip ' + semana.status;
 
   const tz = (ctx.business.config.publish || {}).tz;
-  const info = $('wk-publish-info');
+const info = $('wk-publish-info');
+  const pub = ctx.business.config.publish || {};
+  const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const reglaDefecto = DIAS[pub.weekday ?? 0] + ' a las ' + (pub.time || '18:00');
+
   if (semana.publish_at) {
-    info.textContent = (semana.status === 'published' ? 'Publicada el ' : 'Se publica el ')
+    info.textContent =
+      (semana.status === 'published' ? 'Ya publicada · visible desde el ' : 'Programada · el equipo la verá el ')
       + fmtMomento(semana.publish_at, tz)
-      + (semana.publish_at_manual ? ' (fecha propia)' : '');
+      + (semana.publish_at_manual ? ' · fecha propia de esta semana' : ' · regla por defecto');
   } else {
-    info.textContent = 'Sin programar';
+    info.textContent = 'Sin programar · el equipo todavía no la ve. '
+      + 'Con «Programar» se publicaría el ' + reglaDefecto + '.';
   }
   $('btn-despublicar').hidden = (semana.status === 'draft');
-  $('wk-manual').value = '';
+
+  // Precarga el campo con la fecha actual de publicación, si la hay
+  if (semana.publish_at) {
+    const d = new Date(semana.publish_at);
+    const p = (n) => String(n).padStart(2, '0');
+    $('wk-manual').value =
+      `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  } else {
+    $('wk-manual').value = '';
+  }
 }
 
 /* ---------- Tira de trabajadores ---------- */
