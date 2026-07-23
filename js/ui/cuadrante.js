@@ -1,6 +1,6 @@
 // Pestaña Cuadrante: editor portado de la v1, guardando en Supabase. v7
-import { toast } from './toast.js?v=15';
-import { listarEquipo } from '../data/equipo.js?v=15';
+import { toast } from './toast.js?v=16';
+import { listarEquipo } from '../data/equipo.js?v=16';
 import {
   lunesDe, sumarDias, fmtCorto, etiquetaSemana,
   obtenerOCrearSemana, cargarAsignaciones, guardarSemana,
@@ -8,9 +8,9 @@ import {
   listarSemanas, fmtMomento, localAIso, ETIQUETA_ESTADO,
   estadoBase, esVisible, modoVisibilidad, iconoOjo, textoVisibilidad,
   setVisibilidad, semanaTerminada,
-} from '../data/semanas.js?v=15';
-import { confirmar, elegirOpcion } from './confirmar.js?v=15';
-import { ctx } from '../auth.js?v=15';
+} from '../data/semanas.js?v=16';
+import { confirmar, elegirOpcion } from './confirmar.js?v=16';
+import { ctx } from '../auth.js?v=16';
 
 const ALL_ID = 'ALL';
 const $ = (id) => document.getElementById(id);
@@ -117,7 +117,12 @@ async function cargar(startIso) {
     const cfg = semana.config_snapshot || {};
     DAYS = cfg.days || [];
     ROLES = cfg.roles || [];
-    notas = semana.notes || {};
+    notas = {};
+    const crudas = (semana.notes && typeof semana.notes === 'object') ? semana.notes : {};
+    for (const k in crudas) {
+      const v = crudas[k];
+      if (v !== null && v !== undefined && String(v).trim() !== '') notas[k] = String(v);
+    }
 
     cells = {};
     for (const a of await cargarAsignaciones(semana.id)) {
@@ -249,7 +254,8 @@ function renderGrid() {
       nd.className = 'day-note';
       const ta = document.createElement('textarea');
       ta.placeholder = 'Nota…';
-      ta.value = notas[d.id] || '';
+      const valor = notas ? notas[d.id] : null;
+      ta.value = (valor === null || valor === undefined) ? '' : String(valor);
       ta.maxLength = 200;
       ta.addEventListener('change', () => {
         const v = ta.value.trim();

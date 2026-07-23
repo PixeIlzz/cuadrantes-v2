@@ -1,13 +1,13 @@
 // Pestaña Semanas: registro completo agrupado por año y mes. v14
-import { toast } from './toast.js?v=15';
-import { confirmar } from './confirmar.js?v=15';
-import { ctx } from '../auth.js?v=15';
+import { toast } from './toast.js?v=16';
+import { confirmar } from './confirmar.js?v=16';
+import { ctx } from '../auth.js?v=16';
 import {
   listarSemanas, etiquetaSemana, fmtMomento, localAIso,
   programarSemana, borrarSemana, setVisibilidad,
   estadoBase, esVisible, modoVisibilidad, iconoOjo, textoVisibilidad,
   ETIQUETA_ESTADO, contarSemanasRango, borrarSemanasRango,
-} from '../data/semanas.js?v=15';
+} from '../data/semanas.js?v=16';
 
 const $ = (id) => document.getElementById(id);
 const MESES = ['enero','febrero','marzo','abril','mayo','junio',
