@@ -571,3 +571,43 @@ button{font:inherit;cursor:pointer}
 .grupo-num{font-size:.72rem;color:var(--ink-soft)}
 .grupo-cab .btn{margin-left:auto}
 .week-list .week-row{margin-bottom:6px}
+
+/* =========================================================
+   Ojo (visibilidad) y estado, separados. v15
+   ========================================================= */
+
+.ico-ojo{
+  width:15px;height:15px;flex:0 0 auto;
+  fill:none;stroke:currentColor;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+.ico-ojo .pupila{fill:currentColor;stroke:none}
+.ico-ojo .tacha{stroke-width:2}
+
+.ojo{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:.73rem;font-weight:700;padding:3px 10px;border-radius:12px;white-space:nowrap;
+}
+.ojo-on{background:var(--coc-bg);color:var(--ok)}
+.ojo-off{background:#eef0f4;color:#6f7789}
+.ojo-off .ico-ojo .pupila{fill:none}
+.ojo-manual{box-shadow:inset 0 0 0 1.5px currentColor}
+
+/* Estados del ciclo de vida */
+.est-publicada{border-color:#1d7a4f;background:#e8f6ee;color:var(--ok)}
+.lg-publicada::before{background:#e8f6ee;border-color:#1d7a4f}
+.lg-sep{color:var(--line);font-weight:700}
+.lg-sep::before{display:none}
+.lg-ojo-on::before{background:var(--coc-bg);border-color:#1d7a4f;border-radius:50%}
+.lg-ojo-off::before{background:#eef0f4;border-color:#c2c8d4;border-radius:50%}
+
+/* Fichas de la tira: ojo arriba junto a la fecha */
+.wk-chip-top{display:flex;align-items:center;gap:4px}
+.wk-chip.chip-visible .ico-ojo{color:var(--ok)}
+.wk-chip.chip-oculta .ico-ojo{color:#8a93a6}
+.wk-chip.chip-oculta .ico-ojo .pupila{fill:none}
+.wk-chip.wk-manual{box-shadow:inset 0 0 0 2px rgba(29,142,166,.4)}
+.wk-chip.wk-actual.wk-manual{box-shadow:0 0 0 3px var(--accent-soft), inset 0 0 0 2px rgba(29,142,166,.4)}
+
+/* Fila del registro: ojo + estado */
+.week-marcas{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
