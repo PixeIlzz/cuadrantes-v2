@@ -1,11 +1,11 @@
 // Pestaña Equipo: interfaz calcada a la v1, datos contra Supabase.
-import { toast } from './toast.js?v=16';
+import { toast } from './toast.js?v=17';
 import {
   listarEquipo, crearTrabajador, actualizarTrabajador, borrarTrabajador,
   crearVacacion, actualizarVacacion, borrarVacacion,
-} from '../data/equipo.js?v=16';
-import { generarCodigo, codigoVivo } from '../data/invitaciones.js?v=16';
-import { confirmar } from './confirmar.js?v=16';
+} from '../data/equipo.js?v=17';
+import { generarCodigo, codigoVivo } from '../data/invitaciones.js?v=17';
+import { confirmar } from './confirmar.js?v=17';
 
 let equipo = [];      // caché en memoria de la última carga
 let cargado = false;
@@ -230,27 +230,30 @@ function filaVacacion(w, vac, vacBtn, pintaPanel) {
   const vr = document.createElement('div');
   vr.className = 'vac-row';
 
+  const fechas = document.createElement('div');
+  fechas.className = 'vac-fechas';
+
   const from = document.createElement('input');
   from.type = 'date'; from.value = vac.start_date || '';
   const to = document.createElement('input');
   to.type = 'date'; to.value = vac.end_date || '';
 
-  const guardar = async () => {
+  const guardarFechas = async () => {
     if (!from.value || !to.value) return;             // aún incompleto
     if (from.value > to.value) { toast('El inicio no puede ser posterior al fin'); return; }
     try {
       if (vac.id === null) {
-        const creada = await crearVacacion(w.id, from.value, to.value);
+        const creada = await crearVacacion(w.id, from.value, to.value, nota.value.trim() || null);
         vac.id = creada.id;
       } else {
-        await actualizarVacacion(vac.id, from.value, to.value);
+        await actualizarVacacion(vac.id, { start_date: from.value, end_date: to.value });
       }
       vac.start_date = from.value; vac.end_date = to.value;
       vacBtn.textContent = '🏖 ' + w.vacs.filter((v) => v.id !== null).length;
     } catch (err) { toast(err.message); }
   };
-  from.addEventListener('change', guardar);
-  to.addEventListener('change', guardar);
+  from.addEventListener('change', guardarFechas);
+  to.addEventListener('change', guardarFechas);
 
   const rm = document.createElement('button');
   rm.type = 'button';
@@ -271,6 +274,30 @@ function filaVacacion(w, vac, vacBtn, pintaPanel) {
     } catch (err) { toast(err.message); }
   });
 
-  vr.append(document.createTextNode('Del '), from, document.createTextNode(' al '), to, rm);
+  fechas.append(document.createTextNode('Del '), from,
+                document.createTextNode(' al '), to, rm);
+
+  // Nota del periodo (motivo, aclaraciones…)
+  const nota = document.createElement('input');
+  nota.type = 'text';
+  nota.className = 'vac-nota';
+  nota.maxLength = 120;
+  nota.placeholder = vac.source === 'request'
+    ? 'Nota (solicitada por el trabajador)'
+    : 'Nota: motivo, aclaraciones…';
+  nota.value = vac.note || '';
+  nota.addEventListener('change', async () => {
+    const v = nota.value.trim() || null;
+    if (vac.id === null) { vac.note = v; return; }   // se guardará al completar fechas
+    try {
+      await actualizarVacacion(vac.id, { note: v });
+      vac.note = v;
+    } catch (err) {
+      nota.value = vac.note || '';
+      toast(err.message);
+    }
+  });
+
+  vr.append(fechas, nota);
   return vr;
 }

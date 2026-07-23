@@ -1,9 +1,9 @@
 // Pestaña Ajustes: puestos, días y publicación por defecto. v8
-import { toast } from './toast.js?v=16';
-import { confirmar } from './confirmar.js?v=16';
-import { ctx } from '../auth.js?v=16';
-import { sb } from '../supabase.js?v=16';
-import { recalcularProgramadas } from '../data/semanas.js?v=16';
+import { toast } from './toast.js?v=17';
+import { confirmar } from './confirmar.js?v=17';
+import { ctx } from '../auth.js?v=17';
+import { sb } from '../supabase.js?v=17';
+import { recalcularProgramadas } from '../data/semanas.js?v=17';
 
 const $ = (id) => document.getElementById(id);
 const DIAS_SEMANA = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];

@@ -1,13 +1,13 @@
 // Solicitudes: bandeja del gestor y formulario/historial del empleado. v12
-import { toast } from './toast.js?v=16';
-import { confirmar } from './confirmar.js?v=16';
-import { ctx } from '../auth.js?v=16';
-import { plantilla } from '../data/empleado.js?v=16';
-import { etiquetaSemana, fmtCorto } from '../data/semanas.js?v=16';
+import { toast } from './toast.js?v=17';
+import { confirmar } from './confirmar.js?v=17';
+import { ctx } from '../auth.js?v=17';
+import { plantilla } from '../data/empleado.js?v=17';
+import { etiquetaSemana, fmtCorto } from '../data/semanas.js?v=17';
 import {
   crearSolicitud, misSolicitudes, retirarSolicitud,
   solicitudesDelNegocio, contarPendientes, resolverSolicitud, semanasAfectadas,
-} from '../data/solicitudes.js?v=16';
+} from '../data/solicitudes.js?v=17';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g,

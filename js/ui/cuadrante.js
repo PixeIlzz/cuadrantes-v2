@@ -1,6 +1,6 @@
 // Pestaña Cuadrante: editor portado de la v1, guardando en Supabase. v7
-import { toast } from './toast.js?v=16';
-import { listarEquipo } from '../data/equipo.js?v=16';
+import { toast } from './toast.js?v=17';
+import { listarEquipo } from '../data/equipo.js?v=17';
 import {
   lunesDe, sumarDias, fmtCorto, etiquetaSemana,
   obtenerOCrearSemana, cargarAsignaciones, guardarSemana,
@@ -8,9 +8,9 @@ import {
   listarSemanas, fmtMomento, localAIso, ETIQUETA_ESTADO,
   estadoBase, esVisible, modoVisibilidad, iconoOjo, textoVisibilidad,
   setVisibilidad, semanaTerminada,
-} from '../data/semanas.js?v=16';
-import { confirmar, elegirOpcion } from './confirmar.js?v=16';
-import { ctx } from '../auth.js?v=16';
+} from '../data/semanas.js?v=17';
+import { confirmar, elegirOpcion } from './confirmar.js?v=17';
+import { ctx } from '../auth.js?v=17';
 
 const ALL_ID = 'ALL';
 const $ = (id) => document.getElementById(id);
@@ -219,7 +219,8 @@ function renderStrip() {
     card.innerHTML =
       '<div class="w-name">' + esc(w.name) + '</div>' +
       '<div class="w-hours">' + used + ' / ' + w.weekly_shifts + ' turnos' + (used > w.weekly_shifts ? ' ⚠' : '') + '</div>' +
-      (vac ? '<div class="w-vac">🏖 vacaciones ' + fmtCorto(vac.start_date) + ' – ' + fmtCorto(vac.end_date) + '</div>' : '') +
+      (vac ? '<div class="w-vac">🏖 ' + fmtCorto(vac.start_date) + ' – ' + fmtCorto(vac.end_date)
+             + (vac.note ? ' · ' + esc(vac.note) : '') + '</div>' : '') +
       '<div class="w-bar"><i style="width:' + pct + '%"></i></div>';
     card.draggable = true;
     card.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', w.id));
