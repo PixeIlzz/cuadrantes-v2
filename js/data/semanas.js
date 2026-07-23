@@ -1,6 +1,6 @@
 // Acceso a datos de semanas y asignaciones. Sin interfaz aquí. v7
-import { sb } from '../supabase.js?v=7';
-import { ctx } from '../auth.js?v=7';
+import { sb } from '../supabase.js?v=8';
+import { ctx } from '../auth.js?v=8';
 
 /* Lunes (ISO yyyy-mm-dd) de la semana a la que pertenece una fecha */
 export function lunesDe(fecha) {
@@ -80,4 +80,78 @@ export async function guardarSemana(weekId, filas, notas) {
     p_notes: notas,
   });
   if (error) throw new Error('No se pudo guardar: ' + error.message);
+}
+
+/* ---------- Publicación ---------- */
+
+export async function programarSemana(weekId, manualISO = null) {
+  const { data, error } = await sb.rpc('schedule_week', {
+    p_week_id: weekId,
+    p_manual: manualISO,
+  });
+  if (error) throw new Error('No se pudo programar: ' + error.message);
+  return data;   // timestamptz resultante
+}
+
+export async function publicarAhora(weekId) {
+  const { error } = await sb.rpc('publish_week_now', { p_week_id: weekId });
+  if (error) throw new Error('No se pudo publicar: ' + error.message);
+}
+
+export async function despublicar(weekId) {
+  const { error } = await sb.rpc('unpublish_week', { p_week_id: weekId });
+  if (error) throw new Error('No se pudo pasar a borrador: ' + error.message);
+}
+
+export async function copiarSemana(desdeId, haciaId) {
+  const { error } = await sb.rpc('copy_week', { p_from: desdeId, p_to: haciaId });
+  if (error) throw new Error('No se pudo copiar: ' + error.message);
+}
+
+export async function recalcularProgramadas() {
+  const { data, error } = await sb.rpc('recompute_scheduled', {
+    p_business: ctx.business.id,
+  });
+  if (error) throw new Error('No se pudieron recalcular: ' + error.message);
+  return data || 0;
+}
+
+/* ---------- Listado ---------- */
+
+/* Todas las semanas del negocio, de más reciente a más antigua */
+export async function listarSemanas() {
+  const { data, error } = await sb
+    .from('weeks')
+    .select('id, start_date, status, publish_at, publish_at_manual')
+    .eq('business_id', ctx.business.id)
+    .order('start_date', { ascending: false });
+  if (error) throw new Error('Semanas: ' + error.message);
+  return data || [];
+}
+
+export async function borrarSemana(weekId) {
+  const { error } = await sb.from('weeks').delete().eq('id', weekId);
+  if (error) throw new Error('No se pudo eliminar: ' + error.message);
+}
+
+/* Formatea un timestamptz en hora local del negocio */
+export function fmtMomento(iso, tz) {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleString('es-ES', {
+      timeZone: tz || 'Atlantic/Canary',
+      weekday: 'short', day: 'numeric', month: 'short',
+      hour: '2-digit', minute: '2-digit',
+    });
+  } catch (_) {
+    return new Date(iso).toLocaleString('es-ES');
+  }
+}
+
+/* Convierte 'yyyy-mm-ddThh:mm' (input datetime-local, hora del dispositivo)
+   a ISO absoluto. Se usa solo en el override manual, donde el gestor
+   está eligiendo un momento concreto mirando su propio reloj. */
+export function localAIso(valor) {
+  if (!valor) return null;
+  return new Date(valor).toISOString();
 }
