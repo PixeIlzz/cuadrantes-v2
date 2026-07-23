@@ -1,8 +1,8 @@
 // Vistas del empleado: cuadrante publicado (solo lectura) y "mis turnos". v9
-import { toast } from './toast.js?v=14';
-import { ctx } from '../auth.js?v=14';
-import { semanasVisibles, asignacionesDe, plantilla } from '../data/empleado.js?v=14';
-import { etiquetaSemana, sumarDias, fmtCorto } from '../data/semanas.js?v=14';
+import { toast } from './toast.js?v=15';
+import { ctx } from '../auth.js?v=15';
+import { semanasVisibles, asignacionesDe, plantilla } from '../data/empleado.js?v=15';
+import { etiquetaSemana, sumarDias, fmtCorto } from '../data/semanas.js?v=15';
 
 const ALL_ID = 'ALL';
 const $ = (id) => document.getElementById(id);

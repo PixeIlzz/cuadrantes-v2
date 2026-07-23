@@ -1,13 +1,13 @@
 // Pestaña Semanas: registro completo agrupado por año y mes. v14
-import { toast } from './toast.js?v=14';
-import { confirmar } from './confirmar.js?v=14';
-import { ctx } from '../auth.js?v=14';
+import { toast } from './toast.js?v=15';
+import { confirmar } from './confirmar.js?v=15';
+import { ctx } from '../auth.js?v=15';
 import {
   listarSemanas, etiquetaSemana, fmtMomento, localAIso,
   programarSemana, borrarSemana, setVisibilidad,
-  estadoReal, esVisible, ETIQUETA_ESTADO,
-  contarSemanasRango, borrarSemanasRango,
-} from '../data/semanas.js?v=14';
+  estadoBase, esVisible, modoVisibilidad, iconoOjo, textoVisibilidad,
+  ETIQUETA_ESTADO, contarSemanasRango, borrarSemanasRango,
+} from '../data/semanas.js?v=15';
 
 const $ = (id) => document.getElementById(id);
 const MESES = ['enero','febrero','marzo','abril','mayo','junio',
@@ -90,8 +90,9 @@ function pintar(semanas) {
 
 function fila(w) {
   const tz = (ctx.business.config.publish || {}).tz;
-  const estado = estadoReal(w);
+  const base = estadoBase(w);
   const visible = esVisible(w);
+  const modo = modoVisibilidad(w);
 
   const f = document.createElement('div');
   f.className = 'week-row';
@@ -107,15 +108,23 @@ function fila(w) {
       ? 'Programada para el ' + fmtMomento(w.publish_at, tz)
         + (w.publish_at_manual ? ' · fecha propia' : '')
       : 'Sin programar')
-    + (estado === 'archivada' ? ' · archivada, solo la ves tú' : '')
-    + (estado === 'oculta' ? ' · oculta a mano' : '')
-    + (estado === 'forzada' ? ' · mostrada a mano' : '');
+    + (base === 'archivada' && modo === 'auto' ? ' · archivada, solo la ves tú' : '');
   izq.append(t, sub);
 
+  // Dos indicadores separados: ojo (visibilidad) y chip (estado)
+  const marcas = document.createElement('div');
+  marcas.className = 'week-marcas';
+
+  const ojo = document.createElement('span');
+  ojo.className = 'ojo ' + (visible ? 'ojo-on' : 'ojo-off')
+    + (modo !== 'auto' ? ' ojo-manual' : '');
+  ojo.innerHTML = iconoOjo(visible) + '<span>' + textoVisibilidad(w) + '</span>';
+
   const chip = document.createElement('span');
-  chip.className = 'status-chip est-' + estado;
-  chip.innerHTML = '<span class="ojo-mini">' + (visible ? '👁' : '🚫') + '</span> '
-    + ETIQUETA_ESTADO[estado];
+  chip.className = 'status-chip est-' + base;
+  chip.textContent = ETIQUETA_ESTADO[base];
+
+  marcas.append(ojo, chip);
 
   const acciones = document.createElement('div');
   acciones.className = 'week-actions';
@@ -142,7 +151,7 @@ function fila(w) {
   const bAuto = document.createElement('button');
   bAuto.type = 'button'; bAuto.className = 'btn small';
   bAuto.textContent = '↺ Automático';
-  bAuto.hidden = (w.visibility === 'auto' || !w.visibility);
+  bAuto.hidden = (modo === 'auto');
   bAuto.addEventListener('click', async () => {
     try { await setVisibilidad(w.id, 'auto'); toast('Comportamiento automático'); abrirProgramadas(); }
     catch (err) { toast(err.message); }
@@ -174,7 +183,7 @@ function fila(w) {
   });
 
   acciones.append(bEd, bVis, bAuto, bFecha, bDefecto, bDel);
-  f.append(izq, chip, acciones);
+  f.append(izq, marcas, acciones);
   return f;
 }
 

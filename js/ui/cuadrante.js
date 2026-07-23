@@ -1,15 +1,16 @@
 // Pestaña Cuadrante: editor portado de la v1, guardando en Supabase. v7
-import { toast } from './toast.js?v=14';
-import { listarEquipo } from '../data/equipo.js?v=14';
+import { toast } from './toast.js?v=15';
+import { listarEquipo } from '../data/equipo.js?v=15';
 import {
   lunesDe, sumarDias, fmtCorto, etiquetaSemana,
   obtenerOCrearSemana, cargarAsignaciones, guardarSemana,
   programarSemana, copiarSemana,
-  listarSemanas, fmtMomento, localAIso, estadoReal, esVisible, ETIQUETA_ESTADO,
+  listarSemanas, fmtMomento, localAIso, ETIQUETA_ESTADO,
+  estadoBase, esVisible, modoVisibilidad, iconoOjo, textoVisibilidad,
   setVisibilidad, semanaTerminada,
-} from '../data/semanas.js?v=14';
-import { confirmar, elegirOpcion } from './confirmar.js?v=14';
-import { ctx } from '../auth.js?v=14';
+} from '../data/semanas.js?v=15';
+import { confirmar, elegirOpcion } from './confirmar.js?v=15';
+import { ctx } from '../auth.js?v=15';
 
 const ALL_ID = 'ALL';
 const $ = (id) => document.getElementById(id);
@@ -138,16 +139,23 @@ async function cargar(startIso) {
 function pintarSelector() {
   $('wk-date').value = semana.start_date;
   $('wk-label').textContent = etiquetaSemana(semana.start_date);
-  const estado = estadoReal(semana);
+  const base    = estadoBase(semana);
   const visible = esVisible(semana);
+  const modo    = modoVisibilidad(semana);
 
+  // Etiqueta del ciclo de vida (no la pisa la visibilidad)
   const st = $('wk-status');
-  st.textContent = ETIQUETA_ESTADO[estado];
-  st.className = 'status-chip est-' + estado;
+  st.textContent = ETIQUETA_ESTADO[base];
+  st.className = 'status-chip est-' + base;
 
+  // Indicador de visibilidad, independiente
   const ojo = $('wk-ojo');
-  ojo.textContent = visible ? '👁 La ve el equipo' : '🚫 No la ve el equipo';
-  ojo.className = 'ojo ' + (visible ? 'ojo-on' : 'ojo-off');
+  ojo.innerHTML = iconoOjo(visible) + '<span>' + textoVisibilidad(semana) + '</span>';
+  ojo.className = 'ojo ' + (visible ? 'ojo-on' : 'ojo-off')
+    + (modo !== 'auto' ? ' ojo-manual' : '');
+  ojo.title = modo === 'auto'
+    ? 'Visibilidad automática según la fecha programada'
+    : 'Visibilidad fijada a mano. «↺ Automático» la devuelve a su comportamiento normal.';
 
   const tz = (ctx.business.config.publish || {}).tz;
   const info = $('wk-publish-info');
@@ -162,15 +170,14 @@ function pintarSelector() {
   } else {
     txt = 'Sin programar. Con «Programar» se publicaría el ' + reglaDefecto + '.';
   }
-  if (estado === 'oculta')          txt += ' · Oculta a mano: no se mostrará aunque llegue la fecha.';
-  else if (estado === 'forzada')    txt += ' · Mostrada a mano: visible al margen de la fecha.';
-  else if (estado === 'archivada')  txt += ' · La semana ya terminó: archivada, solo la ves tú.';
+  if (modo === 'hidden')          txt += ' · Oculta a mano: no se mostrará aunque llegue su fecha.';
+  else if (modo === 'shown')      txt += ' · Mostrada a mano: visible al margen de su fecha.';
+  else if (base === 'archivada')  txt += ' · La semana ya terminó: archivada, solo la ves tú.';
   info.textContent = txt;
 
-  // Botones de visibilidad, sin tocar nunca la programación
   $('btn-mostrar').hidden = visible;
   $('btn-ocultar').hidden = !visible;
-  $('btn-auto').hidden = (semana.visibility === 'auto');
+  $('btn-auto').hidden = (modo === 'auto');
 
   if (semana.publish_at) {
     const d = new Date(semana.publish_at);
@@ -428,20 +435,24 @@ async function pintarTiraSemanas() {
     for (const iso of lista) {
       const w = porFecha[iso];
       const pasada = sumarDias(iso, 6) < hoy;
-      const estado = w ? estadoReal(w) : 'nueva';
+      const base = w ? estadoBase(w) : 'nueva';
       const visible = w ? esVisible(w) : false;
+      const modo = w ? modoVisibilidad(w) : 'auto';
 
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'wk-chip est-' + estado
-        + (pasada ? ' wk-pasada' : '')
+      b.className = 'wk-chip est-' + base
+        + (modo !== 'auto' ? ' wk-manual' : '')
         + (semana && iso === semana.start_date ? ' wk-actual' : '');
-      b.innerHTML = '<span class="wk-chip-fecha"></span><span class="wk-chip-estado"></span>';
-      b.querySelector('.wk-chip-fecha').textContent =
-        (w ? (visible ? '👁 ' : '🚫 ') : '') + fmtCorto(iso);
+      b.innerHTML = '<span class="wk-chip-top">'
+        + (w ? iconoOjo(visible) : '')
+        + '<span class="wk-chip-fecha"></span></span>'
+        + '<span class="wk-chip-estado"></span>';
+      b.querySelector('.wk-chip-fecha').textContent = fmtCorto(iso);
       b.querySelector('.wk-chip-estado').textContent =
-        estado === 'nueva' ? 'Sin crear' : ETIQUETA_ESTADO[estado];
-      b.title = etiquetaSemana(iso);
+        base === 'nueva' ? 'Sin crear' : ETIQUETA_ESTADO[base];
+      b.classList.add(visible ? 'chip-visible' : 'chip-oculta');
+      b.title = etiquetaSemana(iso) + (w ? ' · ' + textoVisibilidad(w) : ' · sin crear');
       b.addEventListener('click', () => cargar(iso));
       box.appendChild(b);
     }
