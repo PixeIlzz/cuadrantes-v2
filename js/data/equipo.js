@@ -1,6 +1,6 @@
 // Acceso a datos del equipo (workers + vacations). Sin interfaz aquí.
-import { sb } from '../supabase.js?v=16';
-import { ctx } from '../auth.js?v=16';
+import { sb } from '../supabase.js?v=17';
+import { ctx } from '../auth.js?v=17';
 
 export async function listarEquipo() {
   const biz = ctx.business.id;
@@ -16,7 +16,7 @@ export async function listarEquipo() {
 
   const { data: vacs, error: e2 } = await sb
     .from('vacations')
-    .select('id, worker_id, start_date, end_date')
+    .select('id, worker_id, start_date, end_date, note, source')
     .eq('business_id', biz)
     .order('start_date', { ascending: true });
   if (e2) throw new Error('Vacaciones: ' + e2.message);
@@ -53,7 +53,7 @@ export async function borrarTrabajador(id) {
   if (error) throw new Error('No se pudo eliminar: ' + error.message);
 }
 
-export async function crearVacacion(workerId, desde, hasta) {
+export async function crearVacacion(workerId, desde, hasta, nota = null) {
   const { data, error } = await sb
     .from('vacations')
     .insert({
@@ -61,19 +61,17 @@ export async function crearVacacion(workerId, desde, hasta) {
       worker_id: workerId,
       start_date: desde,
       end_date: hasta,
+      note: nota,
       source: 'manager',
     })
-    .select('id, worker_id, start_date, end_date')
+    .select('id, worker_id, start_date, end_date, note, source')
     .single();
   if (error) throw new Error('No se pudo guardar el periodo: ' + error.message);
   return data;
 }
 
-export async function actualizarVacacion(id, desde, hasta) {
-  const { error } = await sb
-    .from('vacations')
-    .update({ start_date: desde, end_date: hasta })
-    .eq('id', id);
+export async function actualizarVacacion(id, campos) {
+  const { error } = await sb.from('vacations').update(campos).eq('id', id);
   if (error) throw new Error('No se pudo guardar el periodo: ' + error.message);
 }
 
