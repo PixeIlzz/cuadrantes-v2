@@ -1,6 +1,6 @@
 // Acceso a datos de semanas y asignaciones. Sin interfaz aquí. v7
-import { sb } from '../supabase.js?v=12';
-import { ctx } from '../auth.js?v=12';
+import { sb } from '../supabase.js?v=14';
+import { ctx } from '../auth.js?v=14';
 
 /* Lunes (ISO yyyy-mm-dd) de la semana a la que pertenece una fecha */
 export function lunesDe(fecha) {
@@ -41,7 +41,7 @@ export async function obtenerOCrearSemana(startIso) {
 
   const { data: existente, error: e1 } = await sb
     .from('weeks')
-    .select('id, start_date, status, publish_at, publish_at_manual, notes, config_snapshot')
+    .select('id, start_date, status, publish_at, publish_at_manual, visibility, notes, config_snapshot')
     .eq('business_id', biz)
     .eq('start_date', startIso)
     .maybeSingle();
@@ -56,7 +56,7 @@ export async function obtenerOCrearSemana(startIso) {
       status: 'draft',
       config_snapshot: ctx.business.config,
     })
-    .select('id, start_date, status, publish_at, publish_at_manual, notes, config_snapshot')
+    .select('id, start_date, status, publish_at, publish_at_manual, visibility, notes, config_snapshot')
     .single();
   if (e2) throw new Error('No se pudo crear la semana: ' + e2.message);
   return nueva;
@@ -122,7 +122,7 @@ export async function recalcularProgramadas() {
 export async function listarSemanas() {
   const { data, error } = await sb
     .from('weeks')
-    .select('id, start_date, status, publish_at, publish_at_manual')
+    .select('id, start_date, status, publish_at, publish_at_manual, visibility')
     .eq('business_id', ctx.business.id)
     .order('start_date', { ascending: false });
   if (error) throw new Error('Semanas: ' + error.message);
@@ -154,4 +154,62 @@ export function fmtMomento(iso, tz) {
 export function localAIso(valor) {
   if (!valor) return null;
   return new Date(valor).toISOString();
+}
+
+/* Estado real de una semana. Combina la programación (publish_at) con
+   la visibilidad manual (visibility). La columna `status` ya no se usa
+   para decidir nada: la fecha y la visibilidad son la fuente fiable. */
+export function estadoReal(w) {
+  if (w.visibility === 'hidden') return 'oculta';
+  if (w.visibility === 'shown')  return 'forzada';
+  if (!w.publish_at) return 'draft';
+  const ahora = new Date();
+  if (new Date(w.publish_at) > ahora) return 'scheduled';
+  return semanaTerminada(w.start_date) ? 'archivada' : 'visible';
+}
+
+export function esVisible(w) {
+  const e = estadoReal(w);
+  return e === 'visible' || e === 'forzada';
+}
+
+export function semanaTerminada(startIso) {
+  const hoy = new Date();
+  const p = (n) => String(n).padStart(2, '0');
+  const hoyIso = hoy.getFullYear() + '-' + p(hoy.getMonth() + 1) + '-' + p(hoy.getDate());
+  return sumarDias(startIso, 6) < hoyIso;
+}
+
+export const ETIQUETA_ESTADO = {
+  draft:     'Borrador',
+  scheduled: 'Programada',
+  visible:   'Visible',
+  archivada: 'Archivada',
+  forzada:   'Visible (manual)',
+  oculta:    'Oculta',
+};
+
+/* Cambia la visibilidad sin tocar la fecha programada */
+export async function setVisibilidad(weekId, modo) {
+  const { error } = await sb.rpc('set_week_visibility', {
+    p_week_id: weekId, p_mode: modo,
+  });
+  if (error) throw new Error('No se pudo cambiar la visibilidad: ' + error.message);
+}
+
+/* Borrado por rango (mes o año) */
+export async function contarSemanasRango(desde, hasta) {
+  const { data, error } = await sb.rpc('count_weeks_range', {
+    p_business: ctx.business.id, p_from: desde, p_to: hasta,
+  });
+  if (error) return 0;
+  return data || 0;
+}
+
+export async function borrarSemanasRango(desde, hasta) {
+  const { data, error } = await sb.rpc('delete_weeks_range', {
+    p_business: ctx.business.id, p_from: desde, p_to: hasta,
+  });
+  if (error) throw new Error('No se pudieron borrar: ' + error.message);
+  return data || 0;
 }
