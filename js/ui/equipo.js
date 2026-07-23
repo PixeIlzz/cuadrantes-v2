@@ -275,16 +275,23 @@ function filaVacacion(w, vac, vacBtn, pintaPanel) {
   });
 
   fechas.append(document.createTextNode('Del '), from,
-                document.createTextNode(' al '), to, rm);
+                document.createTextNode(' al '), to);
+
+  // Etiqueta de origen: si vino de una solicitud aprobada del trabajador
+  if (vac.source === 'request') {
+    const et = document.createElement('span');
+    et.className = 'vac-etiqueta';
+    et.textContent = 'SOLICITUD';
+    et.title = 'Periodo creado al aprobar una solicitud del trabajador';
+    fechas.appendChild(et);
+  }
 
   // Nota del periodo (motivo, aclaraciones…)
   const nota = document.createElement('input');
   nota.type = 'text';
   nota.className = 'vac-nota';
   nota.maxLength = 120;
-  nota.placeholder = vac.source === 'request'
-    ? 'Nota (solicitada por el trabajador)'
-    : 'Nota: motivo, aclaraciones…';
+  nota.placeholder = 'Nota: motivo, aclaraciones…';
   nota.value = vac.note || '';
   nota.addEventListener('change', async () => {
     const v = nota.value.trim() || null;
@@ -298,6 +305,6 @@ function filaVacacion(w, vac, vacBtn, pintaPanel) {
     }
   });
 
-  vr.append(fechas, nota);
+  vr.append(fechas, nota, rm);
   return vr;
 }
