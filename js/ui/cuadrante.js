@@ -1,14 +1,14 @@
 // Pestaña Cuadrante: editor portado de la v1, guardando en Supabase. v7
-import { toast } from './toast.js?v=8';
-import { listarEquipo } from '../data/equipo.js?v=8';
+import { toast } from './toast.js?v=11';
+import { listarEquipo } from '../data/equipo.js?v=11';
 import {
   lunesDe, sumarDias, fmtCorto, etiquetaSemana,
   obtenerOCrearSemana, cargarAsignaciones, guardarSemana,
   programarSemana, publicarAhora, despublicar, copiarSemana,
   listarSemanas, fmtMomento, localAIso,
-} from '../data/semanas.js?v=8';
-import { confirmar, elegirOpcion } from './confirmar.js?v=8';
-import { ctx } from '../auth.js?v=8';
+} from '../data/semanas.js?v=11';
+import { confirmar, elegirOpcion } from './confirmar.js?v=11';
+import { ctx } from '../auth.js?v=11';
 
 const ALL_ID = 'ALL';
 const $ = (id) => document.getElementById(id);
@@ -126,6 +126,7 @@ async function cargar(startIso) {
     pintarSelector();
     renderStrip();
     renderGrid();
+    pintarTiraSemanas();
   } catch (err) {
     toast(err.message);
     $('grid').innerHTML = '<span class="empty-note">' + esc(err.message) + '</span>';
@@ -143,7 +144,7 @@ function pintarSelector() {
   st.className = 'status-chip ' + semana.status;
 
   const tz = (ctx.business.config.publish || {}).tz;
-const info = $('wk-publish-info');
+  const info = $('wk-publish-info');
   const pub = ctx.business.config.publish || {};
   const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
   const reglaDefecto = DIAS[pub.weekday ?? 0] + ' a las ' + (pub.time || '18:00');
@@ -159,7 +160,6 @@ const info = $('wk-publish-info');
   }
   $('btn-despublicar').hidden = (semana.status === 'draft');
 
-  // Precarga el campo con la fecha actual de publicación, si la hay
   if (semana.publish_at) {
     const d = new Date(semana.publish_at);
     const p = (n) => String(n).padStart(2, '0');
@@ -387,6 +387,75 @@ function removeAssignment(dayId, roleId, index) {
   renderStrip(); renderGrid(); scheduleSave();
 }
 
+/* ---------- Tira de semanas con estado ---------- */
+const hoyIso = () => {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+};
+
+async function pintarTiraSemanas() {
+  const box = $('week-strip');
+  if (!box) return;
+  try {
+    const existentes = await listarSemanas();
+    const porFecha = {};
+    for (const w of existentes) porFecha[w.start_date] = w;
+
+    // Ventana: 4 semanas atrás y 8 adelante desde hoy, más todas las que existan
+    const base = lunesDe(new Date());
+    const fechas = new Set();
+    for (let i = -4; i <= 8; i++) fechas.add(sumarDias(base, i * 7));
+    for (const w of existentes) fechas.add(w.start_date);
+    if (semana) fechas.add(semana.start_date);
+
+    const lista = [...fechas].sort();
+    const hoy = hoyIso();
+
+    box.innerHTML = '';
+    for (const iso of lista) {
+      const w = porFecha[iso];
+      const pasada = sumarDias(iso, 6) < hoy;
+      const estado = w ? w.status : 'nueva';
+
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'wk-chip wk-' + estado
+        + (pasada ? ' wk-pasada' : '')
+        + (semana && iso === semana.start_date ? ' wk-actual' : '');
+      b.innerHTML = '<span class="wk-chip-fecha"></span><span class="wk-chip-estado"></span>';
+      b.querySelector('.wk-chip-fecha').textContent = fmtCorto(iso);
+      b.querySelector('.wk-chip-estado').textContent =
+        estado === 'draft' ? 'Borrador'
+        : estado === 'scheduled' ? 'Programada'
+        : estado === 'published' ? 'Publicada'
+        : 'Sin crear';
+      b.title = etiquetaSemana(iso);
+      b.addEventListener('click', () => cargar(iso));
+      box.appendChild(b);
+    }
+    const activa = box.querySelector('.wk-actual');
+    if (activa) activa.scrollIntoView({ block: 'nearest', inline: 'center' });
+  } catch (err) {
+    console.warn('Tira de semanas:', err.message);
+  }
+}
+
+/* ---------- Vaciar semana ---------- */
+async function accionVaciar() {
+  const ok = await confirmar(
+    'Se borrarán todos los turnos y notas de ' + etiquetaSemana(semana.start_date)
+    + '. La semana seguirá existiendo, pero vacía. ¿Continuar?',
+    { textoOk: 'Vaciar semana', peligro: true });
+  if (!ok) return;
+  try {
+    cells = {}; notas = {};
+    await guardarYa();
+    renderStrip(); renderGrid();
+    toast('Semana vaciada');
+  } catch (err) { toast(err.message); }
+}
+
 /* ---------- Publicación ---------- */
 
 /* Devuelve la lista de incumplimientos de mínimos, como el chequeo de la v1 */
@@ -428,6 +497,7 @@ async function accionPublicar() {
     semana.publish_at = new Date().toISOString();
     pintarSelector();
     toast('Semana publicada. Ya es visible para el equipo.');
+    pintarTiraSemanas();
   } catch (err) { toast(err.message); }
 }
 
@@ -442,6 +512,7 @@ async function accionProgramar() {
     pintarSelector();
     const tz = (ctx.business.config.publish || {}).tz;
     toast('Se publicará el ' + fmtMomento(at, tz));
+    pintarTiraSemanas();
   } catch (err) { toast(err.message); }
 }
 
@@ -457,6 +528,7 @@ async function accionFechaManual() {
     semana.status = new Date(at) <= new Date() ? 'published' : 'scheduled';
     pintarSelector();
     toast('Publicación fijada para esta semana');
+    pintarTiraSemanas();
   } catch (err) { toast(err.message); }
 }
 
@@ -472,6 +544,7 @@ async function accionDespublicar() {
     semana.publish_at_manual = false;
     pintarSelector();
     toast('Semana en borrador');
+    pintarTiraSemanas();
   } catch (err) { toast(err.message); }
 }
 
@@ -511,6 +584,7 @@ export function initCuadrante() {
   $('btn-manual').addEventListener('click', accionFechaManual);
   $('btn-despublicar').addEventListener('click', accionDespublicar);
   $('btn-copiar').addEventListener('click', accionCopiarDe);
+  $('btn-vaciar').addEventListener('click', accionVaciar);
 }
 
 export async function abrirCuadrante(startIso = null) {

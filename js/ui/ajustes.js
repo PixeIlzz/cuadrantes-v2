@@ -1,9 +1,9 @@
 // Pestaña Ajustes: puestos, días y publicación por defecto. v8
-import { toast } from './toast.js?v=8';
-import { confirmar } from './confirmar.js?v=8';
-import { ctx } from '../auth.js?v=8';
-import { sb } from '../supabase.js?v=8';
-import { recalcularProgramadas } from '../data/semanas.js?v=8';
+import { toast } from './toast.js?v=11';
+import { confirmar } from './confirmar.js?v=11';
+import { ctx } from '../auth.js?v=11';
+import { sb } from '../supabase.js?v=11';
+import { recalcularProgramadas } from '../data/semanas.js?v=11';
 
 const $ = (id) => document.getElementById(id);
 const DIAS_SEMANA = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -50,8 +50,14 @@ function pintarPuestos() {
 
     const del = document.createElement('button');
     del.type = 'button'; del.className = 'del'; del.textContent = '✕';
-    del.addEventListener('click', () => {
+    del.addEventListener('click', async () => {
       if (cfg.roles.length <= 1) { toast('Tiene que quedar al menos un puesto'); return; }
+      const ok = await confirmar(
+        'Se quitará el puesto «' + r.label + '». Al guardar, desaparecerá de las semanas '
+        + 'nuevas y de los borradores, junto con quien esté colocado en él. '
+        + 'Las semanas publicadas no se tocan. ¿Continuar?',
+        { textoOk: 'Quitar puesto', peligro: true });
+      if (!ok) return;
       cfg.roles.splice(i, 1);
       pintarPuestos();
     });
@@ -107,8 +113,14 @@ function pintarDias() {
 
     const del = document.createElement('button');
     del.type = 'button'; del.className = 'del'; del.textContent = '✕';
-    del.addEventListener('click', () => {
+    del.addEventListener('click', async () => {
       if (cfg.days.length <= 1) { toast('Tiene que quedar al menos un día'); return; }
+      const ok = await confirmar(
+        'Se quitará la columna «' + d.label + '». Al guardar, desaparecerá de las semanas '
+        + 'nuevas y de los borradores, junto con los turnos colocados en ella. '
+        + 'Las semanas publicadas no se tocan. ¿Continuar?',
+        { textoOk: 'Quitar columna', peligro: true });
+      if (!ok) return;
       cfg.days.splice(i, 1);
       pintarDias();
     });

@@ -1,9 +1,11 @@
 // Pestaña Equipo: interfaz calcada a la v1, datos contra Supabase.
-import { toast } from './toast.js?v=8';
+import { toast } from './toast.js?v=11';
 import {
   listarEquipo, crearTrabajador, actualizarTrabajador, borrarTrabajador,
   crearVacacion, actualizarVacacion, borrarVacacion,
-} from '../data/equipo.js?v=8';
+} from '../data/equipo.js?v=11';
+import { generarCodigo, codigoVivo } from '../data/invitaciones.js?v=11';
+import { confirmar } from './confirmar.js?v=11';
 
 let equipo = [];      // caché en memoria de la última carga
 let cargado = false;
@@ -94,14 +96,13 @@ function filaTrabajador(w) {
   // Borrar con confirmación en dos toques (como la v1)
   const del = document.createElement('button');
   del.type = 'button';
-  del.className = 'del'; del.textContent = '✕'; del.title = 'Eliminar';
+  del.className = 'del'; del.textContent = '✕'; del.title = 'Eliminar trabajador';
   del.addEventListener('click', async () => {
-    if (!del._armed) {
-      del._armed = setTimeout(() => { del._armed = null; del.textContent = '✕'; }, 3000);
-      del.textContent = '¿Borrar?';
-      return;
-    }
-    clearTimeout(del._armed); del._armed = null;
+    const ok = await confirmar(
+      'Se eliminará a ' + w.name + ' del equipo y desaparecerá de todos los cuadrantes '
+      + 'en los que esté colocado, incluidos los ya publicados. ¿Seguro?',
+      { textoOk: 'Eliminar', peligro: true });
+    if (!ok) return;
     try {
       await borrarTrabajador(w.id);
       equipo = equipo.filter((x) => x.id !== w.id);
@@ -110,7 +111,15 @@ function filaTrabajador(w) {
     } catch (err) { toast(err.message); }
   });
 
-  row.append(nameIn, hoursIn, lbl, vacBtn, del);
+  // Invitación: genera y muestra el código para que el empleado se registre
+  const invBtn = document.createElement('button');
+  invBtn.type = 'button';
+  invBtn.className = 'btn small';
+  invBtn.textContent = '🔑 Acceso';
+  invBtn.title = 'Código de acceso para el empleado';
+  invBtn.addEventListener('click', () => mostrarInvitacion(w, invPanel));
+
+  row.append(nameIn, hoursIn, lbl, vacBtn, invBtn, del);
 
   // Panel de vacaciones
   const panel = document.createElement('div');
@@ -142,7 +151,79 @@ function filaTrabajador(w) {
     if (!panel.hidden) pintaPanel();
   });
 
-  return [row, panel];
+  const invPanel = document.createElement('div');
+  invPanel.className = 'inv-panel';
+  invPanel.hidden = true;
+
+  return [row, panel, invPanel];
+}
+
+/* Panel de código de invitación de un trabajador */
+async function mostrarInvitacion(w, panel) {
+  if (!panel.hidden) { panel.hidden = true; return; }
+  panel.hidden = false;
+  panel.innerHTML = '<span class="h-label">Comprobando…</span>';
+  try {
+    let inv = await codigoVivo(w.id);
+    pintarInvitacion(w, panel, inv);
+  } catch (err) {
+    panel.innerHTML = '';
+    toast(err.message);
+  }
+}
+
+function pintarInvitacion(w, panel, inv) {
+  panel.innerHTML = '';
+  const txt = document.createElement('div');
+  txt.className = 'inv-txt';
+
+  if (inv) {
+    txt.innerHTML = 'Código de acceso de <b></b>: <span class="inv-code"></span>';
+    txt.querySelector('b').textContent = w.name;
+    txt.querySelector('.inv-code').textContent = inv.code;
+    const ayuda = document.createElement('div');
+    ayuda.className = 'h-label';
+    ayuda.textContent = 'Que se registre en la app con este código. Un solo uso.';
+    panel.append(txt, ayuda);
+
+    const copiar = document.createElement('button');
+    copiar.type = 'button'; copiar.className = 'btn small';
+    copiar.textContent = 'Copiar';
+    copiar.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(inv.code); toast('Código copiado'); }
+      catch (_) { toast('Copia el código a mano: ' + inv.code); }
+    });
+    const nuevo = document.createElement('button');
+    nuevo.type = 'button'; nuevo.className = 'btn small';
+    nuevo.textContent = 'Generar otro';
+    nuevo.addEventListener('click', async () => {
+      const ok = await confirmar('El código anterior dejará de servir. ¿Generar uno nuevo?',
+        { textoOk: 'Generar' });
+      if (!ok) return;
+      try {
+        const code = await generarCodigo(w.id);
+        pintarInvitacion(w, panel, { code });
+        toast('Código nuevo generado');
+      } catch (err) { toast(err.message); }
+    });
+    const acciones = document.createElement('div');
+    acciones.className = 'inv-acciones';
+    acciones.append(copiar, nuevo);
+    panel.appendChild(acciones);
+  } else {
+    txt.textContent = 'Este trabajador todavía no tiene código de acceso.';
+    const gen = document.createElement('button');
+    gen.type = 'button'; gen.className = 'btn small primary';
+    gen.textContent = 'Generar código';
+    gen.addEventListener('click', async () => {
+      try {
+        const code = await generarCodigo(w.id);
+        pintarInvitacion(w, panel, { code });
+        toast('Código generado');
+      } catch (err) { toast(err.message); }
+    });
+    panel.append(txt, gen);
+  }
 }
 
 function filaVacacion(w, vac, vacBtn, pintaPanel) {
@@ -175,6 +256,13 @@ function filaVacacion(w, vac, vacBtn, pintaPanel) {
   rm.type = 'button';
   rm.className = 'del'; rm.textContent = '✕'; rm.title = 'Quitar periodo';
   rm.addEventListener('click', async () => {
+    if (vac.id !== null) {
+      const ok = await confirmar(
+        'Se quitará el periodo de vacaciones del ' + (vac.start_date || '?')
+        + ' al ' + (vac.end_date || '?') + ' de ' + w.name + '. ¿Continuar?',
+        { textoOk: 'Quitar', peligro: true });
+      if (!ok) return;
+    }
     try {
       if (vac.id !== null) await borrarVacacion(vac.id);
       w.vacs = w.vacs.filter((v) => v !== vac);
