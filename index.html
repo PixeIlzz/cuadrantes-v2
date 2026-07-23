@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#182135">
 <title>Cuadrantes</title>
-<link rel="stylesheet" href="app.css?v=15">
+<link rel="stylesheet" href="app.css?v=16">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
 </head>
@@ -71,18 +71,26 @@
         <input type="date" id="wk-date">
         <button class="btn small" id="wk-next" type="button">›</button>
         <span id="wk-label"></span>
-        <span id="wk-status" class="status-chip"></span>
-        <span id="wk-ojo" class="ojo"></span>
       </div>
+
       <div class="week-actions-bar">
         <button class="btn small" id="btn-copiar" type="button">Copiar de…</button>
         <button class="btn small" id="btn-vaciar" type="button">Vaciar</button>
         <button class="btn small" id="btn-programar" type="button">Programar</button>
-        <button class="btn small primary" id="btn-mostrar" type="button">👁 Mostrar ya</button>
-        <button class="btn small danger" id="btn-ocultar" type="button" hidden>🚫 Ocultar</button>
+        <button class="btn small primary" id="btn-mostrar" type="button">Mostrar ya</button>
+        <button class="btn small danger" id="btn-ocultar" type="button" hidden>Ocultar</button>
         <button class="btn small" id="btn-auto" type="button" hidden>↺ Automático</button>
       </div>
+
+      <div class="pub-override">
+        <label for="wk-manual">Fecha y hora de publicación de esta semana</label>
+        <div class="pub-override-row">
+          <input type="datetime-local" id="wk-manual">
+          <button class="btn small" id="btn-manual" type="button">Guardar</button>
+        </div>
+      </div>
     </div>
+
     <div class="week-strip-wrap">
       <div class="week-strip" id="week-strip"></div>
       <div class="week-leyenda">
@@ -97,19 +105,10 @@
       </div>
     </div>
 
-    <div class="publish-bar">
-      <div class="pub-estado">
-        <span class="pub-tit">Publicación</span>
-        <span id="wk-publish-info" class="pub-info"></span>
-      </div>
-      <div class="pub-override">
-        <label for="wk-manual">Publicar esta semana el día y hora:</label>
-        <div class="pub-override-row">
-          <input type="datetime-local" id="wk-manual">
-          <button class="btn small" id="btn-manual" type="button">Guardar fecha</button>
-        </div>
-        <span class="pub-ayuda">Solo afecta a esta semana. Si lo dejas vacío y pulsas «Programar», se usa la regla por defecto de Ajustes.</span>
-      </div>
+    <div class="pub-resumen">
+      <span id="wk-status" class="status-chip"></span>
+      <span id="wk-ojo" class="ojo"></span>
+      <span id="wk-publish-info" class="pub-info"></span>
     </div>
 
     <div class="worker-strip" id="worker-strip"></div>
@@ -255,6 +254,6 @@
 
 <div id="toast"></div>
 
-<script type="module" src="js/app.js?v=15"></script>
+<script type="module" src="js/app.js?v=16"></script>
 </body>
 </html>

@@ -611,3 +611,47 @@ button{font:inherit;cursor:pointer}
 
 /* Fila del registro: ojo + estado */
 .week-marcas{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+/* =========================================================
+   Reorganización de la cabecera del editor. v16
+   ========================================================= */
+
+.toolbar{
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;
+}
+.toolbar .week-actions-bar{gap:6px}
+
+/* Fecha propia: a la derecha del todo, compacta */
+.toolbar .pub-override{
+  margin-left:auto;
+  display:flex;flex-direction:column;gap:4px;align-items:flex-end;
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:6px 10px;
+}
+.toolbar .pub-override > label{
+  font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--ink-soft);
+}
+.toolbar .pub-override-row{display:flex;gap:6px;align-items:center}
+.toolbar .pub-override input[type=datetime-local]{
+  border:1px solid var(--line);border-radius:7px;padding:4px 7px;font:inherit;font-size:.8rem;
+}
+
+/* Resumen de publicación: píldora sobre las tarjetas de trabajadores */
+.pub-resumen{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  background:var(--card);border:1px solid var(--line);border-radius:999px;
+  padding:8px 16px;margin-bottom:12px;
+}
+.pub-resumen .pub-info{
+  font-size:.8rem;font-weight:600;color:var(--ink-soft);line-height:1.35;
+}
+.pub-resumen .status-chip,.pub-resumen .ojo{flex:0 0 auto}
+
+@media (max-width:820px){
+  .toolbar .pub-override{margin-left:0;width:100%;align-items:flex-start}
+  .pub-resumen{border-radius:var(--radius);align-items:flex-start}
+}
+
+/* La barra antigua ya no se usa */
+.publish-bar{display:none}
