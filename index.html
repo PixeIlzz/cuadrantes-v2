@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#182135">
 <title>Cuadrantes</title>
-<link rel="stylesheet" href="app.css?v=7">
+<link rel="stylesheet" href="app.css?v=8">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
 </head>
@@ -53,6 +53,20 @@
         <span id="wk-label"></span>
         <span id="wk-status" class="status-chip"></span>
       </div>
+      <div class="week-actions-bar">
+        <button class="btn small" id="btn-copiar" type="button">Copiar de…</button>
+        <button class="btn small" id="btn-programar" type="button">Programar</button>
+        <button class="btn small primary" id="btn-publicar" type="button">Publicar ahora</button>
+        <button class="btn small danger" id="btn-despublicar" type="button" hidden>A borrador</button>
+      </div>
+    </div>
+    <div class="publish-bar">
+      <span id="wk-publish-info" class="pub-info"></span>
+      <span class="pub-manual">
+        <label for="wk-manual">Fecha propia:</label>
+        <input type="datetime-local" id="wk-manual">
+        <button class="btn small" id="btn-manual" type="button">Fijar</button>
+      </span>
     </div>
 
     <div class="worker-strip" id="worker-strip"></div>
@@ -66,8 +80,9 @@
   <!-- ============ TAB PROGRAMADAS ============ -->
   <section id="tab-programar" hidden>
     <div class="panel">
-      <h2>Semanas programadas</h2>
-      <span class="empty-note">Próximamente.</span>
+      <h2>Semanas</h2>
+      <p class="note">Los empleados ven una semana cuando llega su fecha de publicación. Las de fecha propia no cambian aunque modifiques el ajuste por defecto.</p>
+      <div class="week-list" id="lista-semanas"></div>
     </div>
   </section>
 
@@ -106,8 +121,40 @@
       <div class="setting-row"><span class="note" id="ajustes-cuenta"></span></div>
     </div>
     <div class="panel">
-      <h2>Puestos y días</h2>
-      <span class="empty-note">Próximamente: configuración de puestos, días y hora de publicación.</span>
+      <h2>Publicación por defecto</h2>
+      <div class="setting-row">
+        <label for="pub-weekday">Publicar el</label>
+        <select id="pub-weekday"></select>
+        <label for="pub-time">a las</label>
+        <input type="time" id="pub-time">
+        <span class="note">Hora de Canarias. Se aplica al pulsar «Programar» en una semana; cada semana puede tener su propia fecha.</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Puestos</h2>
+      <div class="add-form">
+        <input type="text" id="new-role" placeholder="Nombre del puesto" maxlength="20">
+        <button class="btn" id="btn-add-role" type="button">Añadir puesto</button>
+      </div>
+      <div class="worker-list" id="roles-list"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Días y columnas</h2>
+      <div class="add-form">
+        <input type="text" id="new-day" placeholder="Nombre de la columna" maxlength="20">
+        <label class="check"><input type="checkbox" id="new-day-night"> columna de noche</label>
+        <button class="btn" id="btn-add-day" type="button">Añadir columna</button>
+      </div>
+      <div class="worker-list" id="days-list"></div>
+    </div>
+
+    <div class="panel">
+      <div class="setting-row">
+        <button class="btn primary" id="btn-guardar-cfg" type="button">Guardar ajustes</button>
+        <span class="note">Los cambios se aplican a las semanas nuevas y a los borradores. Las publicadas conservan la estructura con la que se hicieron.</span>
+      </div>
     </div>
   </section>
 </main>
@@ -115,6 +162,6 @@
 
 <div id="toast"></div>
 
-<script type="module" src="js/app.js?v=7"></script>
+<script type="module" src="js/app.js?v=8"></script>
 </body>
 </html>
