@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#182135">
 <title>Cuadrantes</title>
-<link rel="stylesheet" href="app.css?v=8">
+<link rel="stylesheet" href="app.css?v=11">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
 </head>
@@ -24,6 +24,23 @@
     <input id="password" type="password" autocomplete="current-password" required>
     <button id="btn-entrar" class="btn primary" type="submit">Entrar</button>
     <p id="login-error" class="login-msg" role="alert"></p>
+    <p class="login-alt">¿Eres empleado y tienes un código? <a href="#" id="link-registro">Crear mi cuenta</a></p>
+  </form>
+
+  <form id="form-registro" class="login-card" hidden>
+    <img src="icon-192.png" alt="" class="logo">
+    <h1>Crear cuenta</h1>
+    <label for="r-codigo">Código de acceso</label>
+    <input id="r-codigo" type="text" autocomplete="one-time-code" maxlength="8" placeholder="Ej.: KQ7MTP" required>
+    <label for="r-nombre">Tu nombre</label>
+    <input id="r-nombre" type="text" autocomplete="name" maxlength="40" required>
+    <label for="r-email">Email</label>
+    <input id="r-email" type="email" autocomplete="username" required>
+    <label for="r-pass">Contraseña</label>
+    <input id="r-pass" type="password" autocomplete="new-password" minlength="6" required>
+    <button id="btn-registrar" class="btn primary" type="submit">Crear cuenta</button>
+    <p id="registro-error" class="login-msg" role="alert"></p>
+    <p class="login-alt">¿Ya tienes cuenta? <a href="#" id="link-volver-login">Iniciar sesión</a></p>
   </form>
 </section>
 
@@ -33,18 +50,20 @@
   <h1 id="negocio-nombre"></h1>
   <span id="sync-status"></span>
   <nav class="tabs">
-    <button class="tab-btn active" data-tab="cuadrante">Cuadrante</button>
-    <button class="tab-btn" data-tab="programar">Programadas</button>
-    <button class="tab-btn" data-tab="equipo">Equipo</button>
-    <button class="tab-btn" data-tab="solicitudes">Solicitudes</button>
-    <button class="tab-btn" data-tab="ajustes">Ajustes</button>
+    <button class="tab-btn active solo-gestor" data-tab="cuadrante">Cuadrante</button>
+    <button class="tab-btn solo-gestor" data-tab="programar">Programadas</button>
+    <button class="tab-btn solo-gestor" data-tab="equipo">Equipo</button>
+    <button class="tab-btn solo-gestor" data-tab="solicitudes">Solicitudes</button>
+    <button class="tab-btn solo-gestor" data-tab="ajustes">Ajustes</button>
+    <button class="tab-btn solo-empleado" data-tab="emp-cuadrante">Cuadrante</button>
+    <button class="tab-btn solo-empleado" data-tab="emp-turnos">Mis turnos</button>
   </nav>
   <button id="btn-salir" class="tab-btn">Cerrar sesión</button>
 </header>
 
 <main>
   <!-- ============ TAB CUADRANTE ============ -->
-  <section id="tab-cuadrante">
+  <section class="solo-gestor" id="tab-cuadrante">
     <div class="toolbar">
       <div class="week-picker">
         <button class="btn small" id="wk-prev" type="button">‹</button>
@@ -55,11 +74,23 @@
       </div>
       <div class="week-actions-bar">
         <button class="btn small" id="btn-copiar" type="button">Copiar de…</button>
+        <button class="btn small" id="btn-vaciar" type="button">Vaciar</button>
         <button class="btn small" id="btn-programar" type="button">Programar</button>
         <button class="btn small primary" id="btn-publicar" type="button">Publicar ahora</button>
         <button class="btn small danger" id="btn-despublicar" type="button" hidden>A borrador</button>
       </div>
     </div>
+    <div class="week-strip-wrap">
+      <div class="week-strip" id="week-strip"></div>
+      <div class="week-leyenda">
+        <span class="lg lg-draft">Borrador</span>
+        <span class="lg lg-scheduled">Programada</span>
+        <span class="lg lg-published">Publicada</span>
+        <span class="lg lg-nueva">Sin crear</span>
+        <span class="lg lg-pasada">Ya pasada</span>
+      </div>
+    </div>
+
     <div class="publish-bar">
       <div class="pub-estado">
         <span class="pub-tit">Publicación</span>
@@ -84,7 +115,7 @@
   </section>
 
   <!-- ============ TAB PROGRAMADAS ============ -->
-  <section id="tab-programar" hidden>
+  <section class="solo-gestor" id="tab-programar" hidden>
     <div class="panel">
       <h2>Semanas</h2>
       <p class="note">Los empleados ven una semana cuando llega su fecha de publicación. Las de fecha propia no cambian aunque modifiques el ajuste por defecto.</p>
@@ -93,7 +124,7 @@
   </section>
 
   <!-- ============ TAB EQUIPO ============ -->
-  <section id="tab-equipo" hidden>
+  <section class="solo-gestor" id="tab-equipo" hidden>
     <div class="panel">
       <h2>Añadir trabajador</h2>
       <div class="add-form">
@@ -113,7 +144,7 @@
   </section>
 
   <!-- ============ TAB SOLICITUDES ============ -->
-  <section id="tab-solicitudes" hidden>
+  <section class="solo-gestor" id="tab-solicitudes" hidden>
     <div class="panel">
       <h2>Solicitudes</h2>
       <span class="empty-note">Próximamente: aquí verás las solicitudes de vacaciones y cambios de tus empleados.</span>
@@ -121,7 +152,7 @@
   </section>
 
   <!-- ============ TAB AJUSTES ============ -->
-  <section id="tab-ajustes" hidden>
+  <section class="solo-gestor" id="tab-ajustes" hidden>
     <div class="panel">
       <h2>Cuenta</h2>
       <div class="setting-row"><span class="note" id="ajustes-cuenta"></span></div>
@@ -163,11 +194,31 @@
       </div>
     </div>
   </section>
+  <!-- ============ EMPLEADO · CUADRANTE ============ -->
+  <section id="tab-emp-cuadrante" class="solo-empleado" hidden>
+    <div class="toolbar">
+      <div class="week-picker">
+        <button class="btn small" id="emp-prev" type="button">‹</button>
+        <span id="emp-week-label"></span>
+        <button class="btn small" id="emp-next" type="button">›</button>
+      </div>
+    </div>
+    <div class="people-bar" id="emp-people"></div>
+    <p class="strip-hint">Toca un nombre para resaltar sus turnos en el cuadrante.</p>
+    <div class="grid-scroller">
+      <div class="grid" id="emp-grid"></div>
+    </div>
+  </section>
+
+  <!-- ============ EMPLEADO · MIS TURNOS ============ -->
+  <section id="tab-emp-turnos" class="solo-empleado" hidden>
+    <div id="mis-turnos"></div>
+  </section>
 </main>
 </div>
 
 <div id="toast"></div>
 
-<script type="module" src="js/app.js?v=8"></script>
+<script type="module" src="js/app.js?v=11"></script>
 </body>
 </html>

@@ -331,3 +331,112 @@ button{font:inherit;cursor:pointer}
 .setting-row label{font-size:.82rem;font-weight:600}
 .check{display:flex;align-items:center;gap:6px;font-size:.82rem;color:var(--ink-soft)}
 .check input{width:auto}
+
+/* =========================================================
+   Empleados: registro, invitaciones y vistas. v9
+   ========================================================= */
+
+.login-alt{font-size:.8rem;color:var(--ink-soft);text-align:center;margin-top:12px}
+.login-alt a{color:var(--accent);font-weight:600;text-decoration:none}
+.login-alt a:hover{text-decoration:underline}
+#r-codigo{text-transform:uppercase;letter-spacing:.12em;font-weight:700;text-align:center}
+
+/* ---------- Panel de invitación en Equipo ---------- */
+.inv-panel{
+  border:1px solid var(--line);border-top:none;
+  border-radius:0 0 var(--radius) var(--radius);
+  padding:10px;margin-top:-8px;margin-bottom:2px;background:#f6f8fc;
+  display:flex;flex-direction:column;gap:7px;
+}
+.inv-txt{font-size:.85rem}
+.inv-code{
+  display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:1.05rem;font-weight:700;letter-spacing:.16em;
+  background:var(--ink);color:#fff;padding:3px 12px;border-radius:7px;margin-left:4px;
+}
+.inv-acciones{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ---------- Vista de empleado ---------- */
+.people-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.people-chip{
+  border:1.5px solid var(--line);background:var(--card);border-radius:16px;
+  padding:5px 13px;font:inherit;font-size:.83rem;font-weight:600;cursor:pointer;
+}
+.people-chip.yo{border-color:var(--accent);color:var(--accent)}
+.people-chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip.solo-lectura{cursor:default;justify-content:center}
+.zone-vacio{color:#b9bfcc;font-size:.8rem;text-align:center;padding:2px}
+.day-note-ro{
+  padding:7px 8px;border-top:1px dashed var(--line);
+  font-size:.76rem;background:#fffdf2;color:var(--ink-soft);
+}
+
+/* ---------- Mis turnos ---------- */
+.turno-list{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.turno-row{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  border:1px solid var(--line);border-left:4px solid var(--accent);
+  border-radius:var(--radius);padding:9px 12px;
+}
+.turno-row.todos{border-left-color:var(--ink);background:#f6f8fc}
+.turno-dia{font-weight:700;font-size:.92rem;min-width:110px}
+.turno-fecha{font-size:.78rem;color:var(--ink-soft)}
+.turno-puesto{margin-left:auto;font-size:.85rem;font-weight:600;color:var(--accent)}
+.turno-row.todos .turno-puesto{color:var(--ink)}
+.turno-total{font-size:.75rem;color:var(--ink-soft);margin-top:8px;text-align:right}
+
+/* =========================================================
+   Tira de semanas con estados + barra de publicación separada. v10
+   ========================================================= */
+
+.week-strip-wrap{margin-bottom:12px}
+.week-strip{
+  display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;
+  -webkit-overflow-scrolling:touch;
+}
+.wk-chip{
+  flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:1px;
+  border:1.5px solid var(--line);border-radius:var(--radius);
+  background:var(--card);padding:6px 12px;font:inherit;cursor:pointer;min-width:88px;
+}
+.wk-chip-fecha{font-weight:700;font-size:.85rem;white-space:nowrap}
+.wk-chip-estado{
+  font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+}
+/* Colores por estado */
+.wk-draft{border-color:#c9a227;background:#fdf8e6}
+.wk-draft .wk-chip-estado{color:#8a6a00}
+.wk-scheduled{border-color:#2456c8;background:#eaf0fd}
+.wk-scheduled .wk-chip-estado{color:var(--accent)}
+.wk-published{border-color:#1d7a4f;background:#e8f6ee}
+.wk-published .wk-chip-estado{color:var(--ok)}
+.wk-nueva{border-color:var(--line);background:#fff;border-style:dashed}
+.wk-nueva .wk-chip-estado{color:#b0b7c6}
+/* Semanas ya pasadas: en gris, por encima del color de estado */
+.wk-pasada{background:#eef0f4;border-color:#cfd5df;opacity:.72}
+.wk-pasada .wk-chip-fecha{color:#7b8395}
+.wk-pasada .wk-chip-estado{color:#9aa1b1}
+/* Semana en edición */
+.wk-actual{box-shadow:0 0 0 3px var(--accent-soft);border-color:var(--accent);opacity:1}
+
+.week-leyenda{display:flex;gap:12px;flex-wrap:wrap;margin-top:2px}
+.lg{font-size:.68rem;color:var(--ink-soft);display:flex;align-items:center;gap:4px}
+.lg::before{content:'';width:9px;height:9px;border-radius:3px;border:1.5px solid}
+.lg-draft::before{background:#fdf8e6;border-color:#c9a227}
+.lg-scheduled::before{background:#eaf0fd;border-color:#2456c8}
+.lg-published::before{background:#e8f6ee;border-color:#1d7a4f}
+.lg-nueva::before{background:#fff;border-color:var(--line);border-style:dashed}
+.lg-pasada::before{background:#eef0f4;border-color:#cfd5df}
+
+/* Barra de publicación: bloques bien separados */
+.publish-bar{
+  gap:24px;padding:12px 14px;
+}
+.pub-estado{
+  border-right:1px solid var(--line);padding-right:24px;
+}
+.pub-tit{margin-bottom:2px}
+@media (max-width:760px){
+  .pub-estado{border-right:none;border-bottom:1px solid var(--line);padding-right:0;padding-bottom:10px;width:100%}
+  .publish-bar{gap:12px}
+}
