@@ -1,11 +1,11 @@
 // Pestaña Programadas: cola de semanas con su estado y publicación. v8
-import { toast } from './toast.js?v=11';
-import { confirmar } from './confirmar.js?v=11';
-import { ctx } from '../auth.js?v=11';
+import { toast } from './toast.js?v=12';
+import { confirmar } from './confirmar.js?v=12';
+import { ctx } from '../auth.js?v=12';
 import {
   listarSemanas, etiquetaSemana, fmtMomento, localAIso,
   programarSemana, despublicar, borrarSemana,
-} from '../data/semanas.js?v=11';
+} from '../data/semanas.js?v=12';
 
 const $ = (id) => document.getElementById(id);
 let alEditar = null;   // callback para saltar al editor
