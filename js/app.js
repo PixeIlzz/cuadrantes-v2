@@ -1,18 +1,18 @@
 // Arranque, login y navegación por pestañas. v7
-import { ctx, signIn, signUp, signOut, getSession } from './auth.js?v=14';
-import { sb } from './supabase.js?v=14';
-import { toast } from './ui/toast.js?v=14';
-import { confirmar } from './ui/confirmar.js?v=14';
-import { initEquipo, abrirEquipo } from './ui/equipo.js?v=14';
-import { initCuadrante, abrirCuadrante } from './ui/cuadrante.js?v=14';
-import { initProgramadas, abrirProgramadas } from './ui/programadas.js?v=14';
-import { initAjustes, abrirAjustes } from './ui/ajustes.js?v=14';
-import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos } from './ui/empleado.js?v=14';
-import { canjearCodigo } from './data/invitaciones.js?v=14';
+import { ctx, signIn, signUp, signOut, getSession } from './auth.js?v=15';
+import { sb } from './supabase.js?v=15';
+import { toast } from './ui/toast.js?v=15';
+import { confirmar } from './ui/confirmar.js?v=15';
+import { initEquipo, abrirEquipo } from './ui/equipo.js?v=15';
+import { initCuadrante, abrirCuadrante } from './ui/cuadrante.js?v=15';
+import { initProgramadas, abrirProgramadas } from './ui/programadas.js?v=15';
+import { initAjustes, abrirAjustes } from './ui/ajustes.js?v=15';
+import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos } from './ui/empleado.js?v=15';
+import { canjearCodigo } from './data/invitaciones.js?v=15';
 import {
   initSolicitudes, abrirSolicitudes, refrescarContador,
   initMisSolicitudes, abrirMisSolicitudes,
-} from './ui/solicitudes.js?v=14';
+} from './ui/solicitudes.js?v=15';
 
 const $ = (id) => document.getElementById(id);
 const errorLogin = $('login-error');
