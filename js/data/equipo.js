@@ -1,6 +1,6 @@
 // Acceso a datos del equipo (workers + vacations). Sin interfaz aquí.
-import { sb } from '../supabase.js?v=8';
-import { ctx } from '../auth.js?v=8';
+import { sb } from '../supabase.js?v=11';
+import { ctx } from '../auth.js?v=11';
 
 export async function listarEquipo() {
   const biz = ctx.business.id;
