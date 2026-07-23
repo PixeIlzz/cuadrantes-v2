@@ -1,14 +1,18 @@
 // Arranque, login y navegación por pestañas. v7
-import { ctx, signIn, signUp, signOut, getSession } from './auth.js?v=11';
-import { sb } from './supabase.js?v=11';
-import { toast } from './ui/toast.js?v=11';
-import { confirmar } from './ui/confirmar.js?v=11';
-import { initEquipo, abrirEquipo } from './ui/equipo.js?v=11';
-import { initCuadrante, abrirCuadrante } from './ui/cuadrante.js?v=11';
-import { initProgramadas, abrirProgramadas } from './ui/programadas.js?v=11';
-import { initAjustes, abrirAjustes } from './ui/ajustes.js?v=11';
-import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos } from './ui/empleado.js?v=11';
-import { canjearCodigo } from './data/invitaciones.js?v=11';
+import { ctx, signIn, signUp, signOut, getSession } from './auth.js?v=12';
+import { sb } from './supabase.js?v=12';
+import { toast } from './ui/toast.js?v=12';
+import { confirmar } from './ui/confirmar.js?v=12';
+import { initEquipo, abrirEquipo } from './ui/equipo.js?v=12';
+import { initCuadrante, abrirCuadrante } from './ui/cuadrante.js?v=12';
+import { initProgramadas, abrirProgramadas } from './ui/programadas.js?v=12';
+import { initAjustes, abrirAjustes } from './ui/ajustes.js?v=12';
+import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos } from './ui/empleado.js?v=12';
+import { canjearCodigo } from './data/invitaciones.js?v=12';
+import {
+  initSolicitudes, abrirSolicitudes, refrescarContador,
+  initMisSolicitudes, abrirMisSolicitudes,
+} from './ui/solicitudes.js?v=12';
 
 const $ = (id) => document.getElementById(id);
 const errorLogin = $('login-error');
@@ -25,7 +29,7 @@ window.addEventListener('unhandledrejection', (e) =>
 
 /* ---------- Pestañas ---------- */
 const PESTANAS = ['cuadrante', 'programar', 'equipo', 'solicitudes', 'ajustes',
-                  'emp-cuadrante', 'emp-turnos'];
+                  'emp-cuadrante', 'emp-turnos', 'emp-solicitudes'];
 
 function cambiarPestana(nombre) {
   document.querySelectorAll('.tab-btn[data-tab]').forEach((b) =>
@@ -37,6 +41,8 @@ function cambiarPestana(nombre) {
   if (nombre === 'ajustes') abrirAjustes();
   if (nombre === 'emp-cuadrante') abrirEmpCuadrante();
   if (nombre === 'emp-turnos') abrirMisTurnos();
+  if (nombre === 'emp-solicitudes') abrirMisSolicitudes();
+  if (nombre === 'solicitudes') abrirSolicitudes('pending');
 }
 
 document.querySelectorAll('.tab-btn[data-tab]').forEach((btn) => {
@@ -74,9 +80,12 @@ function mostrarApp(session, role, biz) {
       cambiarPestana('cuadrante');
       abrirCuadrante(startIso);
     });
+    initSolicitudes();
+    refrescarContador();              // aviso de pendientes al entrar
     cambiarPestana('cuadrante');
   } else {
     initEmpleado();
+    initMisSolicitudes();
     cambiarPestana('emp-cuadrante');
   }
 }
