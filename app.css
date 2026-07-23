@@ -509,3 +509,65 @@ button{font:inherit;cursor:pointer}
   padding:8px 10px;font:inherit;font-size:.86rem;resize:vertical;
 }
 .sol-form .btn{align-self:flex-start}
+
+/* =========================================================
+   Indicador de visibilidad para el equipo. v13
+   ========================================================= */
+.ojo{
+  font-size:.74rem;font-weight:700;padding:3px 10px;border-radius:12px;
+  white-space:nowrap;
+}
+.ojo-on{background:var(--coc-bg);color:var(--ok)}
+.ojo-off{background:#eef0f4;color:#7b8395}
+.ojo-mini{font-size:.8em}
+.week-row .status-chip{display:inline-flex;align-items:center;gap:4px}
+
+/* =========================================================
+   Estados de semana y registro por año/mes. v14
+   ========================================================= */
+
+/* Colores por estado (chips y fichas de la tira) */
+.est-draft{border-color:#c9a227;background:#fdf8e6;color:#8a6a00}
+.est-scheduled{border-color:#2456c8;background:#eaf0fd;color:var(--accent)}
+.est-visible{border-color:#1d7a4f;background:#e8f6ee;color:var(--ok)}
+.est-forzada{border-color:#1d8ea6;background:#e6f6fa;color:#12657a}
+.est-archivada{border-color:#c2c8d4;background:#eef0f4;color:#6f7789}
+.est-oculta{border-color:#b0641d;background:#fdf0e4;color:#a3541a}
+.est-nueva{border-color:var(--line);background:#fff;border-style:dashed;color:#b0b7c6}
+
+.wk-chip.est-draft .wk-chip-estado{color:#8a6a00}
+.wk-chip.est-scheduled .wk-chip-estado{color:var(--accent)}
+.wk-chip.est-visible .wk-chip-estado{color:var(--ok)}
+.wk-chip.est-forzada .wk-chip-estado{color:#12657a}
+.wk-chip.est-archivada .wk-chip-estado{color:#6f7789}
+.wk-chip.est-oculta .wk-chip-estado{color:#a3541a}
+.wk-chip.est-nueva .wk-chip-estado{color:#b0b7c6}
+.wk-chip .wk-chip-fecha{color:var(--ink)}
+.wk-chip.est-archivada .wk-chip-fecha{color:#7b8395}
+
+.lg-draft::before{background:#fdf8e6;border-color:#c9a227}
+.lg-scheduled::before{background:#eaf0fd;border-color:#2456c8}
+.lg-visible::before{background:#e8f6ee;border-color:#1d7a4f}
+.lg-archivada::before{background:#eef0f4;border-color:#c2c8d4}
+.lg-oculta::before{background:#fdf0e4;border-color:#b0641d}
+.lg-nueva::before{background:#fff;border-color:var(--line);border-style:dashed}
+
+/* Registro agrupado */
+.grupo-año{margin-bottom:22px}
+.grupo-cab{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.grupo-cab-año{
+  border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:10px;
+}
+.grupo-cab-año h3{
+  font-size:1.15rem;font-weight:700;letter-spacing:.04em;
+  font-family:"Arial Narrow","Segoe UI",sans-serif;
+}
+.grupo-cab-mes{
+  margin:14px 0 8px;padding-bottom:4px;border-bottom:1px dashed var(--line);
+}
+.grupo-cab-mes h4{
+  font-size:.9rem;font-weight:700;text-transform:capitalize;color:var(--ink-soft);
+}
+.grupo-num{font-size:.72rem;color:var(--ink-soft)}
+.grupo-cab .btn{margin-left:auto}
+.week-list .week-row{margin-bottom:6px}

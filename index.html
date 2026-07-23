@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#182135">
 <title>Cuadrantes</title>
-<link rel="stylesheet" href="app.css?v=12">
+<link rel="stylesheet" href="app.css?v=14">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
 </head>
@@ -72,13 +72,15 @@
         <button class="btn small" id="wk-next" type="button">›</button>
         <span id="wk-label"></span>
         <span id="wk-status" class="status-chip"></span>
+        <span id="wk-ojo" class="ojo"></span>
       </div>
       <div class="week-actions-bar">
         <button class="btn small" id="btn-copiar" type="button">Copiar de…</button>
         <button class="btn small" id="btn-vaciar" type="button">Vaciar</button>
         <button class="btn small" id="btn-programar" type="button">Programar</button>
-        <button class="btn small primary" id="btn-publicar" type="button">Publicar ahora</button>
-        <button class="btn small danger" id="btn-despublicar" type="button" hidden>A borrador</button>
+        <button class="btn small primary" id="btn-mostrar" type="button">👁 Mostrar ya</button>
+        <button class="btn small danger" id="btn-ocultar" type="button" hidden>🚫 Ocultar</button>
+        <button class="btn small" id="btn-auto" type="button" hidden>↺ Automático</button>
       </div>
     </div>
     <div class="week-strip-wrap">
@@ -86,9 +88,10 @@
       <div class="week-leyenda">
         <span class="lg lg-draft">Borrador</span>
         <span class="lg lg-scheduled">Programada</span>
-        <span class="lg lg-published">Publicada</span>
+        <span class="lg lg-visible">Visible</span>
+        <span class="lg lg-archivada">Archivada</span>
+        <span class="lg lg-oculta">Oculta a mano</span>
         <span class="lg lg-nueva">Sin crear</span>
-        <span class="lg lg-pasada">Ya pasada</span>
       </div>
     </div>
 
@@ -119,7 +122,7 @@
   <section class="solo-gestor" id="tab-programar" hidden>
     <div class="panel">
       <h2>Semanas</h2>
-      <p class="note">Los empleados ven una semana cuando llega su fecha de publicación. Las de fecha propia no cambian aunque modifiques el ajuste por defecto.</p>
+      <p class="note">Los empleados ven una semana desde que llega su fecha de publicación hasta que termina; después se archiva y solo la ves tú. Puedes adelantar («Mostrar») u ocultar cualquier semana sin perder su fecha programada, y «↺ Automático» devuelve el comportamiento normal.</p>
       <div class="week-list" id="lista-semanas"></div>
     </div>
   </section>
@@ -250,6 +253,6 @@
 
 <div id="toast"></div>
 
-<script type="module" src="js/app.js?v=12"></script>
+<script type="module" src="js/app.js?v=14"></script>
 </body>
 </html>
