@@ -440,3 +440,72 @@ button{font:inherit;cursor:pointer}
   .pub-estado{border-right:none;border-bottom:1px solid var(--line);padding-right:0;padding-bottom:10px;width:100%}
   .publish-bar{gap:12px}
 }
+
+/* =========================================================
+   Solicitudes. v12
+   ========================================================= */
+
+.badge{
+  display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;
+  background:var(--bad);color:#fff;border-radius:9px;
+  font-size:.68rem;font-weight:700;line-height:18px;text-align:center;
+}
+.tab-btn.active .badge{background:var(--bad);color:#fff}
+
+.sol-filtros{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.sol-filtro.active{background:var(--ink);border-color:var(--ink);color:#fff}
+.sol-list{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+
+.sol-card{
+  border:1px solid var(--line);border-left:4px solid var(--line);
+  border-radius:var(--radius);padding:12px 14px;
+  display:flex;flex-direction:column;gap:7px;
+}
+.sol-pending{border-left-color:#c9a227;background:#fffdf5}
+.sol-approved{border-left-color:var(--ok)}
+.sol-denied{border-left-color:var(--bad)}
+
+.sol-cab{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.sol-quien{font-weight:700;font-size:.95rem}
+.sol-tipo{
+  font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--ink-soft);
+}
+.status-chip.sol-estado-pending{background:#fdf8e6;color:#8a6a00}
+.status-chip.sol-estado-approved{background:var(--coc-bg);color:var(--ok)}
+.status-chip.sol-estado-denied{background:var(--bad-bg);color:var(--bad)}
+.sol-cab .status-chip{margin-left:auto}
+
+.sol-fechas{font-size:.88rem;font-weight:600}
+.sol-msg{font-size:.85rem;color:var(--ink-soft);font-style:italic;line-height:1.4}
+.sol-respuesta{
+  font-size:.82rem;background:#f4f6fa;border-radius:8px;padding:7px 10px;line-height:1.4;
+}
+.sol-aviso{
+  font-size:.78rem;background:#fdf8e6;border:1px solid #ecd98a;color:#8a6a00;
+  border-radius:8px;padding:7px 10px;line-height:1.4;
+}
+.sol-nota{
+  width:100%;border:1px solid var(--line);border-radius:8px;
+  padding:7px 9px;font:inherit;font-size:.83rem;resize:vertical;min-height:38px;
+}
+.sol-acciones{display:flex;gap:6px;flex-wrap:wrap}
+.sol-pie{font-size:.7rem;color:#9aa1b1}
+
+/* ---------- Formulario del empleado ---------- */
+.sol-form{display:flex;flex-direction:column;gap:12px;margin-top:6px}
+.sol-radios{display:flex;gap:16px;flex-wrap:wrap}
+.sol-radios .check{font-size:.88rem;color:var(--ink);font-weight:600}
+.sol-fechas-form{display:flex;gap:12px;flex-wrap:wrap}
+.sol-fechas-form label{
+  display:flex;flex-direction:column;gap:4px;
+  font-size:.78rem;font-weight:600;color:var(--ink-soft);
+}
+.sol-fechas-form input[type=date]{
+  border:1px solid var(--line);border-radius:8px;padding:7px 9px;font:inherit;background:#fff;
+}
+#sol-msg{
+  width:100%;border:1px solid var(--line);border-radius:8px;
+  padding:8px 10px;font:inherit;font-size:.86rem;resize:vertical;
+}
+.sol-form .btn{align-self:flex-start}

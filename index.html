@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#182135">
 <title>Cuadrantes</title>
-<link rel="stylesheet" href="app.css?v=11">
+<link rel="stylesheet" href="app.css?v=12">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
 </head>
@@ -53,10 +53,11 @@
     <button class="tab-btn active solo-gestor" data-tab="cuadrante">Cuadrante</button>
     <button class="tab-btn solo-gestor" data-tab="programar">Programadas</button>
     <button class="tab-btn solo-gestor" data-tab="equipo">Equipo</button>
-    <button class="tab-btn solo-gestor" data-tab="solicitudes">Solicitudes</button>
+    <button class="tab-btn solo-gestor" data-tab="solicitudes">Solicitudes <span id="badge-solicitudes" class="badge" hidden></span></button>
     <button class="tab-btn solo-gestor" data-tab="ajustes">Ajustes</button>
     <button class="tab-btn solo-empleado" data-tab="emp-cuadrante">Cuadrante</button>
     <button class="tab-btn solo-empleado" data-tab="emp-turnos">Mis turnos</button>
+    <button class="tab-btn solo-empleado" data-tab="emp-solicitudes">Solicitudes</button>
   </nav>
   <button id="btn-salir" class="tab-btn">Cerrar sesión</button>
 </header>
@@ -146,8 +147,15 @@
   <!-- ============ TAB SOLICITUDES ============ -->
   <section class="solo-gestor" id="tab-solicitudes" hidden>
     <div class="panel">
-      <h2>Solicitudes</h2>
-      <span class="empty-note">Próximamente: aquí verás las solicitudes de vacaciones y cambios de tus empleados.</span>
+      <h2>Solicitudes del equipo</h2>
+      <div class="sol-filtros">
+        <button class="btn small sol-filtro active" type="button" data-estado="pending">Pendientes</button>
+        <button class="btn small sol-filtro" type="button" data-estado="approved">Aprobadas</button>
+        <button class="btn small sol-filtro" type="button" data-estado="denied">Denegadas</button>
+        <button class="btn small sol-filtro" type="button" data-estado="">Todas</button>
+      </div>
+      <p class="note">Al aprobar unas vacaciones se añaden solas al periodo del trabajador. Los cambios de turno quedan aprobados por escrito, pero los turnos los mueves tú en el cuadrante.</p>
+      <div class="sol-list" id="lista-solicitudes"></div>
     </div>
   </section>
 
@@ -210,6 +218,29 @@
     </div>
   </section>
 
+  <!-- ============ EMPLEADO · SOLICITUDES ============ -->
+  <section id="tab-emp-solicitudes" class="solo-empleado" hidden>
+    <div class="panel">
+      <h2>Nueva solicitud</h2>
+      <div class="sol-form">
+        <div class="sol-radios">
+          <label class="check"><input type="radio" name="sol-tipo" value="vacation" checked> Vacaciones</label>
+          <label class="check"><input type="radio" name="sol-tipo" value="change"> Cambio de turno</label>
+        </div>
+        <div class="sol-fechas-form">
+          <label><span id="sol-desde-lbl">Desde el día</span><input type="date" id="sol-desde"></label>
+          <label id="sol-hasta-wrap">Hasta el día<input type="date" id="sol-hasta"></label>
+        </div>
+        <textarea id="sol-msg" maxlength="300" rows="3"></textarea>
+        <button class="btn primary" id="btn-enviar-sol" type="button">Enviar solicitud</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Mis solicitudes</h2>
+      <div class="sol-list" id="mis-solicitudes"></div>
+    </div>
+  </section>
+
   <!-- ============ EMPLEADO · MIS TURNOS ============ -->
   <section id="tab-emp-turnos" class="solo-empleado" hidden>
     <div id="mis-turnos"></div>
@@ -219,6 +250,6 @@
 
 <div id="toast"></div>
 
-<script type="module" src="js/app.js?v=11"></script>
+<script type="module" src="js/app.js?v=12"></script>
 </body>
 </html>
