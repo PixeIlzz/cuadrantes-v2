@@ -1,14 +1,15 @@
 // Pestaña Cuadrante: editor portado de la v1, guardando en Supabase. v7
-import { toast } from './toast.js?v=12';
-import { listarEquipo } from '../data/equipo.js?v=12';
+import { toast } from './toast.js?v=14';
+import { listarEquipo } from '../data/equipo.js?v=14';
 import {
   lunesDe, sumarDias, fmtCorto, etiquetaSemana,
   obtenerOCrearSemana, cargarAsignaciones, guardarSemana,
-  programarSemana, publicarAhora, despublicar, copiarSemana,
-  listarSemanas, fmtMomento, localAIso,
-} from '../data/semanas.js?v=12';
-import { confirmar, elegirOpcion } from './confirmar.js?v=12';
-import { ctx } from '../auth.js?v=12';
+  programarSemana, copiarSemana,
+  listarSemanas, fmtMomento, localAIso, estadoReal, esVisible, ETIQUETA_ESTADO,
+  setVisibilidad, semanaTerminada,
+} from '../data/semanas.js?v=14';
+import { confirmar, elegirOpcion } from './confirmar.js?v=14';
+import { ctx } from '../auth.js?v=14';
 
 const ALL_ID = 'ALL';
 const $ = (id) => document.getElementById(id);
@@ -137,11 +138,16 @@ async function cargar(startIso) {
 function pintarSelector() {
   $('wk-date').value = semana.start_date;
   $('wk-label').textContent = etiquetaSemana(semana.start_date);
+  const estado = estadoReal(semana);
+  const visible = esVisible(semana);
+
   const st = $('wk-status');
-  st.textContent =
-    semana.status === 'draft' ? 'Borrador' :
-    semana.status === 'scheduled' ? 'Programada' : 'Publicada';
-  st.className = 'status-chip ' + semana.status;
+  st.textContent = ETIQUETA_ESTADO[estado];
+  st.className = 'status-chip est-' + estado;
+
+  const ojo = $('wk-ojo');
+  ojo.textContent = visible ? '👁 La ve el equipo' : '🚫 No la ve el equipo';
+  ojo.className = 'ojo ' + (visible ? 'ojo-on' : 'ojo-off');
 
   const tz = (ctx.business.config.publish || {}).tz;
   const info = $('wk-publish-info');
@@ -149,16 +155,22 @@ function pintarSelector() {
   const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
   const reglaDefecto = DIAS[pub.weekday ?? 0] + ' a las ' + (pub.time || '18:00');
 
+  let txt;
   if (semana.publish_at) {
-    info.textContent =
-      (semana.status === 'published' ? 'Ya publicada · visible desde el ' : 'Programada · el equipo la verá el ')
-      + fmtMomento(semana.publish_at, tz)
-      + (semana.publish_at_manual ? ' · fecha propia de esta semana' : ' · regla por defecto');
+    txt = 'Programada para el ' + fmtMomento(semana.publish_at, tz)
+        + (semana.publish_at_manual ? ' · fecha propia' : ' · regla por defecto');
   } else {
-    info.textContent = 'Sin programar · el equipo todavía no la ve. '
-      + 'Con «Programar» se publicaría el ' + reglaDefecto + '.';
+    txt = 'Sin programar. Con «Programar» se publicaría el ' + reglaDefecto + '.';
   }
-  $('btn-despublicar').hidden = (semana.status === 'draft');
+  if (estado === 'oculta')          txt += ' · Oculta a mano: no se mostrará aunque llegue la fecha.';
+  else if (estado === 'forzada')    txt += ' · Mostrada a mano: visible al margen de la fecha.';
+  else if (estado === 'archivada')  txt += ' · La semana ya terminó: archivada, solo la ves tú.';
+  info.textContent = txt;
+
+  // Botones de visibilidad, sin tocar nunca la programación
+  $('btn-mostrar').hidden = visible;
+  $('btn-ocultar').hidden = !visible;
+  $('btn-auto').hidden = (semana.visibility === 'auto');
 
   if (semana.publish_at) {
     const d = new Date(semana.publish_at);
@@ -168,6 +180,7 @@ function pintarSelector() {
   } else {
     $('wk-manual').value = '';
   }
+}
 }
 
 /* ---------- Tira de trabajadores ---------- */
@@ -416,20 +429,19 @@ async function pintarTiraSemanas() {
     for (const iso of lista) {
       const w = porFecha[iso];
       const pasada = sumarDias(iso, 6) < hoy;
-      const estado = w ? w.status : 'nueva';
+      const estado = w ? estadoReal(w) : 'nueva';
+      const visible = w ? esVisible(w) : false;
 
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'wk-chip wk-' + estado
+      b.className = 'wk-chip est-' + estado
         + (pasada ? ' wk-pasada' : '')
         + (semana && iso === semana.start_date ? ' wk-actual' : '');
       b.innerHTML = '<span class="wk-chip-fecha"></span><span class="wk-chip-estado"></span>';
-      b.querySelector('.wk-chip-fecha').textContent = fmtCorto(iso);
+      b.querySelector('.wk-chip-fecha').textContent =
+        (w ? (visible ? '👁 ' : '🚫 ') : '') + fmtCorto(iso);
       b.querySelector('.wk-chip-estado').textContent =
-        estado === 'draft' ? 'Borrador'
-        : estado === 'scheduled' ? 'Programada'
-        : estado === 'published' ? 'Publicada'
-        : 'Sin crear';
+        estado === 'nueva' ? 'Sin crear' : ETIQUETA_ESTADO[estado];
       b.title = etiquetaSemana(iso);
       b.addEventListener('click', () => cargar(iso));
       box.appendChild(b);
@@ -488,17 +500,41 @@ async function guardarYa() {
   setSync('ok');
 }
 
-async function accionPublicar() {
-  if (!(await confirmarMinimos('Publicar'))) return;
+async function cambiarVisibilidad(modo, mensaje, textoOk, peligro = false) {
+  const ok = await confirmar(mensaje, { textoOk, peligro });
+  if (!ok) return;
   try {
     await guardarYa();
-    await publicarAhora(semana.id);
-    semana.status = 'published';
-    semana.publish_at = new Date().toISOString();
+    await setVisibilidad(semana.id, modo);
+    semana.visibility = modo;
     pintarSelector();
-    toast('Semana publicada. Ya es visible para el equipo.');
     pintarTiraSemanas();
+    toast(modo === 'hidden' ? 'Oculta para el equipo'
+        : modo === 'shown' ? 'Ya la ve el equipo'
+        : 'Vuelve al comportamiento automático');
   } catch (err) { toast(err.message); }
+}
+
+async function accionMostrar() {
+  const fallos = fallosDeMinimos();
+  if (fallos.length && !(await confirmarMinimos('Mostrar'))) return;
+  cambiarVisibilidad('shown',
+    'La semana será visible para el equipo ahora mismo. La fecha programada se conserva.',
+    'Mostrar');
+}
+
+async function accionOcultar() {
+  cambiarVisibilidad('hidden',
+    'Dejará de verse por el equipo. El contenido y la fecha programada se conservan; '
+    + 'puedes volver a mostrarla cuando quieras.',
+    'Ocultar', true);
+}
+
+async function accionAuto() {
+  cambiarVisibilidad('auto',
+    'Volverá al comportamiento automático: se mostrará al llegar su fecha y se archivará '
+    + 'cuando la semana termine.',
+    'Automático');
 }
 
 async function accionProgramar() {
@@ -528,22 +564,6 @@ async function accionFechaManual() {
     semana.status = new Date(at) <= new Date() ? 'published' : 'scheduled';
     pintarSelector();
     toast('Publicación fijada para esta semana');
-    pintarTiraSemanas();
-  } catch (err) { toast(err.message); }
-}
-
-async function accionDespublicar() {
-  const ok = await confirmar(
-    'La semana volverá a borrador y dejará de verse por el equipo. ¿Continuar?',
-    { textoOk: 'Pasar a borrador', peligro: true });
-  if (!ok) return;
-  try {
-    await despublicar(semana.id);
-    semana.status = 'draft';
-    semana.publish_at = null;
-    semana.publish_at_manual = false;
-    pintarSelector();
-    toast('Semana en borrador');
     pintarTiraSemanas();
   } catch (err) { toast(err.message); }
 }
@@ -579,10 +599,11 @@ export function initCuadrante() {
     const [y, m, d] = v.split('-').map(Number);
     cargar(lunesDe(new Date(y, m - 1, d)));
   });
-  $('btn-publicar').addEventListener('click', accionPublicar);
+  $('btn-mostrar').addEventListener('click', accionMostrar);
+  $('btn-ocultar').addEventListener('click', accionOcultar);
+  $('btn-auto').addEventListener('click', accionAuto);
   $('btn-programar').addEventListener('click', accionProgramar);
   $('btn-manual').addEventListener('click', accionFechaManual);
-  $('btn-despublicar').addEventListener('click', accionDespublicar);
   $('btn-copiar').addEventListener('click', accionCopiarDe);
   $('btn-vaciar').addEventListener('click', accionVaciar);
 }
