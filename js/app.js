@@ -1,12 +1,14 @@
 // Arranque, login y navegación por pestañas. v7
-import { ctx, signIn, signOut, getSession } from './auth.js?v=8';
-import { sb } from './supabase.js?v=8';
-import { toast } from './ui/toast.js?v=8';
-import { confirmar } from './ui/confirmar.js?v=8';
-import { initEquipo, abrirEquipo } from './ui/equipo.js?v=8';
-import { initCuadrante, abrirCuadrante } from './ui/cuadrante.js?v=8';
-import { initProgramadas, abrirProgramadas } from './ui/programadas.js?v=8';
-import { initAjustes, abrirAjustes } from './ui/ajustes.js?v=8';
+import { ctx, signIn, signUp, signOut, getSession } from './auth.js?v=11';
+import { sb } from './supabase.js?v=11';
+import { toast } from './ui/toast.js?v=11';
+import { confirmar } from './ui/confirmar.js?v=11';
+import { initEquipo, abrirEquipo } from './ui/equipo.js?v=11';
+import { initCuadrante, abrirCuadrante } from './ui/cuadrante.js?v=11';
+import { initProgramadas, abrirProgramadas } from './ui/programadas.js?v=11';
+import { initAjustes, abrirAjustes } from './ui/ajustes.js?v=11';
+import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos } from './ui/empleado.js?v=11';
+import { canjearCodigo } from './data/invitaciones.js?v=11';
 
 const $ = (id) => document.getElementById(id);
 const errorLogin = $('login-error');
@@ -22,7 +24,8 @@ window.addEventListener('unhandledrejection', (e) =>
   fallo('Fallo: ' + (e.reason?.message || e.reason)));
 
 /* ---------- Pestañas ---------- */
-const PESTANAS = ['cuadrante', 'programar', 'equipo', 'solicitudes', 'ajustes'];
+const PESTANAS = ['cuadrante', 'programar', 'equipo', 'solicitudes', 'ajustes',
+                  'emp-cuadrante', 'emp-turnos'];
 
 function cambiarPestana(nombre) {
   document.querySelectorAll('.tab-btn[data-tab]').forEach((b) =>
@@ -32,6 +35,8 @@ function cambiarPestana(nombre) {
   if (nombre === 'cuadrante') abrirCuadrante();
   if (nombre === 'programar') abrirProgramadas();
   if (nombre === 'ajustes') abrirAjustes();
+  if (nombre === 'emp-cuadrante') abrirEmpCuadrante();
+  if (nombre === 'emp-turnos') abrirMisTurnos();
 }
 
 document.querySelectorAll('.tab-btn[data-tab]').forEach((btn) => {
@@ -57,14 +62,23 @@ function mostrarApp(session, role, biz) {
   $('ajustes-cuenta').textContent =
     session.user.email + ' · ' + (role === 'manager' ? 'Gestor' : 'Empleado');
 
-  initEquipo();
-  initCuadrante();
-  initAjustes();
-  initProgramadas((startIso) => {   // "Editar" desde Programadas abre esa semana
+  const esGestor = (role === 'manager');
+  document.querySelectorAll('.solo-gestor').forEach((e) => { e.hidden = !esGestor; });
+  document.querySelectorAll('.solo-empleado').forEach((e) => { e.hidden = esGestor; });
+
+  if (esGestor) {
+    initEquipo();
+    initCuadrante();
+    initAjustes();
+    initProgramadas((startIso) => {   // "Editar" desde Programadas abre esa semana
+      cambiarPestana('cuadrante');
+      abrirCuadrante(startIso);
+    });
     cambiarPestana('cuadrante');
-    abrirCuadrante(startIso);
-  });
-  cambiarPestana('cuadrante');
+  } else {
+    initEmpleado();
+    cambiarPestana('emp-cuadrante');
+  }
 }
 
 async function cargarNegocio(session) {
@@ -80,6 +94,16 @@ async function cargarNegocio(session) {
     .eq('id', mem[0].business_id).maybeSingle();
   if (e2) throw new Error('businesses: ' + e2.message);
   if (!biz) throw new Error('No se pudo cargar el negocio.');
+
+  ctx.workerId = null;
+  if (mem[0].role === 'employee') {
+    const { data: w } = await sb
+      .from('workers').select('id')
+      .eq('business_id', biz.id)
+      .eq('profile_id', session.user.id)
+      .maybeSingle();
+    ctx.workerId = w ? w.id : null;
+  }
 
   mostrarApp(session, mem[0].role, biz);
 }
@@ -97,6 +121,37 @@ $('form-login').addEventListener('submit', async (e) => {
     fallo(err.message || String(err));
   } finally {
     btn.disabled = false; btn.textContent = 'Entrar';
+  }
+});
+
+/* ---------- Registro con código de invitación ---------- */
+$('link-registro').addEventListener('click', (e) => {
+  e.preventDefault();
+  $('form-login').hidden = true;
+  $('form-registro').hidden = false;
+});
+$('link-volver-login').addEventListener('click', (e) => {
+  e.preventDefault();
+  $('form-registro').hidden = true;
+  $('form-login').hidden = false;
+});
+
+$('form-registro').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = $('btn-registrar');
+  const err = $('registro-error');
+  err.style.color = '#c62838'; err.textContent = '';
+  btn.disabled = true; btn.textContent = 'Creando cuenta…';
+  try {
+    const codigo = $('r-codigo').value.trim().toUpperCase();
+    if (codigo.length < 4) throw new Error('Escribe el código que te ha dado tu responsable.');
+    const session = await signUp($('r-email').value, $('r-pass').value, $('r-nombre').value.trim());
+    await canjearCodigo(codigo);
+    await cargarNegocio(session);
+  } catch (e2) {
+    err.textContent = e2.message || String(e2);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Crear cuenta';
   }
 });
 
