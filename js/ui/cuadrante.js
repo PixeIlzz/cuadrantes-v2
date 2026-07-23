@@ -1,10 +1,14 @@
 // Pestaña Cuadrante: editor portado de la v1, guardando en Supabase. v7
-import { toast } from './toast.js?v=7';
-import { listarEquipo } from '../data/equipo.js?v=7';
+import { toast } from './toast.js?v=8';
+import { listarEquipo } from '../data/equipo.js?v=8';
 import {
   lunesDe, sumarDias, fmtCorto, etiquetaSemana,
   obtenerOCrearSemana, cargarAsignaciones, guardarSemana,
-} from '../data/semanas.js?v=7';
+  programarSemana, publicarAhora, despublicar, copiarSemana,
+  listarSemanas, fmtMomento, localAIso,
+} from '../data/semanas.js?v=8';
+import { confirmar, elegirOpcion } from './confirmar.js?v=8';
+import { ctx } from '../auth.js?v=8';
 
 const ALL_ID = 'ALL';
 const $ = (id) => document.getElementById(id);
@@ -137,6 +141,18 @@ function pintarSelector() {
     semana.status === 'draft' ? 'Borrador' :
     semana.status === 'scheduled' ? 'Programada' : 'Publicada';
   st.className = 'status-chip ' + semana.status;
+
+  const tz = (ctx.business.config.publish || {}).tz;
+  const info = $('wk-publish-info');
+  if (semana.publish_at) {
+    info.textContent = (semana.status === 'published' ? 'Publicada el ' : 'Se publica el ')
+      + fmtMomento(semana.publish_at, tz)
+      + (semana.publish_at_manual ? ' (fecha propia)' : '');
+  } else {
+    info.textContent = 'Sin programar';
+  }
+  $('btn-despublicar').hidden = (semana.status === 'draft');
+  $('wk-manual').value = '';
 }
 
 /* ---------- Tira de trabajadores ---------- */
@@ -356,6 +372,115 @@ function removeAssignment(dayId, roleId, index) {
   renderStrip(); renderGrid(); scheduleSave();
 }
 
+/* ---------- Publicación ---------- */
+
+/* Devuelve la lista de incumplimientos de mínimos, como el chequeo de la v1 */
+function fallosDeMinimos() {
+  const fallos = [];
+  for (const d of DAYS) {
+    if (dayHasAll(d.id)) continue;              // día completo: no aplica
+    for (const r of ROLES) {
+      const n = cellList(d.id, r.id).length;
+      if (n < r.min) fallos.push(`${d.label}: ${r.label} ${n}/${r.min}`);
+    }
+  }
+  return fallos;
+}
+
+async function confirmarMinimos(accion) {
+  const fallos = fallosDeMinimos();
+  if (fallos.length === 0) return true;
+  const lista = fallos.slice(0, 6).join(' · ')
+    + (fallos.length > 6 ? ` y ${fallos.length - 6} más` : '');
+  return confirmar(
+    `No se llega al mínimo en ${fallos.length} puesto(s):\n${lista}\n\n¿${accion} igualmente?`,
+    { textoOk: accion, peligro: true }
+  );
+}
+
+async function guardarYa() {
+  clearTimeout(saveTimer);
+  await guardarSemana(semana.id, filasParaGuardar(), notas);
+  setSync('ok');
+}
+
+async function accionPublicar() {
+  if (!(await confirmarMinimos('Publicar'))) return;
+  try {
+    await guardarYa();
+    await publicarAhora(semana.id);
+    semana.status = 'published';
+    semana.publish_at = new Date().toISOString();
+    pintarSelector();
+    toast('Semana publicada. Ya es visible para el equipo.');
+  } catch (err) { toast(err.message); }
+}
+
+async function accionProgramar() {
+  if (!(await confirmarMinimos('Programar'))) return;
+  try {
+    await guardarYa();
+    const at = await programarSemana(semana.id, null);
+    semana.publish_at = at;
+    semana.publish_at_manual = false;
+    semana.status = new Date(at) <= new Date() ? 'published' : 'scheduled';
+    pintarSelector();
+    const tz = (ctx.business.config.publish || {}).tz;
+    toast('Se publicará el ' + fmtMomento(at, tz));
+  } catch (err) { toast(err.message); }
+}
+
+async function accionFechaManual() {
+  const valor = $('wk-manual').value;
+  if (!valor) { toast('Elige fecha y hora'); return; }
+  if (!(await confirmarMinimos('Programar'))) return;
+  try {
+    await guardarYa();
+    const at = await programarSemana(semana.id, localAIso(valor));
+    semana.publish_at = at;
+    semana.publish_at_manual = true;
+    semana.status = new Date(at) <= new Date() ? 'published' : 'scheduled';
+    pintarSelector();
+    toast('Publicación fijada para esta semana');
+  } catch (err) { toast(err.message); }
+}
+
+async function accionDespublicar() {
+  const ok = await confirmar(
+    'La semana volverá a borrador y dejará de verse por el equipo. ¿Continuar?',
+    { textoOk: 'Pasar a borrador', peligro: true });
+  if (!ok) return;
+  try {
+    await despublicar(semana.id);
+    semana.status = 'draft';
+    semana.publish_at = null;
+    semana.publish_at_manual = false;
+    pintarSelector();
+    toast('Semana en borrador');
+  } catch (err) { toast(err.message); }
+}
+
+async function accionCopiarDe() {
+  try {
+    const todas = (await listarSemanas()).filter((w) => w.id !== semana.id);
+    if (todas.length === 0) { toast('No hay otras semanas para copiar'); return; }
+    const elegida = await elegirOpcion('Copiar el contenido de…', todas.slice(0, 20).map((w) => ({
+      valor: w.id,
+      etiqueta: etiquetaSemana(w.start_date),
+      nota: w.status === 'draft' ? 'Borrador'
+          : w.status === 'scheduled' ? 'Programada' : 'Publicada',
+    })));
+    if (!elegida) return;
+    const ok = await confirmar(
+      'Se reemplazará todo el contenido de la semana en edición. ¿Continuar?',
+      { textoOk: 'Copiar', peligro: true });
+    if (!ok) return;
+    await copiarSemana(elegida, semana.id);
+    await cargar(semana.start_date);
+    toast('Semana copiada');
+  } catch (err) { toast(err.message); }
+}
+
 /* ---------- API pública de la pestaña ---------- */
 export function initCuadrante() {
   $('wk-prev').addEventListener('click', () => cargar(sumarDias(semana.start_date, -7)));
@@ -366,9 +491,15 @@ export function initCuadrante() {
     const [y, m, d] = v.split('-').map(Number);
     cargar(lunesDe(new Date(y, m - 1, d)));
   });
+  $('btn-publicar').addEventListener('click', accionPublicar);
+  $('btn-programar').addEventListener('click', accionProgramar);
+  $('btn-manual').addEventListener('click', accionFechaManual);
+  $('btn-despublicar').addEventListener('click', accionDespublicar);
+  $('btn-copiar').addEventListener('click', accionCopiarDe);
 }
 
-export async function abrirCuadrante() {
+export async function abrirCuadrante(startIso = null) {
+  if (startIso) { await cargar(startIso); return; }
   if (semana) { await cargar(semana.start_date); return; }
   await cargar(lunesDe(new Date()));
 }
