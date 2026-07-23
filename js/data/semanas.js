@@ -1,6 +1,6 @@
 // Acceso a datos de semanas y asignaciones. Sin interfaz aquí. v7
-import { sb } from '../supabase.js?v=15';
-import { ctx } from '../auth.js?v=15';
+import { sb } from '../supabase.js?v=16';
+import { ctx } from '../auth.js?v=16';
 
 /* Lunes (ISO yyyy-mm-dd) de la semana a la que pertenece una fecha */
 export function lunesDe(fecha) {
