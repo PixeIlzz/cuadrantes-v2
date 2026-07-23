@@ -181,7 +181,6 @@ function pintarSelector() {
     $('wk-manual').value = '';
   }
 }
-}
 
 /* ---------- Tira de trabajadores ---------- */
 function renderStrip() {
