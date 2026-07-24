@@ -54,8 +54,10 @@
     <button class="tab-btn solo-gestor" data-tab="cuadrante">Cuadrante</button>
     <button class="tab-btn solo-gestor" data-tab="programar">Programadas</button>
     <button class="tab-btn solo-gestor" data-tab="equipo">Equipo</button>
+    <button class="tab-btn solo-gestor" data-tab="tareas">Tareas <span id="badge-tareas" class="badge" hidden></span></button>
     <button class="tab-btn solo-gestor" data-tab="solicitudes">Solicitudes <span id="badge-solicitudes" class="badge" hidden></span></button>
     <button class="tab-btn solo-gestor" data-tab="ajustes">Ajustes</button>
+    <button class="tab-btn active solo-empleado" data-tab="emp-hoy">Hoy</button>
     <button class="tab-btn solo-empleado" data-tab="emp-cuadrante">Cuadrante</button>
     <button class="tab-btn solo-empleado" data-tab="emp-turnos">Mis turnos</button>
     <button class="tab-btn solo-empleado" data-tab="emp-solicitudes">Solicitudes</button>
@@ -156,6 +158,47 @@
     </div>
   </section>
 
+  <!-- ============ TAB TAREAS ============ -->
+  <section class="solo-gestor" id="tab-tareas" hidden>
+    <div class="panel">
+      <h2>Para hoy</h2>
+      <div id="tareas-hoy"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Nueva tarea</h2>
+      <div class="tarea-form">
+        <input type="text" id="tarea-titulo" maxlength="120" placeholder="Ej.: Revisar cámara de congelados">
+        <input type="text" id="tarea-detalle" maxlength="200" placeholder="Detalle (opcional)">
+        <div class="tarea-radios">
+          <label class="check"><input type="radio" name="tarea-repite" value="once" checked> Un día</label>
+          <label class="check"><input type="radio" name="tarea-repite" value="daily"> Todos los días</label>
+          <label class="check"><input type="radio" name="tarea-repite" value="weekly"> Días concretos</label>
+        </div>
+        <div class="tarea-dias" id="tarea-dias" hidden>
+          <label class="dia-chip"><input type="checkbox" class="tarea-dia" value="1"><span>L</span></label>
+          <label class="dia-chip"><input type="checkbox" class="tarea-dia" value="2"><span>M</span></label>
+          <label class="dia-chip"><input type="checkbox" class="tarea-dia" value="3"><span>X</span></label>
+          <label class="dia-chip"><input type="checkbox" class="tarea-dia" value="4"><span>J</span></label>
+          <label class="dia-chip"><input type="checkbox" class="tarea-dia" value="5"><span>V</span></label>
+          <label class="dia-chip"><input type="checkbox" class="tarea-dia" value="6"><span>S</span></label>
+          <label class="dia-chip"><input type="checkbox" class="tarea-dia" value="0"><span>D</span></label>
+        </div>
+        <div id="tarea-fecha-wrap" class="setting-row">
+          <label for="tarea-fecha">Fecha</label>
+          <input type="date" id="tarea-fecha">
+          <span class="note">Si la dejas vacía se pone hoy. Las de un día se arrastran hasta que las marques.</span>
+        </div>
+        <button class="btn primary" id="btn-nueva-tarea" type="button">Añadir tarea</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Todas las tareas</h2>
+      <div id="tareas-todas"></div>
+    </div>
+  </section>
+
   <!-- ============ TAB SOLICITUDES ============ -->
   <section class="solo-gestor" id="tab-solicitudes" hidden>
     <div class="panel">
@@ -243,6 +286,12 @@
     <div class="grid-scroller">
       <div class="grid" id="emp-grid"></div>
     </div>
+  </section>
+
+  <!-- ============ EMPLEADO · HOY ============ -->
+  <section id="tab-emp-hoy" class="solo-empleado" hidden>
+    <div class="tablon" id="tablon-emp-hoy" hidden></div>
+    <div id="emp-hoy"></div>
   </section>
 
   <!-- ============ EMPLEADO · SOLICITUDES ============ -->

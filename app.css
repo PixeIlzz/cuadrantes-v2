@@ -807,3 +807,78 @@ button{font:inherit;cursor:pointer}
 .cl-turno::before{background:#e9eefc;border:1px solid #b9cbf2}
 .cl-vac::before{background:#dff2f7;border:1px solid #bfe3ec}
 .cl-hoy::before{background:var(--ink)}
+
+/* =========================================================
+   Tareas / checklist
+   ========================================================= */
+
+.tarea-resumen{
+  font-size:.85rem;font-weight:700;color:var(--ink-soft);
+  padding-bottom:8px;margin-bottom:8px;border-bottom:1px dashed var(--line);
+}
+.tarea-check{
+  display:flex;align-items:flex-start;gap:11px;
+  border:1px solid var(--line);border-radius:var(--radius);
+  padding:11px 13px;margin-bottom:7px;cursor:pointer;
+}
+.tarea-check input[type=checkbox]{
+  width:20px;height:20px;margin-top:1px;flex:0 0 auto;accent-color:var(--ok);
+}
+.tarea-check.hecha{background:#f4f8f5;border-color:#cfe6da}
+.tarea-check.hecha .tarea-titulo{text-decoration:line-through;color:var(--ink-soft)}
+.tarea-txt{flex:1}
+.tarea-titulo{font-weight:600;font-size:.92rem;line-height:1.3}
+.tarea-detalle{font-size:.8rem;color:var(--ink-soft);margin-top:2px}
+.tarea-repite{font-size:.68rem;color:#9aa1b1;margin-top:4px;text-transform:uppercase;letter-spacing:.03em}
+.tarea-repite.atrasada{color:var(--bad);font-weight:700}
+
+.tarea-form{display:flex;flex-direction:column;gap:9px;margin-top:6px}
+.tarea-form input[type=text]{
+  width:100%;border:1px solid var(--line);border-radius:8px;
+  padding:9px 11px;font:inherit;font-size:.9rem;
+}
+.tarea-radios{display:flex;gap:16px;flex-wrap:wrap}
+.tarea-radios .check{font-size:.85rem;color:var(--ink);font-weight:600}
+.tarea-dias{display:flex;gap:6px;flex-wrap:wrap}
+.dia-chip{cursor:pointer}
+.dia-chip input{position:absolute;opacity:0;width:0;height:0}
+.dia-chip span{
+  display:grid;place-items:center;width:36px;height:36px;border-radius:50%;
+  border:1.5px solid var(--line);font-size:.82rem;font-weight:700;color:var(--ink-soft);
+}
+.dia-chip input:checked + span{
+  background:var(--accent);border-color:var(--accent);color:#fff;
+}
+.tarea-form .btn{align-self:flex-start}
+
+.tarea-row{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  border:1px solid var(--line);border-radius:var(--radius);padding:9px 12px;margin-bottom:7px;
+}
+.tarea-row.apagada{opacity:.55;background:#f7f8fa}
+.tarea-row-main{flex:1;min-width:160px}
+.tarea-row-titulo{
+  width:100%;border:none;background:transparent;font:inherit;font-weight:600;font-size:.9rem;
+}
+.tarea-row-meta{font-size:.7rem;color:var(--ink-soft);margin-top:2px}
+.tarea-row-acciones{display:flex;gap:6px;align-items:center}
+
+.hoy-tareas{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.hoy-tarea{font-size:.88rem;padding:5px 0;border-bottom:1px dashed var(--line)}
+.hoy-tarea:last-child{border-bottom:none}
+.hoy-vac-prox{background:#fffdf2;border-color:#ecd98a}
+.hoy-vac-prox .hoy-vac-hasta{color:#8a6a00;font-weight:700}
+
+/* ---------- Hoy del empleado ---------- */
+.panel-vac-hoy{background:#eaf7fa;border-color:#bfe3ec}
+.vac-hoy-tit{font-size:1rem;font-weight:700;color:#12657a}
+.vac-hoy-sub{font-size:.82rem;color:#12657a;margin-top:3px}
+.emp-notas{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px}
+.emp-notas-tit{
+  font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--ink-soft);margin-bottom:5px;
+}
+.emp-nota{
+  background:#fffdf2;border:1px solid #ecd98a;border-radius:8px;
+  padding:8px 11px;font-size:.85rem;line-height:1.4;margin-bottom:5px;
+}
