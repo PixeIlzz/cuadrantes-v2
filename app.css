@@ -894,25 +894,26 @@ button{font:inherit;cursor:pointer}
   margin-bottom:2px;
 }
 .tarea-chip{
-  display:inline-flex;align-items:center;gap:8px;
+  display:inline-flex;align-items:center;gap:9px;
   border:1.5px solid #c9a227;background:#fffdf2;color:var(--ink);
-  border-radius:999px;padding:7px 15px 7px 9px;
-  font:inherit;font-size:.85rem;font-weight:600;cursor:pointer;
+  border-radius:var(--radius);padding:9px 14px;
+  font:inherit;font-size:.88rem;font-weight:600;cursor:pointer;text-align:left;
   transition:background .12s,border-color .12s,opacity .12s;
 }
 .tarea-chip:hover{background:#fdf8e6}
+.tarea-chip:active{transform:scale(.98)}
 .tarea-chip-caja{
-  width:19px;height:19px;border-radius:50%;flex:0 0 auto;
+  width:18px;height:18px;border-radius:5px;flex:0 0 auto;
   border:1.5px solid #c9a227;background:#fff;
-  display:grid;place-items:center;font-size:.72rem;font-weight:700;color:#fff;
+  display:grid;place-items:center;font-size:.7rem;font-weight:700;color:#fff;
 }
-.tarea-chip.hecha{
-  border-color:#1d7a4f;background:#e8f6ee;
-}
+.tarea-chip.hecha{border-color:#1d7a4f;background:#e8f6ee}
 .tarea-chip.hecha .tarea-chip-caja{background:var(--ok);border-color:var(--ok)}
 .tarea-chip.hecha .tarea-chip-txt{text-decoration:line-through;color:var(--ink-soft)}
 .tarea-chip:disabled{opacity:.5;cursor:default}
-.hoy-tareas .btn{margin-left:auto}
+.hoy-tareas{align-items:stretch}
+.hoy-tareas-res{text-align:left}
+.hoy-tareas .btn{margin-left:auto;align-self:center}
 
 /* ---------- Hoy trabajan: personas como fichas ---------- */
 .hoy-rol{align-items:center}
@@ -951,3 +952,27 @@ button{font:inherit;cursor:pointer}
   border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:.88rem;
 }
 .tarea-editor .btn{align-self:flex-start}
+
+/* =========================================================
+   PWA: barra de actualización e instalación
+   ========================================================= */
+
+.barra-update{
+  position:fixed;left:0;right:0;bottom:0;z-index:150;
+  background:var(--ink);color:#fff;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:12px 16px;
+  padding-bottom:calc(12px + env(safe-area-inset-bottom));
+  font-size:.88rem;font-weight:600;
+  box-shadow:0 -4px 20px rgba(24,33,53,.25);
+}
+.barra-update .btn{margin-left:0}
+.barra-update .btn:not(.primary){
+  background:transparent;border-color:rgba(255,255,255,.35);color:#fff;
+}
+.barra-update > span{flex:1;min-width:180px}
+
+@media (display-mode: standalone){
+  /* Instalada: un poco más de aire arriba en móviles con notch */
+  header{padding-top:calc(14px + env(safe-area-inset-top))}
+}

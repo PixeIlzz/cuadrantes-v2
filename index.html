@@ -6,10 +6,21 @@
 <meta name="theme-color" content="#182135">
 <title>Cuadrantes</title>
 <link rel="stylesheet" href="app.css">
+<link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cuadrantes">
+<meta name="mobile-web-app-capable" content="yes">
 <link rel="apple-touch-icon" href="icon-180.png">
 </head>
 <body>
+
+<div id="barra-update" class="barra-update" hidden>
+  <span>Hay una versión nueva de la app.</span>
+  <button id="btn-update" class="btn small primary" type="button">Actualizar</button>
+  <button id="btn-update-luego" class="btn small" type="button">Más tarde</button>
+</div>
 
 <div id="cargando" class="centro">Cargando…</div>
 
@@ -219,6 +230,15 @@
     <div class="panel">
       <h2>Cuenta</h2>
       <div class="setting-row"><span class="note" id="ajustes-cuenta"></span></div>
+    </div>
+
+    <div class="panel">
+      <h2>Instalar la aplicación</h2>
+      <div class="setting-row">
+        <button class="btn primary" id="btn-instalar" type="button" hidden>Instalar en este dispositivo</button>
+        <span class="note">Instalada funciona como una app normal: icono propio, pantalla completa y arranque más rápido.</span>
+        <span class="note" id="ayuda-ios" hidden>En iPhone: toca el botón <b>Compartir</b> de Safari y elige <b>Añadir a pantalla de inicio</b>.</span>
+      </div>
     </div>
     <div class="panel">
       <h2>Tablón de avisos</h2>
