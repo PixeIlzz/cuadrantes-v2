@@ -1,11 +1,11 @@
 // Pestaña Equipo: interfaz calcada a la v1, datos contra Supabase.
-import { toast } from './toast.js?v=18';
+import { toast } from './toast.js';
 import {
   listarEquipo, crearTrabajador, actualizarTrabajador, borrarTrabajador,
   crearVacacion, actualizarVacacion, borrarVacacion,
-} from '../data/equipo.js?v=18';
-import { generarCodigo, codigoVivo } from '../data/invitaciones.js?v=18';
-import { confirmar } from './confirmar.js?v=18';
+} from '../data/equipo.js';
+import { generarCodigo, codigoVivo } from '../data/invitaciones.js';
+import { confirmar } from './confirmar.js';
 
 let equipo = [];      // caché en memoria de la última carga
 let cargado = false;

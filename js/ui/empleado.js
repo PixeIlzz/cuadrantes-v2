@@ -1,8 +1,8 @@
 // Vistas del empleado: cuadrante publicado (solo lectura) y "mis turnos". v9
-import { toast } from './toast.js?v=18';
-import { ctx } from '../auth.js?v=18';
-import { semanasVisibles, asignacionesDe, plantilla } from '../data/empleado.js?v=18';
-import { etiquetaSemana, sumarDias, fmtCorto } from '../data/semanas.js?v=18';
+import { toast } from './toast.js';
+import { ctx } from '../auth.js';
+import { semanasVisibles, asignacionesDe, plantilla } from '../data/empleado.js';
+import { etiquetaSemana, sumarDias, fmtCorto } from '../data/semanas.js';
 
 const ALL_ID = 'ALL';
 const $ = (id) => document.getElementById(id);
@@ -23,6 +23,7 @@ export function initEmpleado() {
 
 async function cargarBase() {
   if (cargado) return;
+  if (!ctx.business) throw new Error('La sesión no se cargó del todo. Cierra sesión y vuelve a entrar.');
   equipo = await plantilla();
   semanas = await semanasVisibles();
   // La más reciente ya publicada es la primera (orden descendente)

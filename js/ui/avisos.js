@@ -1,10 +1,10 @@
 // Tablón de avisos: gestión (gestor) y lectura (todo el equipo). v18
-import { toast } from './toast.js?v=18';
-import { confirmar } from './confirmar.js?v=18';
-import { ctx } from '../auth.js?v=18';
+import { toast } from './toast.js';
+import { confirmar } from './confirmar.js';
+import { ctx } from '../auth.js';
 import {
   avisosVisibles, todosLosAvisos, crearAviso, actualizarAviso, borrarAviso,
-} from '../data/avisos.js?v=18';
+} from '../data/avisos.js';
 
 const $ = (id) => document.getElementById(id);
 const fmtFecha = (iso) => new Date(iso).toLocaleDateString('es-ES',
