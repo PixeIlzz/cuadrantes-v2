@@ -50,7 +50,8 @@
   <h1 id="negocio-nombre"></h1>
   <span id="sync-status"></span>
   <nav class="tabs">
-    <button class="tab-btn active solo-gestor" data-tab="cuadrante">Cuadrante</button>
+    <button class="tab-btn active solo-gestor" data-tab="hoy">Hoy</button>
+    <button class="tab-btn solo-gestor" data-tab="cuadrante">Cuadrante</button>
     <button class="tab-btn solo-gestor" data-tab="programar">Programadas</button>
     <button class="tab-btn solo-gestor" data-tab="equipo">Equipo</button>
     <button class="tab-btn solo-gestor" data-tab="solicitudes">Solicitudes <span id="badge-solicitudes" class="badge" hidden></span></button>
@@ -64,7 +65,13 @@
 
 <main>
   <!-- ============ TAB CUADRANTE ============ -->
-  <section class="solo-gestor" id="tab-cuadrante">
+  <!-- ============ TAB HOY (gestor) ============ -->
+  <section class="solo-gestor" id="tab-hoy">
+    <div class="tablon" id="tablon-hoy" hidden></div>
+    <div id="panel-hoy"></div>
+  </section>
+
+  <section class="solo-gestor" id="tab-cuadrante" hidden>
     <div class="tablon" id="tablon-gestor" hidden></div>
     <div class="toolbar">
       <div class="week-picker">
@@ -264,6 +271,10 @@
 
   <!-- ============ EMPLEADO · MIS TURNOS ============ -->
   <section id="tab-emp-turnos" class="solo-empleado" hidden>
+    <div class="panel">
+      <h2>Mi calendario</h2>
+      <div id="emp-calendario"></div>
+    </div>
     <div id="mis-turnos"></div>
   </section>
 </main>

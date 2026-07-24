@@ -714,3 +714,96 @@ button{font:inherit;cursor:pointer}
 @media (max-width:640px){
   .aviso-opts .btn{margin-left:0;width:100%}
 }
+
+/* =========================================================
+   Panel de hoy (gestor)
+   ========================================================= */
+
+.panel-hoy-cab{background:var(--ink);color:#fff;border-color:var(--ink)}
+.hoy-fecha{
+  font-size:1.15rem;font-weight:700;text-transform:capitalize;
+  font-family:"Arial Narrow","Segoe UI",sans-serif;letter-spacing:.02em;
+}
+.hoy-sub{font-size:.8rem;color:#b9c1d6;margin-top:3px}
+
+.panel-alerta{border-color:#ecd98a;background:#fffdf2;padding:0;overflow:hidden}
+.hoy-alerta{
+  display:flex;align-items:center;gap:12px;width:100%;
+  background:none;border:0;padding:14px 16px;font:inherit;cursor:pointer;text-align:left;
+}
+.hoy-alerta-num{
+  background:var(--bad);color:#fff;border-radius:50%;
+  width:30px;height:30px;display:grid;place-items:center;font-weight:700;font-size:.9rem;
+}
+.hoy-alerta-ir{margin-left:auto;color:var(--accent);font-weight:700;font-size:.85rem}
+
+.hoy-col{margin-bottom:12px}
+.hoy-col:last-child{margin-bottom:0}
+.hoy-col-nom{
+  font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--ink-soft);margin-bottom:5px;
+}
+.hoy-rol{
+  display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;
+  padding:6px 0;border-bottom:1px dashed var(--line);
+}
+.hoy-rol:last-child{border-bottom:none}
+.hoy-rol-nom{
+  font-size:.72rem;font-weight:700;text-transform:uppercase;
+  color:var(--ink-soft);min-width:78px;
+}
+.hoy-rol-gente{font-size:.9rem;font-weight:600}
+
+.hoy-vacas{display:flex;flex-direction:column;gap:7px}
+.hoy-vac{
+  display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;
+  background:#eaf7fa;border:1px solid #bfe3ec;border-radius:var(--radius);padding:8px 12px;
+  font-size:.88rem;
+}
+.hoy-vac-hasta{font-size:.75rem;color:#12657a}
+.hoy-vac-nota{font-size:.75rem;color:var(--ink-soft);flex-basis:100%;font-style:italic}
+
+.hoy-min-list{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.hoy-min{
+  display:flex;gap:10px;align-items:center;
+  background:var(--bad-bg);border-radius:8px;padding:6px 11px;font-size:.85rem;
+}
+.hoy-min-rol{color:var(--ink-soft);font-size:.8rem}
+.hoy-min-num{margin-left:auto;font-weight:700;color:var(--bad)}
+
+/* =========================================================
+   Calendario del empleado
+   ========================================================= */
+
+.cal-cab{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.cal-titulo{
+  font-weight:700;font-size:1rem;text-transform:capitalize;flex:1;text-align:center;
+}
+.cal-cab .btn:last-child{margin-left:0}
+
+.cal-rejilla{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-dow{
+  text-align:center;font-size:.68rem;font-weight:700;color:var(--ink-soft);
+  text-transform:uppercase;padding-bottom:2px;
+}
+.cal-dia{
+  aspect-ratio:1;border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  background:#f3f5f9;font-size:.85rem;position:relative;
+}
+.cal-fuera{background:transparent}
+.cal-num{font-weight:600;line-height:1}
+.cal-con-turno{background:#e9eefc}
+.cal-vac{background:#dff2f7}
+.cal-hoy{background:var(--ink);color:#fff}
+.cal-hoy .cal-num{color:#fff}
+.cal-puntos{display:flex;gap:2px;height:5px}
+.cal-puntos i{width:5px;height:5px;border-radius:50%;display:block}
+.cal-playa{font-size:.62rem;line-height:1}
+
+.cal-leyenda{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;justify-content:center}
+.cl{font-size:.7rem;color:var(--ink-soft);display:flex;align-items:center;gap:5px}
+.cl::before{content:'';width:11px;height:11px;border-radius:50%;display:block}
+.cl-turno::before{background:#e9eefc;border:1px solid #b9cbf2}
+.cl-vac::before{background:#dff2f7;border:1px solid #bfe3ec}
+.cl-hoy::before{background:var(--ink)}
