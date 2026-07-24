@@ -1,7 +1,9 @@
 // Vistas del empleado: cuadrante publicado (solo lectura) y "mis turnos". v9
 import { toast } from './toast.js';
 import { ctx } from '../auth.js';
-import { semanasVisibles, asignacionesDe, plantilla } from '../data/empleado.js';
+import {
+  semanasVisibles, asignacionesDe, plantilla, misAsignaciones, misVacaciones,
+} from '../data/empleado.js';
 import { etiquetaSemana, sumarDias, fmtCorto } from '../data/semanas.js';
 
 const ALL_ID = 'ALL';
@@ -153,6 +155,163 @@ async function pintarSemana() {
   }
 }
 
+/* =====================================================================
+   Calendario mensual de "Mis turnos"
+   ===================================================================== */
+
+const MESES_LARGO = ['enero','febrero','marzo','abril','mayo','junio',
+                     'julio','agosto','septiembre','octubre','noviembre','diciembre'];
+let mesVisible = null;      // {a: 2026, m: 7}  (m = 1..12)
+let diasConTurno = {};      // iso -> [{color, label}]
+let diasVacaciones = {};    // iso -> nota
+
+const isoDe = (d) => {
+  const p = (n) => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+};
+const colorPuesto = (i) => ['var(--cam)','var(--par)','var(--coc)'][i % 3];
+
+async function cargarCalendario() {
+  diasConTurno = {}; diasVacaciones = {};
+
+  // Turnos: cada asignación se traduce a la fecha real de su día
+  for (const a of await misAsignaciones()) {
+    const sem = a.weeks;
+    if (!sem) continue;
+    const cfg = sem.config_snapshot || {};
+    const DAYS = cfg.days || [];
+    const ROLES = cfg.roles || [];
+    const base = DAYS.filter((d) => !d.night);
+    const idx = base.findIndex((b) => b.id === a.day_id.replace(/N$/, ''));
+    if (idx < 0) continue;
+    const iso = sumarDias(sem.start_date, idx);
+    const ri = ROLES.findIndex((r) => r.id === a.position_id);
+    const rol = ROLES[ri];
+    (diasConTurno[iso] ||= []).push({
+      color: a.is_all ? 'var(--ink)' : colorPuesto(ri < 0 ? 0 : ri),
+      label: a.is_all ? 'Día completo' : (rol ? rol.label : ''),
+    });
+  }
+
+  // Vacaciones: se pintan aunque no haya cuadrante publicado
+  for (const v of await misVacaciones()) {
+    let d = new Date(v.start_date + 'T12:00:00');
+    const fin = new Date(v.end_date + 'T12:00:00');
+    while (d <= fin) {
+      diasVacaciones[isoDe(d)] = v.note || '';
+      d.setDate(d.getDate() + 1);
+    }
+  }
+}
+
+function pintarCalendario() {
+  const cont = $('emp-calendario');
+  if (!cont) return;
+  if (!mesVisible) {
+    const h = new Date();
+    mesVisible = { a: h.getFullYear(), m: h.getMonth() + 1 };
+  }
+  const { a, m } = mesVisible;
+  cont.innerHTML = '';
+
+  // Cabecera con navegación
+  const cab = document.createElement('div');
+  cab.className = 'cal-cab';
+  const bPrev = document.createElement('button');
+  bPrev.type = 'button'; bPrev.className = 'btn small'; bPrev.textContent = '‹';
+  bPrev.addEventListener('click', () => {
+    mesVisible = (m === 1) ? { a: a - 1, m: 12 } : { a, m: m - 1 };
+    pintarCalendario();
+  });
+  const tit = document.createElement('span');
+  tit.className = 'cal-titulo';
+  tit.textContent = MESES_LARGO[m - 1] + ' ' + a;
+  const bNext = document.createElement('button');
+  bNext.type = 'button'; bNext.className = 'btn small'; bNext.textContent = '›';
+  bNext.addEventListener('click', () => {
+    mesVisible = (m === 12) ? { a: a + 1, m: 1 } : { a, m: m + 1 };
+    pintarCalendario();
+  });
+  const bHoy = document.createElement('button');
+  bHoy.type = 'button'; bHoy.className = 'btn small'; bHoy.textContent = 'Hoy';
+  bHoy.addEventListener('click', () => {
+    const h = new Date();
+    mesVisible = { a: h.getFullYear(), m: h.getMonth() + 1 };
+    pintarCalendario();
+  });
+  cab.append(bPrev, tit, bNext, bHoy);
+  cont.appendChild(cab);
+
+  // Rejilla
+  const rej = document.createElement('div');
+  rej.className = 'cal-rejilla';
+  for (const d of ['L','M','X','J','V','S','D']) {
+    const c = document.createElement('div');
+    c.className = 'cal-dow';
+    c.textContent = d;
+    rej.appendChild(c);
+  }
+
+  const primero = new Date(a, m - 1, 1);
+  const hueco = (primero.getDay() + 6) % 7;      // lunes primero
+  const diasMes = new Date(a, m, 0).getDate();
+  const hoy = isoDe(new Date());
+
+  for (let i = 0; i < hueco; i++) {
+    const c = document.createElement('div');
+    c.className = 'cal-dia cal-fuera';
+    rej.appendChild(c);
+  }
+
+  for (let dia = 1; dia <= diasMes; dia++) {
+    const iso = a + '-' + String(m).padStart(2, '0') + '-' + String(dia).padStart(2, '0');
+    const turnos = diasConTurno[iso] || [];
+    const vac = Object.prototype.hasOwnProperty.call(diasVacaciones, iso);
+
+    const c = document.createElement('div');
+    c.className = 'cal-dia'
+      + (iso === hoy ? ' cal-hoy' : '')
+      + (vac ? ' cal-vac' : '')
+      + (turnos.length ? ' cal-con-turno' : '');
+
+    const num = document.createElement('span');
+    num.className = 'cal-num';
+    num.textContent = dia;
+    c.appendChild(num);
+
+    if (vac) {
+      const s = document.createElement('span');
+      s.className = 'cal-playa';
+      s.textContent = '🏖';
+      c.appendChild(s);
+    } else if (turnos.length) {
+      const puntos = document.createElement('span');
+      puntos.className = 'cal-puntos';
+      for (const t of turnos.slice(0, 3)) {
+        const p = document.createElement('i');
+        p.style.background = t.color;
+        puntos.appendChild(p);
+      }
+      c.appendChild(puntos);
+    }
+
+    const partes = [];
+    if (vac) partes.push('Vacaciones' + (diasVacaciones[iso] ? ': ' + diasVacaciones[iso] : ''));
+    for (const t of turnos) partes.push(t.label);
+    if (partes.length) c.title = partes.join(' · ');
+
+    rej.appendChild(c);
+  }
+  cont.appendChild(rej);
+
+  const ley = document.createElement('div');
+  ley.className = 'cal-leyenda';
+  ley.innerHTML = '<span class="cl cl-turno">Con turno</span>'
+    + '<span class="cl cl-vac">Vacaciones</span>'
+    + '<span class="cl cl-hoy">Hoy</span>';
+  cont.appendChild(ley);
+}
+
 /* ---------- Mis turnos ---------- */
 export async function abrirMisTurnos() {
   const cont = $('mis-turnos');
@@ -164,12 +323,18 @@ export async function abrirMisTurnos() {
       cont.innerHTML = '<span class="empty-note">Tu cuenta todavía no está enlazada a una ficha de trabajador. Habla con tu responsable.</span>';
       return;
     }
+    cont.innerHTML = '';
+    await cargarCalendario();
+    pintarCalendario();
+
     if (semanas.length === 0) {
-      cont.innerHTML = '<span class="empty-note">Todavía no hay ningún cuadrante publicado.</span>';
+      const aviso = document.createElement('div');
+      aviso.className = 'panel';
+      aviso.innerHTML = '<span class="empty-note">Todavía no hay ningún cuadrante publicado.</span>';
+      cont.appendChild(aviso);
       return;
     }
 
-    cont.innerHTML = '';
     // Semana publicada más reciente y las siguientes que ya estén visibles
     for (const s of semanas.slice(0, 4)) {
       const cfg = s.config_snapshot || {};
