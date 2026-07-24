@@ -1,6 +1,6 @@
 // Solicitudes de vacaciones y cambios. v12
-import { sb } from '../supabase.js?v=17';
-import { ctx } from '../auth.js?v=17';
+import { sb } from '../supabase.js?v=18';
+import { ctx } from '../auth.js?v=18';
 
 /* --- Empleado --- */
 
