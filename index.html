@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#182135">
 <title>Cuadrantes</title>
-<link rel="stylesheet" href="app.css?v=17">
+<link rel="stylesheet" href="app.css?v=18">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
 </head>
@@ -65,6 +65,7 @@
 <main>
   <!-- ============ TAB CUADRANTE ============ -->
   <section class="solo-gestor" id="tab-cuadrante">
+    <div class="tablon" id="tablon-gestor" hidden></div>
     <div class="toolbar">
       <div class="week-picker">
         <button class="btn small" id="wk-prev" type="button">‹</button>
@@ -170,6 +171,20 @@
       <div class="setting-row"><span class="note" id="ajustes-cuenta"></span></div>
     </div>
     <div class="panel">
+      <h2>Tablón de avisos</h2>
+      <p class="note">Lo que publiques aquí lo ve todo el equipo al abrir la app.</p>
+      <div class="aviso-form">
+        <textarea id="aviso-texto" rows="2" maxlength="400" placeholder="Ej.: El sábado tenemos una reserva de 40 personas a las 21:00."></textarea>
+        <div class="aviso-opts">
+          <label class="check"><input type="checkbox" id="aviso-pin"> 📌 Destacar arriba</label>
+          <label class="check">Mostrar hasta <input type="date" id="aviso-expira"></label>
+          <button class="btn primary" id="btn-nuevo-aviso" type="button">Publicar aviso</button>
+        </div>
+      </div>
+      <div class="aviso-list" id="lista-avisos"></div>
+    </div>
+
+    <div class="panel">
       <h2>Publicación por defecto</h2>
       <div class="setting-row">
         <label for="pub-weekday">Publicar el</label>
@@ -208,6 +223,7 @@
   </section>
   <!-- ============ EMPLEADO · CUADRANTE ============ -->
   <section id="tab-emp-cuadrante" class="solo-empleado" hidden>
+    <div class="tablon" id="tablon-empleado" hidden></div>
     <div class="toolbar">
       <div class="week-picker">
         <button class="btn small" id="emp-prev" type="button">‹</button>
@@ -230,8 +246,9 @@
         <div class="sol-radios">
           <label class="check"><input type="radio" name="sol-tipo" value="vacation" checked> Vacaciones</label>
           <label class="check"><input type="radio" name="sol-tipo" value="change"> Cambio de turno</label>
+          <label class="check"><input type="radio" name="sol-tipo" value="other"> Otro</label>
         </div>
-        <div class="sol-fechas-form">
+        <div class="sol-fechas-form" id="sol-fechas-wrap">
           <label><span id="sol-desde-lbl">Desde el día</span><input type="date" id="sol-desde"></label>
           <label id="sol-hasta-wrap">Hasta el día<input type="date" id="sol-hasta"></label>
         </div>
@@ -254,6 +271,6 @@
 
 <div id="toast"></div>
 
-<script type="module" src="js/app.js?v=17"></script>
+<script type="module" src="js/app.js?v=18"></script>
 </body>
 </html>
