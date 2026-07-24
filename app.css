@@ -882,3 +882,72 @@ button{font:inherit;cursor:pointer}
   background:#fffdf2;border:1px solid #ecd98a;border-radius:8px;
   padding:8px 11px;font-size:.85rem;line-height:1.4;margin-bottom:5px;
 }
+
+/* =========================================================
+   Fichas del panel de Hoy y editor de tareas
+   ========================================================= */
+
+/* ---------- Tareas de hoy: fichas marcables ---------- */
+.hoy-tareas{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.hoy-tareas-res{
+  flex-basis:100%;font-size:.78rem;font-weight:700;color:var(--ink-soft);
+  margin-bottom:2px;
+}
+.tarea-chip{
+  display:inline-flex;align-items:center;gap:8px;
+  border:1.5px solid #c9a227;background:#fffdf2;color:var(--ink);
+  border-radius:999px;padding:7px 15px 7px 9px;
+  font:inherit;font-size:.85rem;font-weight:600;cursor:pointer;
+  transition:background .12s,border-color .12s,opacity .12s;
+}
+.tarea-chip:hover{background:#fdf8e6}
+.tarea-chip-caja{
+  width:19px;height:19px;border-radius:50%;flex:0 0 auto;
+  border:1.5px solid #c9a227;background:#fff;
+  display:grid;place-items:center;font-size:.72rem;font-weight:700;color:#fff;
+}
+.tarea-chip.hecha{
+  border-color:#1d7a4f;background:#e8f6ee;
+}
+.tarea-chip.hecha .tarea-chip-caja{background:var(--ok);border-color:var(--ok)}
+.tarea-chip.hecha .tarea-chip-txt{text-decoration:line-through;color:var(--ink-soft)}
+.tarea-chip:disabled{opacity:.5;cursor:default}
+.hoy-tareas .btn{margin-left:auto}
+
+/* ---------- Hoy trabajan: personas como fichas ---------- */
+.hoy-rol{align-items:center}
+.hoy-rol-gente{display:flex;flex-wrap:wrap;gap:6px}
+.persona-chip{
+  display:inline-block;border:1.5px solid var(--line);background:#fff;
+  border-radius:999px;padding:5px 14px;font-size:.85rem;font-weight:600;white-space:nowrap;
+}
+.persona-chip.rol-0{border-color:var(--cam);background:var(--cam-bg);color:var(--cam)}
+.persona-chip.rol-1{border-color:var(--par);background:var(--par-bg);color:var(--par)}
+.persona-chip.rol-2{border-color:var(--coc);background:var(--coc-bg);color:var(--coc)}
+.persona-todos{
+  border-color:var(--ink);background:var(--ink);color:#fff;
+  padding:7px 16px;font-size:.88rem;
+}
+.hoy-col{
+  border:1px solid var(--line);border-radius:var(--radius);
+  padding:10px 12px;margin-bottom:9px;
+}
+.hoy-col-nom{margin-bottom:7px}
+
+/* ---------- Editor de tareas ---------- */
+.tarea-row{flex-direction:column;align-items:stretch}
+.tarea-row-cab{display:flex;align-items:center;gap:10px;flex-wrap:wrap;width:100%}
+.tarea-row-titulo{font-weight:600;font-size:.9rem}
+.tarea-editor{
+  border-top:1px dashed var(--line);margin-top:9px;padding-top:11px;
+  display:flex;flex-direction:column;gap:10px;
+}
+.ed-campo{display:flex;flex-direction:column;gap:4px}
+.ed-campo > span{
+  font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--ink-soft);
+}
+.ed-campo input[type=text],.ed-campo input[type=date]{
+  border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:.88rem;
+}
+.tarea-editor .btn{align-self:flex-start}
