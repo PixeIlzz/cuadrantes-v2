@@ -8,6 +8,7 @@ import { initCuadrante, abrirCuadrante } from './ui/cuadrante.js';
 import { initProgramadas, abrirProgramadas } from './ui/programadas.js';
 import { initAjustes, abrirAjustes } from './ui/ajustes.js';
 import { initAvisos, abrirAvisos, pintarTablon } from './ui/avisos.js';
+import { initHoy, abrirHoy } from './ui/hoy.js';
 import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos } from './ui/empleado.js';
 import { canjearCodigo } from './data/invitaciones.js';
 import {
@@ -29,13 +30,14 @@ window.addEventListener('unhandledrejection', (e) =>
   fallo('Fallo: ' + (e.reason?.message || e.reason)));
 
 /* ---------- Pestañas ---------- */
-const PESTANAS = ['cuadrante', 'programar', 'equipo', 'solicitudes', 'ajustes',
+const PESTANAS = ['hoy', 'cuadrante', 'programar', 'equipo', 'solicitudes', 'ajustes',
                   'emp-cuadrante', 'emp-turnos', 'emp-solicitudes'];
 
 function cambiarPestana(nombre) {
   document.querySelectorAll('.tab-btn[data-tab]').forEach((b) =>
     b.classList.toggle('active', b.dataset.tab === nombre));
   for (const t of PESTANAS) $('tab-' + t).hidden = (t !== nombre);
+  if (nombre === 'hoy') abrirHoy();
   if (nombre === 'equipo') abrirEquipo();
   if (nombre === 'cuadrante') abrirCuadrante();
   if (nombre === 'programar') abrirProgramadas();
@@ -83,9 +85,11 @@ function mostrarApp(session, role, biz) {
     });
     initSolicitudes();
     initAvisos();
+    initHoy((destino) => cambiarPestana(destino));
     refrescarContador();              // aviso de pendientes al entrar
     pintarTablon('tablon-gestor');
-    cambiarPestana('cuadrante');
+    pintarTablon('tablon-hoy');
+    cambiarPestana('hoy');            // el panel de hoy es la primera pantalla
   } else {
     initEmpleado();
     initMisSolicitudes();
