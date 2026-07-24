@@ -2,6 +2,7 @@
 import { ctx, signIn, signUp, signOut, getSession } from './auth.js';
 import { sb } from './supabase.js';
 import { toast } from './ui/toast.js';
+import { initPWA } from './pwa.js';
 import { confirmar } from './ui/confirmar.js';
 import { initEquipo, abrirEquipo } from './ui/equipo.js';
 import { initCuadrante, abrirCuadrante } from './ui/cuadrante.js';
@@ -188,6 +189,8 @@ $('btn-salir').addEventListener('click', async () => {
 });
 
 /* ---------- Arranque ---------- */
+initPWA();
+
 try {
   paso('Comprobando sesión…');
   const session = await getSession();
