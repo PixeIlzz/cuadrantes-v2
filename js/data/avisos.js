@@ -1,6 +1,6 @@
 // Tablón de avisos del negocio. v18
-import { sb } from '../supabase.js?v=18';
-import { ctx } from '../auth.js?v=18';
+import { sb } from '../supabase.js';
+import { ctx } from '../auth.js';
 
 /* Avisos visibles (RLS ya filtra activos y no caducados para el empleado) */
 export async function avisosVisibles() {

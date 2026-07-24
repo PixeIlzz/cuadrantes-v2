@@ -1,5 +1,5 @@
 // Códigos de invitación de empleados. v9
-import { sb } from '../supabase.js?v=18';
+import { sb } from '../supabase.js';
 
 export async function generarCodigo(workerId, dias = 30) {
   const { data, error } = await sb.rpc('create_invite', {

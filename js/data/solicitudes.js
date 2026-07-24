@@ -1,6 +1,6 @@
 // Solicitudes de vacaciones y cambios. v12
-import { sb } from '../supabase.js?v=18';
-import { ctx } from '../auth.js?v=18';
+import { sb } from '../supabase.js';
+import { ctx } from '../auth.js';
 
 /* --- Empleado --- */
 
@@ -23,6 +23,7 @@ export async function crearSolicitud({ tipo, desde, hasta, mensaje }) {
 }
 
 export async function misSolicitudes() {
+  if (!ctx.workerId) return [];   // sin ficha enlazada no hay solicitudes propias
   const { data, error } = await sb
     .from('requests')
     .select('id, type, status, start_date, end_date, message, manager_note, created_at, resolved_at')
