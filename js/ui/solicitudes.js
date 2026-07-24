@@ -1,19 +1,19 @@
 // Solicitudes: bandeja del gestor y formulario/historial del empleado. v12
-import { toast } from './toast.js?v=17';
-import { confirmar } from './confirmar.js?v=17';
-import { ctx } from '../auth.js?v=17';
-import { plantilla } from '../data/empleado.js?v=17';
-import { etiquetaSemana, fmtCorto } from '../data/semanas.js?v=17';
+import { toast } from './toast.js?v=18';
+import { confirmar } from './confirmar.js?v=18';
+import { ctx } from '../auth.js?v=18';
+import { plantilla } from '../data/empleado.js?v=18';
+import { etiquetaSemana, fmtCorto } from '../data/semanas.js?v=18';
 import {
   crearSolicitud, misSolicitudes, retirarSolicitud,
   solicitudesDelNegocio, contarPendientes, resolverSolicitud, semanasAfectadas,
-} from '../data/solicitudes.js?v=17';
+} from '../data/solicitudes.js?v=18';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g,
   (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-const TIPO = { vacation: 'Vacaciones', change: 'Cambio de turno' };
+const TIPO = { vacation: 'Vacaciones', change: 'Cambio de turno', other: 'Otro' };
 const ESTADO = { pending: 'Pendiente', approved: 'Aprobada', denied: 'Denegada' };
 
 let equipoCache = [];
@@ -85,7 +85,7 @@ async function tarjetaGestor(s) {
     ? (s.end_date && s.end_date !== s.start_date
         ? 'Del ' + fmtCorto(s.start_date) + ' al ' + fmtCorto(s.end_date)
         : 'El ' + fmtCorto(s.start_date))
-    : 'Sin fechas';
+    : 'Sin fecha concreta';
   card.appendChild(fechas);
 
   if (s.message) {
@@ -123,7 +123,9 @@ async function tarjetaGestor(s) {
     bSi.addEventListener('click', async () => {
       const extra = s.type === 'vacation'
         ? 'Se añadirá el periodo a sus vacaciones.'
-        : 'Queda constancia de la aprobación. Recuerda mover los turnos a mano en el cuadrante.';
+        : s.type === 'change'
+          ? 'Queda constancia de la aprobación. Recuerda mover los turnos a mano en el cuadrante.'
+          : 'Queda constancia de la aprobación y de tu nota.';
       const ok = await confirmar('Aprobar la solicitud de ' + nombreDe(s.worker_id) + '. ' + extra,
         { textoOk: 'Aprobar' });
       if (!ok) return;
@@ -185,27 +187,33 @@ export function initMisSolicitudes() {
 function pintarCampos() {
   const tipo = document.querySelector('input[name="sol-tipo"]:checked').value;
   $('sol-hasta-wrap').hidden = (tipo !== 'vacation');
-  $('sol-desde-lbl').textContent = tipo === 'vacation' ? 'Desde el día' : 'Día afectado';
-  $('sol-msg').placeholder = tipo === 'vacation'
-    ? 'Motivo (opcional). Ej.: boda de mi hermana'
-    : 'Explica el cambio que necesitas. Ej.: no puedo el viernes noche, ¿puedo cambiar con Pedro?';
+  $('sol-fechas-wrap').hidden = false;
+  $('sol-desde-lbl').textContent =
+    tipo === 'vacation' ? 'Desde el día'
+    : tipo === 'change' ? 'Día afectado'
+    : 'Día relacionado (opcional)';
+  $('sol-msg').placeholder =
+    tipo === 'vacation' ? 'Motivo (opcional). Ej.: boda de mi hermana'
+    : tipo === 'change' ? 'Explica el cambio que necesitas. Ej.: no puedo el viernes noche, ¿puedo cambiar con Pedro?'
+    : 'Cuéntanos qué necesitas. Ej.: necesito un justificante, tengo cita médica, una duda sobre el cuadrante…';
 }
 
 async function enviar() {
   const tipo = document.querySelector('input[name="sol-tipo"]:checked').value;
   const desde = $('sol-desde').value;
-  const hasta = tipo === 'vacation' ? ($('sol-hasta').value || desde) : desde;
+  const hasta = tipo === 'vacation' ? ($('sol-hasta').value || desde) : (desde || null);
   const mensaje = $('sol-msg').value.trim();
 
   if (!ctx.workerId) { toast('Tu cuenta no está enlazada a una ficha de trabajador.'); return; }
-  if (!desde) { toast('Elige la fecha'); return; }
+  if (tipo !== 'other' && !desde) { toast('Elige la fecha'); return; }
   if (tipo === 'vacation' && hasta < desde) { toast('La fecha final no puede ser anterior'); return; }
   if (tipo === 'change' && !mensaje) { toast('Explica brevemente el cambio que necesitas'); return; }
+  if (tipo === 'other' && !mensaje) { toast('Escribe en qué podemos ayudarte'); return; }
 
   const btn = $('btn-enviar-sol');
   btn.disabled = true; btn.textContent = 'Enviando…';
   try {
-    await crearSolicitud({ tipo, desde, hasta, mensaje });
+    await crearSolicitud({ tipo, desde: desde || null, hasta, mensaje });
     $('sol-desde').value = ''; $('sol-hasta').value = ''; $('sol-msg').value = '';
     toast('Solicitud enviada. Tu responsable la verá en la app.');
     await abrirMisSolicitudes();

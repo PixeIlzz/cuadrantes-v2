@@ -1,6 +1,6 @@
 // Pestaña Cuadrante: editor portado de la v1, guardando en Supabase. v7
-import { toast } from './toast.js?v=17';
-import { listarEquipo } from '../data/equipo.js?v=17';
+import { toast } from './toast.js?v=18';
+import { listarEquipo } from '../data/equipo.js?v=18';
 import {
   lunesDe, sumarDias, fmtCorto, etiquetaSemana,
   obtenerOCrearSemana, cargarAsignaciones, guardarSemana,
@@ -8,9 +8,9 @@ import {
   listarSemanas, fmtMomento, localAIso, ETIQUETA_ESTADO,
   estadoBase, esVisible, modoVisibilidad, iconoOjo, textoVisibilidad,
   setVisibilidad, semanaTerminada,
-} from '../data/semanas.js?v=17';
-import { confirmar, elegirOpcion } from './confirmar.js?v=17';
-import { ctx } from '../auth.js?v=17';
+} from '../data/semanas.js?v=18';
+import { confirmar, elegirOpcion } from './confirmar.js?v=18';
+import { ctx } from '../auth.js?v=18';
 
 const ALL_ID = 'ALL';
 const $ = (id) => document.getElementById(id);
