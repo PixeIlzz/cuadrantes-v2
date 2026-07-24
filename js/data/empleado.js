@@ -43,3 +43,27 @@ export async function plantilla() {
   if (error) throw new Error('Equipo: ' + error.message);
   return data || [];
 }
+
+/* Todas mis asignaciones de semanas visibles, con la fecha de su semana.
+   RLS filtra: solo llegan las de semanas que puedo ver. */
+export async function misAsignaciones() {
+  if (!ctx.workerId) return [];
+  const { data, error } = await sb
+    .from('assignments')
+    .select('day_id, position_id, is_all, weeks!inner(start_date, config_snapshot)')
+    .or('worker_id.eq.' + ctx.workerId + ',is_all.eq.true');
+  if (error) throw new Error('Mis turnos: ' + error.message);
+  return data || [];
+}
+
+/* Mis periodos de vacaciones. No dependen de que haya cuadrante publicado. */
+export async function misVacaciones() {
+  if (!ctx.workerId) return [];
+  const { data, error } = await sb
+    .from('vacations')
+    .select('start_date, end_date, note')
+    .eq('worker_id', ctx.workerId)
+    .order('start_date', { ascending: true });
+  if (error) throw new Error('Vacaciones: ' + error.message);
+  return data || [];
+}
