@@ -34,6 +34,18 @@ export function etiquetaSemana(startIso) {
     : `Del ${d1} de ${MESES[m1 - 1]} al ${d2} de ${MESES[m2 - 1]}`;
 }
 
+/* Busca una semana por su lunes. Devuelve null si no existe (no la crea). */
+export async function buscarSemana(startIso) {
+  const { data, error } = await sb
+    .from('weeks')
+    .select('id, start_date, status, publish_at, publish_at_manual, visibility, notes, config_snapshot')
+    .eq('business_id', ctx.business.id)
+    .eq('start_date', startIso)
+    .maybeSingle();
+  if (error) throw new Error('Semana: ' + error.message);
+  return data;
+}
+
 /* Devuelve la semana de ese lunes; si no existe la crea como borrador
    congelando la configuración actual del negocio (config_snapshot). */
 export async function obtenerOCrearSemana(startIso) {
