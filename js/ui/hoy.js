@@ -3,6 +3,7 @@ import { toast } from './toast.js';
 import { ctx } from '../auth.js';
 import { listarEquipo } from '../data/equipo.js';
 import { contarPendientes } from '../data/solicitudes.js';
+import { pendientesDeHoy } from './tareas.js';
 import {
   lunesDe, sumarDias, etiquetaSemana, buscarSemana, cargarAsignaciones,
   esVisible, estadoBase, ETIQUETA_ESTADO,
@@ -38,8 +39,10 @@ export async function abrirHoy() {
     cont.innerHTML = '';
     cont.appendChild(cabecera(hoy, semana, lunes));
     if (pendientes > 0) cont.appendChild(tarjetaSolicitudes(pendientes));
+    cont.appendChild(await tarjetaTareas());
     cont.appendChild(await tarjetaTurnosHoy(hoy, lunes, semana, equipo));
     cont.appendChild(tarjetaVacaciones(hoy, equipo));
+    cont.appendChild(tarjetaProximasVacaciones(hoy, equipo));
     if (semana) cont.appendChild(await tarjetaMinimos(semana));
   } catch (err) {
     cont.innerHTML = '';
@@ -172,6 +175,81 @@ function tarjetaVacaciones(hoy, equipo) {
     lista.appendChild(el);
   }
   p.appendChild(lista);
+  return p;
+}
+
+/* Avisos de vacaciones que empiezan en los próximos 14 días */
+function tarjetaProximasVacaciones(hoy, equipo) {
+  const p = panel('Vacaciones próximas (2 semanas)');
+  const limite = sumarDias(hoy, 14);
+  const proximas = [];
+  for (const w of equipo) {
+    for (const v of (w.vacs || [])) {
+      if (v.start_date > hoy && v.start_date <= limite) {
+        proximas.push({ nombre: w.name, ...v });
+      }
+    }
+  }
+  proximas.sort((a, b) => a.start_date.localeCompare(b.start_date));
+
+  if (proximas.length === 0) {
+    p.appendChild(vacio('Nadie empieza vacaciones en las próximas dos semanas.'));
+    return p;
+  }
+  const lista = document.createElement('div');
+  lista.className = 'hoy-vacas';
+  for (const v of proximas) {
+    const dias = Math.round((new Date(v.start_date) - new Date(hoy)) / 86400000);
+    const el = document.createElement('div');
+    el.className = 'hoy-vac hoy-vac-prox';
+    el.innerHTML = '<span>🏖 <b>' + esc(v.nombre) + '</b></span>'
+      + '<span class="hoy-vac-hasta">'
+      + (dias === 1 ? 'mañana' : 'en ' + dias + ' días')
+      + ' · del ' + v.start_date.split('-').reverse().slice(0, 2).join('/')
+      + ' al ' + v.end_date.split('-').reverse().slice(0, 2).join('/') + '</span>'
+      + (v.note ? '<span class="hoy-vac-nota">' + esc(v.note) + '</span>' : '');
+    lista.appendChild(el);
+  }
+  p.appendChild(lista);
+  return p;
+}
+
+/* Resumen de la checklist del día */
+async function tarjetaTareas() {
+  const p = panel('Tareas de hoy');
+  try {
+    const { total, pendientes } = await pendientesDeHoy();
+    if (total === 0) {
+      p.appendChild(vacio('No hay tareas para hoy.'));
+      return p;
+    }
+    if (pendientes.length === 0) {
+      p.appendChild(vacio('Todas las tareas de hoy están hechas. ✓'));
+      return p;
+    }
+    const lista = document.createElement('div');
+    lista.className = 'hoy-tareas';
+    for (const t of pendientes.slice(0, 6)) {
+      const el = document.createElement('div');
+      el.className = 'hoy-tarea';
+      el.textContent = '☐ ' + t.title;
+      lista.appendChild(el);
+    }
+    if (pendientes.length > 6) {
+      const mas = document.createElement('div');
+      mas.className = 'empty-note';
+      mas.textContent = 'y ' + (pendientes.length - 6) + ' más…';
+      lista.appendChild(mas);
+    }
+    p.appendChild(lista);
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'btn small';
+    b.textContent = 'Ir a Tareas';
+    b.addEventListener('click', () => alIrA && alIrA('tareas'));
+    p.appendChild(b);
+  } catch (err) {
+    p.appendChild(vacio('No se pudieron cargar las tareas.'));
+  }
   return p;
 }
 

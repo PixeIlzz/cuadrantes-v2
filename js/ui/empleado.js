@@ -156,6 +156,124 @@ async function pintarSemana() {
 }
 
 /* =====================================================================
+   Pantalla "Hoy" del empleado
+   ===================================================================== */
+
+export async function abrirEmpHoy() {
+  const cont = $('emp-hoy');
+  cont.innerHTML = '<span class="empty-note">Cargando…</span>';
+  try {
+    cargado = false;
+    await cargarBase();
+    const hoy = isoDe(new Date());
+    cont.innerHTML = '';
+
+    // Cabecera con la fecha
+    const cab = document.createElement('div');
+    cab.className = 'panel panel-hoy-cab';
+    const f = new Date(hoy + 'T12:00:00');
+    cab.innerHTML = '<div class="hoy-fecha"></div><div class="hoy-sub"></div>';
+    cab.querySelector('.hoy-fecha').textContent = f.toLocaleDateString('es-ES',
+      { weekday: 'long', day: 'numeric', month: 'long' });
+    const yo = equipo.find((w) => w.id === ctx.workerId);
+    cab.querySelector('.hoy-sub').textContent = yo ? 'Hola, ' + yo.name : '';
+    cont.appendChild(cab);
+
+    // ¿Vacaciones hoy?
+    const vacs = await misVacaciones();
+    const vacHoy = vacs.find((v) => v.start_date <= hoy && v.end_date >= hoy);
+    if (vacHoy) {
+      const p = document.createElement('div');
+      p.className = 'panel panel-vac-hoy';
+      p.innerHTML = '<div class="vac-hoy-tit">🏖 Estás de vacaciones</div>'
+        + '<div class="vac-hoy-sub"></div>';
+      p.querySelector('.vac-hoy-sub').textContent =
+        'Hasta el ' + fmtCorto(vacHoy.end_date)
+        + (vacHoy.note ? ' · ' + vacHoy.note : '');
+      cont.appendChild(p);
+    }
+
+    // Mis turnos de hoy + notas del día
+    cont.appendChild(await tarjetaHoyTurnos(hoy));
+  } catch (err) {
+    cont.innerHTML = '';
+    toast(err.message);
+  }
+}
+
+async function tarjetaHoyTurnos(hoy) {
+  const p = document.createElement('div');
+  p.className = 'panel';
+  const h = document.createElement('h2');
+  h.textContent = 'Mi jornada de hoy';
+  p.appendChild(h);
+
+  // Buscar la semana visible que contiene hoy
+  const sem = semanas.find((s) => s.start_date <= hoy && sumarDias(s.start_date, 6) >= hoy);
+  if (!sem) {
+    p.appendChild(nota('El cuadrante de esta semana todavía no está publicado.'));
+    return p;
+  }
+  const cfg = sem.config_snapshot || {};
+  const DAYS = cfg.days || [];
+  const ROLES = cfg.roles || [];
+  const base = DAYS.filter((d) => !d.night);
+  const idx = Math.round((new Date(hoy) - new Date(sem.start_date)) / 86400000);
+  const hoyBase = base[idx];
+  if (!hoyBase) {
+    p.appendChild(nota('Hoy no es un día del cuadrante.'));
+    return p;
+  }
+  const columnas = DAYS.filter((d) => d.id === hoyBase.id || d.id === hoyBase.id + 'N');
+  const filas = await asignacionesDe(sem.id);
+
+  let tengo = false;
+  for (const col of columnas) {
+    const mios = filas.filter((a) => a.day_id === col.id
+      && (a.is_all || a.worker_id === ctx.workerId));
+    if (mios.length === 0) continue;
+    tengo = true;
+    for (const a of mios) {
+      const r = ROLES.find((x) => x.id === a.position_id);
+      const el = document.createElement('div');
+      el.className = 'turno-row' + (a.is_all ? ' todos' : '');
+      el.innerHTML = '<span class="turno-dia">' + esc(col.label) + '</span>'
+        + '<span class="turno-puesto">'
+        + (a.is_all ? 'Día completo (TODOS)' : esc(r ? r.label : '')) + '</span>';
+      p.appendChild(el);
+    }
+  }
+  if (!tengo) p.appendChild(nota('Hoy no tienes turno asignado.'));
+
+  // Notas del día que escribió el gestor
+  const notas = sem.notes || {};
+  const textos = columnas.map((c) => notas[c.id]).filter((t) => t && String(t).trim());
+  if (textos.length) {
+    const nt = document.createElement('div');
+    nt.className = 'emp-notas';
+    const h2 = document.createElement('div');
+    h2.className = 'emp-notas-tit';
+    h2.textContent = 'Notas del día';
+    nt.appendChild(h2);
+    for (const t of textos) {
+      const el = document.createElement('div');
+      el.className = 'emp-nota';
+      el.textContent = t;
+      nt.appendChild(el);
+    }
+    p.appendChild(nt);
+  }
+  return p;
+}
+
+function nota(txt) {
+  const s = document.createElement('span');
+  s.className = 'empty-note';
+  s.textContent = txt;
+  return s;
+}
+
+/* =====================================================================
    Calendario mensual de "Mis turnos"
    ===================================================================== */
 
