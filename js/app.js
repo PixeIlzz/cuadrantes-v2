@@ -9,7 +9,8 @@ import { initProgramadas, abrirProgramadas } from './ui/programadas.js';
 import { initAjustes, abrirAjustes } from './ui/ajustes.js';
 import { initAvisos, abrirAvisos, pintarTablon } from './ui/avisos.js';
 import { initHoy, abrirHoy } from './ui/hoy.js';
-import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos } from './ui/empleado.js';
+import { initTareas, abrirTareas, refrescarContadorTareas } from './ui/tareas.js';
+import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos, abrirEmpHoy } from './ui/empleado.js';
 import { canjearCodigo } from './data/invitaciones.js';
 import {
   initSolicitudes, abrirSolicitudes, refrescarContador,
@@ -30,14 +31,16 @@ window.addEventListener('unhandledrejection', (e) =>
   fallo('Fallo: ' + (e.reason?.message || e.reason)));
 
 /* ---------- Pestañas ---------- */
-const PESTANAS = ['hoy', 'cuadrante', 'programar', 'equipo', 'solicitudes', 'ajustes',
-                  'emp-cuadrante', 'emp-turnos', 'emp-solicitudes'];
+const PESTANAS = ['hoy', 'cuadrante', 'programar', 'equipo', 'tareas', 'solicitudes', 'ajustes',
+                  'emp-hoy', 'emp-cuadrante', 'emp-turnos', 'emp-solicitudes'];
 
 function cambiarPestana(nombre) {
   document.querySelectorAll('.tab-btn[data-tab]').forEach((b) =>
     b.classList.toggle('active', b.dataset.tab === nombre));
   for (const t of PESTANAS) $('tab-' + t).hidden = (t !== nombre);
   if (nombre === 'hoy') abrirHoy();
+  if (nombre === 'tareas') abrirTareas();
+  if (nombre === 'emp-hoy') abrirEmpHoy();
   if (nombre === 'equipo') abrirEquipo();
   if (nombre === 'cuadrante') abrirCuadrante();
   if (nombre === 'programar') abrirProgramadas();
@@ -86,6 +89,8 @@ function mostrarApp(session, role, biz) {
     initSolicitudes();
     initAvisos();
     initHoy((destino) => cambiarPestana(destino));
+    initTareas();
+    refrescarContadorTareas();
     refrescarContador();              // aviso de pendientes al entrar
     pintarTablon('tablon-gestor');
     pintarTablon('tablon-hoy');
@@ -94,7 +99,8 @@ function mostrarApp(session, role, biz) {
     initEmpleado();
     initMisSolicitudes();
     pintarTablon('tablon-empleado');
-    cambiarPestana('emp-cuadrante');
+    pintarTablon('tablon-emp-hoy');
+    cambiarPestana('emp-hoy');
   }
 }
 
