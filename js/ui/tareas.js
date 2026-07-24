@@ -128,24 +128,27 @@ function filaGestion(t) {
   const f = document.createElement('div');
   f.className = 'tarea-row' + (t.active ? '' : ' apagada');
 
+  const cab = document.createElement('div');
+  cab.className = 'tarea-row-cab';
+
   const izq = document.createElement('div');
   izq.className = 'tarea-row-main';
-  const tit = document.createElement('input');
-  tit.type = 'text'; tit.value = t.title; tit.maxLength = 120;
+  const tit = document.createElement('div');
   tit.className = 'tarea-row-titulo';
-  tit.addEventListener('change', async () => {
-    const v = tit.value.trim();
-    if (!v) { tit.value = t.title; return; }
-    try { await actualizarTarea(t.id, { title: v }); t.title = v; }
-    catch (err) { tit.value = t.title; toast(err.message); }
-  });
+  tit.textContent = t.title;
   const meta = document.createElement('div');
   meta.className = 'tarea-row-meta';
-  meta.textContent = textoRepeticion(t) + (t.active ? '' : ' · pausada');
+  meta.textContent = textoRepeticion(t)
+    + (t.detail ? ' · ' + t.detail : '')
+    + (t.active ? '' : ' · pausada');
   izq.append(tit, meta);
 
   const acciones = document.createElement('div');
   acciones.className = 'tarea-row-acciones';
+
+  const bEdit = document.createElement('button');
+  bEdit.type = 'button'; bEdit.className = 'btn small';
+  bEdit.textContent = 'Editar';
 
   const bAct = document.createElement('button');
   bAct.type = 'button'; bAct.className = 'btn small';
@@ -167,9 +170,132 @@ function filaGestion(t) {
     catch (err) { toast(err.message); }
   });
 
-  acciones.append(bAct, bDel);
-  f.append(izq, acciones);
+  acciones.append(bEdit, bAct, bDel);
+  cab.append(izq, acciones);
+  f.appendChild(cab);
+
+  // Panel de edición: mismas opciones que al crear
+  const editor = document.createElement('div');
+  editor.className = 'tarea-editor';
+  editor.hidden = true;
+  f.appendChild(editor);
+
+  bEdit.addEventListener('click', () => {
+    if (!editor.hidden) { editor.hidden = true; bEdit.textContent = 'Editar'; return; }
+    editor.hidden = false;
+    bEdit.textContent = 'Cerrar';
+    pintarEditor(t, editor);
+  });
+
   return f;
+}
+
+function pintarEditor(t, cont) {
+  cont.innerHTML = '';
+
+  const campo = (etiqueta, el) => {
+    const w = document.createElement('label');
+    w.className = 'ed-campo';
+    const s = document.createElement('span');
+    s.textContent = etiqueta;
+    w.append(s, el);
+    return w;
+  };
+
+  const tit = document.createElement('input');
+  tit.type = 'text'; tit.value = t.title; tit.maxLength = 120;
+
+  const det = document.createElement('input');
+  det.type = 'text'; det.value = t.detail || ''; det.maxLength = 200;
+  det.placeholder = 'Opcional';
+
+  // Tipo de repetición
+  const radios = document.createElement('div');
+  radios.className = 'tarea-radios';
+  const nombreGrupo = 'ed-rep-' + t.id;
+  const opciones = [
+    { v: 'once',   l: 'Un día' },
+    { v: 'daily',  l: 'Todos los días' },
+    { v: 'weekly', l: 'Días concretos' },
+  ];
+  for (const o of opciones) {
+    const l = document.createElement('label');
+    l.className = 'check';
+    const r = document.createElement('input');
+    r.type = 'radio'; r.name = nombreGrupo; r.value = o.v;
+    r.checked = (t.repeat_type === o.v);
+    r.addEventListener('change', refrescar);
+    l.append(r, document.createTextNode(' ' + o.l));
+    radios.appendChild(l);
+  }
+
+  // Días de la semana
+  const dias = document.createElement('div');
+  dias.className = 'tarea-dias';
+  const DIAS_UI = [[1,'L'],[2,'M'],[3,'X'],[4,'J'],[5,'V'],[6,'S'],[0,'D']];
+  for (const [v, l] of DIAS_UI) {
+    const lab = document.createElement('label');
+    lab.className = 'dia-chip';
+    const c = document.createElement('input');
+    c.type = 'checkbox'; c.value = v; c.className = 'ed-dia';
+    c.checked = (t.repeat_days || []).includes(v);
+    const sp = document.createElement('span');
+    sp.textContent = l;
+    lab.append(c, sp);
+    dias.appendChild(lab);
+  }
+
+  const fecha = document.createElement('input');
+  fecha.type = 'date';
+  fecha.value = t.due_date || '';
+
+  const wDias = campo('Días de la semana', dias);
+  const wFecha = campo('Fecha', fecha);
+
+  function refrescar() {
+    const tipo = cont.querySelector('input[name="' + nombreGrupo + '"]:checked').value;
+    wDias.hidden = (tipo !== 'weekly');
+    wFecha.hidden = (tipo !== 'once');
+  }
+
+  const guardar = document.createElement('button');
+  guardar.type = 'button'; guardar.className = 'btn primary small';
+  guardar.textContent = 'Guardar cambios';
+  guardar.addEventListener('click', async () => {
+    const titulo = tit.value.trim();
+    if (!titulo) { toast('El nombre no puede quedar vacío'); return; }
+    const tipo = cont.querySelector('input[name="' + nombreGrupo + '"]:checked').value;
+
+    const campos = {
+      title: titulo,
+      detail: det.value.trim() || null,
+      repeat_type: tipo,
+      repeat_days: [],
+      due_date: null,
+    };
+    if (tipo === 'weekly') {
+      const sel = [...cont.querySelectorAll('.ed-dia:checked')].map((c) => Number(c.value));
+      if (sel.length === 0) { toast('Elige al menos un día de la semana'); return; }
+      campos.repeat_days = sel;
+    } else if (tipo === 'once') {
+      campos.due_date = fecha.value || hoyIso();
+    }
+
+    guardar.disabled = true;
+    try {
+      await actualizarTarea(t.id, campos);
+      toast('Tarea actualizada');
+      await abrirTareas();
+    } catch (err) { toast(err.message); guardar.disabled = false; }
+  });
+
+  cont.append(
+    campo('Nombre', tit),
+    campo('Detalle', det),
+    campo('Repetición', radios),
+    wDias, wFecha, guardar,
+  );
+  refrescar();
 }
 
 async function crear() {

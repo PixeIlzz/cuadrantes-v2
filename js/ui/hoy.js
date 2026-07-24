@@ -4,6 +4,8 @@ import { ctx } from '../auth.js';
 import { listarEquipo } from '../data/equipo.js';
 import { contarPendientes } from '../data/solicitudes.js';
 import { pendientesDeHoy } from './tareas.js';
+import { marcarHecha, desmarcar, tocaHoy, listarTareas } from '../data/tareas.js';
+import { completadas } from '../data/tareas.js';
 import {
   lunesDe, sumarDias, etiquetaSemana, buscarSemana, cargarAsignaciones,
   esVisible, estadoBase, ETIQUETA_ESTADO,
@@ -129,8 +131,8 @@ async function tarjetaTurnosHoy(hoy, lunes, semana, equipo) {
 
     const delDia = filas.filter((a) => a.day_id === col.id);
     if (delDia.some((a) => a.is_all)) {
-      const chip = document.createElement('div');
-      chip.className = 'chip all-chip solo-lectura';
+      const chip = document.createElement('span');
+      chip.className = 'persona-chip persona-todos';
       chip.textContent = 'TODOS · día completo';
       bloque.appendChild(chip);
       algo = true;
@@ -142,9 +144,18 @@ async function tarjetaTurnosHoy(hoy, lunes, semana, equipo) {
         if (gente.length === 0) continue;
         const fila = document.createElement('div');
         fila.className = 'hoy-rol';
-        fila.innerHTML = '<span class="hoy-rol-nom">' + esc(r.label) + '</span>'
-          + '<span class="hoy-rol-gente">'
-          + gente.map((a) => esc(nombre(a.worker_id))).join(' · ') + '</span>';
+        const et = document.createElement('span');
+        et.className = 'hoy-rol-nom';
+        et.textContent = r.label;
+        const caja = document.createElement('span');
+        caja.className = 'hoy-rol-gente';
+        for (const a of gente) {
+          const ficha = document.createElement('span');
+          ficha.className = 'persona-chip rol-' + (ROLES.indexOf(r) % 3);
+          ficha.textContent = nombre(a.worker_id);
+          caja.appendChild(ficha);
+        }
+        fila.append(et, caja);
         bloque.appendChild(fila);
         algo = true;
       }
@@ -214,42 +225,65 @@ function tarjetaProximasVacaciones(hoy, equipo) {
   return p;
 }
 
-/* Resumen de la checklist del día */
+/* Checklist del día, marcable desde aquí mismo */
 async function tarjetaTareas() {
   const p = panel('Tareas de hoy');
-  try {
-    const { total, pendientes } = await pendientesDeHoy();
-    if (total === 0) {
-      p.appendChild(vacio('No hay tareas para hoy.'));
-      return p;
+  const cont = document.createElement('div');
+  cont.className = 'hoy-tareas';
+  p.appendChild(cont);
+
+  async function pintar() {
+    cont.innerHTML = '<span class="empty-note">Cargando…</span>';
+    try {
+      const iso = hoyIso();
+      const lista = (await listarTareas(true)).filter((t) => tocaHoy(t, iso));
+      const hechas = new Set((await completadas(iso, iso)).map((c) => c.task_id));
+
+      cont.innerHTML = '';
+      if (lista.length === 0) {
+        cont.appendChild(vacio('No hay tareas para hoy.'));
+        return;
+      }
+      const pend = lista.filter((t) => !hechas.has(t.id)).length;
+      const res = document.createElement('div');
+      res.className = 'hoy-tareas-res';
+      res.textContent = pend === 0
+        ? 'Todas hechas por hoy ✓'
+        : pend + (pend === 1 ? ' pendiente' : ' pendientes') + ' de ' + lista.length;
+      cont.appendChild(res);
+
+      for (const t of lista) {
+        const hecha = hechas.has(t.id);
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'tarea-chip' + (hecha ? ' hecha' : '');
+        chip.innerHTML = '<span class="tarea-chip-caja">' + (hecha ? '✓' : '') + '</span>'
+          + '<span class="tarea-chip-txt"></span>';
+        chip.querySelector('.tarea-chip-txt').textContent = t.title;
+        chip.title = hecha ? 'Marcar como pendiente' : 'Marcar como hecha';
+        chip.addEventListener('click', async () => {
+          chip.disabled = true;
+          try {
+            if (hecha) await desmarcar(t.id, iso);
+            else await marcarHecha(t.id, iso);
+            await pintar();
+          } catch (err) { toast(err.message); chip.disabled = false; }
+        });
+        cont.appendChild(chip);
+      }
+
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'btn small';
+      b.textContent = 'Ir a Tareas';
+      b.addEventListener('click', () => alIrA && alIrA('tareas'));
+      cont.appendChild(b);
+    } catch (err) {
+      cont.innerHTML = '';
+      cont.appendChild(vacio('No se pudieron cargar las tareas.'));
     }
-    if (pendientes.length === 0) {
-      p.appendChild(vacio('Todas las tareas de hoy están hechas. ✓'));
-      return p;
-    }
-    const lista = document.createElement('div');
-    lista.className = 'hoy-tareas';
-    for (const t of pendientes.slice(0, 6)) {
-      const el = document.createElement('div');
-      el.className = 'hoy-tarea';
-      el.textContent = '☐ ' + t.title;
-      lista.appendChild(el);
-    }
-    if (pendientes.length > 6) {
-      const mas = document.createElement('div');
-      mas.className = 'empty-note';
-      mas.textContent = 'y ' + (pendientes.length - 6) + ' más…';
-      lista.appendChild(mas);
-    }
-    p.appendChild(lista);
-    const b = document.createElement('button');
-    b.type = 'button'; b.className = 'btn small';
-    b.textContent = 'Ir a Tareas';
-    b.addEventListener('click', () => alIrA && alIrA('tareas'));
-    p.appendChild(b);
-  } catch (err) {
-    p.appendChild(vacio('No se pudieron cargar las tareas.'));
   }
+
+  await pintar();
   return p;
 }
 
