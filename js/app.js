@@ -1,18 +1,19 @@
 // Arranque, login y navegación por pestañas. v7
-import { ctx, signIn, signUp, signOut, getSession } from './auth.js?v=17';
-import { sb } from './supabase.js?v=17';
-import { toast } from './ui/toast.js?v=17';
-import { confirmar } from './ui/confirmar.js?v=17';
-import { initEquipo, abrirEquipo } from './ui/equipo.js?v=17';
-import { initCuadrante, abrirCuadrante } from './ui/cuadrante.js?v=17';
-import { initProgramadas, abrirProgramadas } from './ui/programadas.js?v=17';
-import { initAjustes, abrirAjustes } from './ui/ajustes.js?v=17';
-import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos } from './ui/empleado.js?v=17';
-import { canjearCodigo } from './data/invitaciones.js?v=17';
+import { ctx, signIn, signUp, signOut, getSession } from './auth.js?v=18';
+import { sb } from './supabase.js?v=18';
+import { toast } from './ui/toast.js?v=18';
+import { confirmar } from './ui/confirmar.js?v=18';
+import { initEquipo, abrirEquipo } from './ui/equipo.js?v=18';
+import { initCuadrante, abrirCuadrante } from './ui/cuadrante.js?v=18';
+import { initProgramadas, abrirProgramadas } from './ui/programadas.js?v=18';
+import { initAjustes, abrirAjustes } from './ui/ajustes.js?v=18';
+import { initAvisos, abrirAvisos, pintarTablon } from './ui/avisos.js?v=18';
+import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos } from './ui/empleado.js?v=18';
+import { canjearCodigo } from './data/invitaciones.js?v=18';
 import {
   initSolicitudes, abrirSolicitudes, refrescarContador,
   initMisSolicitudes, abrirMisSolicitudes,
-} from './ui/solicitudes.js?v=17';
+} from './ui/solicitudes.js?v=18';
 
 const $ = (id) => document.getElementById(id);
 const errorLogin = $('login-error');
@@ -38,7 +39,7 @@ function cambiarPestana(nombre) {
   if (nombre === 'equipo') abrirEquipo();
   if (nombre === 'cuadrante') abrirCuadrante();
   if (nombre === 'programar') abrirProgramadas();
-  if (nombre === 'ajustes') abrirAjustes();
+  if (nombre === 'ajustes') { abrirAjustes(); abrirAvisos(); }
   if (nombre === 'emp-cuadrante') abrirEmpCuadrante();
   if (nombre === 'emp-turnos') abrirMisTurnos();
   if (nombre === 'emp-solicitudes') abrirMisSolicitudes();
@@ -81,11 +82,14 @@ function mostrarApp(session, role, biz) {
       abrirCuadrante(startIso);
     });
     initSolicitudes();
+    initAvisos();
     refrescarContador();              // aviso de pendientes al entrar
+    pintarTablon('tablon-gestor');
     cambiarPestana('cuadrante');
   } else {
     initEmpleado();
     initMisSolicitudes();
+    pintarTablon('tablon-empleado');
     cambiarPestana('emp-cuadrante');
   }
 }
