@@ -1172,3 +1172,9 @@ html[data-tema="oscuro"] .prox-fila.prox-hoy{background:var(--accent-soft)}
 }
 .r-quien.ok{background:var(--t-ver-bg);color:var(--t-ver-txt)}
 .r-quien.err{background:var(--t-roj-bg);color:var(--bad)}
+
+/* ---------- Separador en la barra de acciones ---------- */
+.sep-acciones{
+  width:1px;height:22px;background:var(--line);display:inline-block;margin:0 2px;
+}
+@media (max-width:760px){ .sep-acciones{display:none} }
