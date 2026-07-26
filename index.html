@@ -4,13 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#182135">
-<title>Brigada · Turnos y equipo</title>
+<title>StaffPoint · Turnos, fichaje y gestión</title>
 <link rel="stylesheet" href="app.css">
+<script>
+  /* Se aplica antes de pintar para evitar el destello del tema contrario */
+  (function () {
+    try {
+      var m = localStorage.getItem('staffpoint-tema') || 'auto';
+      var osc = m === 'oscuro' || (m === 'auto'
+        && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.setAttribute('data-tema', osc ? 'oscuro' : 'claro');
+    } catch (e) {}
+  })();
+</script>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Brigada">
+<meta name="apple-mobile-web-app-title" content="StaffPoint">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="apple-touch-icon" href="icon-180.png">
 </head>
@@ -28,7 +39,8 @@
 <section id="vista-login" class="centro" hidden>
   <form id="form-login" class="login-card">
     <img src="icon-192.png" alt="" class="logo">
-    <h1>Brigada</h1>
+    <h1>StaffPoint</h1>
+    <p class="login-claim">Turnos, fichaje y gestión</p>
     <label for="email">Email</label>
     <input id="email" type="email" autocomplete="username" required>
     <label for="password">Contraseña</label>
@@ -45,10 +57,9 @@
   <form id="form-registro" class="login-card" hidden>
     <img src="icon-192.png" alt="" class="logo">
     <h1>Crear cuenta</h1>
-    <label for="r-codigo">Código de acceso</label>
+    <label for="r-codigo">Código de la empresa</label>
     <input id="r-codigo" type="text" autocomplete="one-time-code" maxlength="8" placeholder="Ej.: KQ7MTP" required>
-    <label for="r-nombre">Tu nombre</label>
-    <input id="r-nombre" type="text" autocomplete="name" maxlength="40" required>
+    <p id="r-quien" class="r-quien" hidden></p>
     <label for="r-email">Email</label>
     <input id="r-email" type="email" autocomplete="username" required>
     <label for="r-pass">Contraseña</label>
@@ -238,6 +249,12 @@
     </div>
 
     <div class="panel">
+      <h2>Aspecto</h2>
+      <div class="tema-opciones" id="tema-gestor"></div>
+      <p class="note">«Automático» sigue el ajuste de tu móvil o PC.</p>
+    </div>
+
+    <div class="panel">
       <h2>Instalar la aplicación</h2>
       <div class="setting-row">
         <button class="btn primary" id="btn-instalar" type="button" hidden>Instalar en este dispositivo</button>
@@ -359,6 +376,12 @@
         </label>
         <button class="btn primary" id="btn-cambiar-pass" type="button">Cambiar contraseña</button>
       </div>
+    </div>
+
+    <div class="panel">
+      <h2>Aspecto</h2>
+      <div class="tema-opciones" id="tema-empleado"></div>
+      <p class="note">«Automático» sigue el ajuste de tu móvil.</p>
     </div>
 
     <div class="panel">

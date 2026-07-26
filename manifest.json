@@ -1,7 +1,7 @@
 {
-  "name": "Brigada · Turnos y equipo",
-  "short_name": "Brigada",
-  "description": "Cuadrantes de turnos, equipo, tareas y solicitudes para hostelería.",
+  "name": "StaffPoint · Turnos, fichaje y gestión",
+  "short_name": "StaffPoint",
+  "description": "Turnos, fichaje y gestión de equipo para hostelería.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
