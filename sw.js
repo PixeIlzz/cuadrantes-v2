@@ -1,7 +1,7 @@
 /* Service worker de Cuadrantes.
    Sube VERSION en cada despliegue: al cambiar, el navegador detecta el
    service worker nuevo, descarga los archivos y avisa al usuario. */
-const VERSION = 'v3';
+const VERSION = 'v4';
 const CACHE = 'cuadrantes-' + VERSION;
 
 const ARCHIVOS = [
@@ -12,6 +12,7 @@ const ARCHIVOS = [
   './icon-192.png',
   './icon-512.png',
   './icon-180.png',
+  './icon-maskable-512.png',
   './js/app.js',
   './js/auth.js',
   './js/supabase.js',
