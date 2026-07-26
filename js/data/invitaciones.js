@@ -15,6 +15,15 @@ export async function codigoVivo(workerId) {
   return (data && data.length) ? data[0] : null;
 }
 
+/* Nombre del trabajador al que pertenece un código, sin canjearlo */
+export async function nombreDelCodigo(codigo) {
+  const { data, error } = await sb.rpc('invite_owner', {
+    p_code: (codigo || '').trim().toUpperCase(),
+  });
+  if (error) return null;
+  return data || null;
+}
+
 export async function canjearCodigo(codigo) {
   const { data, error } = await sb.rpc('redeem_invite', { p_code: codigo });
   if (error) throw new Error(traducir(error.message));
