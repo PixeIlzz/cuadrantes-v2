@@ -3,6 +3,7 @@ import { ctx, signIn, signUp, signOut, getSession } from './auth.js';
 import { sb } from './supabase.js';
 import { toast } from './ui/toast.js';
 import { initPWA } from './pwa.js';
+import { initTema } from './ui/tema.js';
 import { confirmar } from './ui/confirmar.js';
 import { initEquipo, abrirEquipo } from './ui/equipo.js';
 import { initCuadrante, abrirCuadrante } from './ui/cuadrante.js';
@@ -13,7 +14,7 @@ import { initHoy, abrirHoy } from './ui/hoy.js';
 import { initTareas, abrirTareas, refrescarContadorTareas } from './ui/tareas.js';
 import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos, abrirEmpHoy } from './ui/empleado.js';
 import { initAjustesEmpleado, abrirAjustesEmpleado } from './ui/ajustes-empleado.js';
-import { canjearCodigo } from './data/invitaciones.js';
+import { canjearCodigo, nombreDelCodigo } from './data/invitaciones.js';
 import {
   initSolicitudes, abrirSolicitudes, refrescarContador,
   initMisSolicitudes, abrirMisSolicitudes,
@@ -92,6 +93,7 @@ function mostrarApp(session, role, biz) {
     initSolicitudes();
     initAvisos();
     initHoy((destino) => cambiarPestana(destino));
+    initTema('tema-gestor');
     initTareas();
     refrescarContadorTareas();
     refrescarContador();              // aviso de pendientes al entrar
@@ -102,6 +104,7 @@ function mostrarApp(session, role, biz) {
     initEmpleado();
     initMisSolicitudes();
     initAjustesEmpleado();
+    initTema('tema-empleado');
     pintarTablon('tablon-empleado');
     pintarTablon('tablon-emp-hoy');
     cambiarPestana('emp-hoy');
@@ -163,6 +166,29 @@ $('link-volver-login').addEventListener('click', (e) => {
   $('form-login').hidden = false;
 });
 
+/* Al escribir el código completo, se muestra a quién pertenece */
+let temporizadorCodigo = null;
+$('r-codigo').addEventListener('input', () => {
+  const aviso = $('r-quien');
+  const val = $('r-codigo').value.trim().toUpperCase();
+  $('r-codigo').value = val;
+  aviso.hidden = true;
+  clearTimeout(temporizadorCodigo);
+  if (val.length < 4) return;
+  temporizadorCodigo = setTimeout(async () => {
+    const nombre = await nombreDelCodigo(val);
+    if (nombre) {
+      aviso.textContent = 'Vas a crear la cuenta de ' + nombre + '.';
+      aviso.className = 'r-quien ok';
+      aviso.hidden = false;
+    } else {
+      aviso.textContent = 'Ese código no es válido o ya se ha usado.';
+      aviso.className = 'r-quien err';
+      aviso.hidden = false;
+    }
+  }, 450);
+});
+
 $('form-registro').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = $('btn-registrar');
@@ -172,7 +198,8 @@ $('form-registro').addEventListener('submit', async (e) => {
   try {
     const codigo = $('r-codigo').value.trim().toUpperCase();
     if (codigo.length < 4) throw new Error('Escribe el código que te ha dado tu responsable.');
-    const session = await signUp($('r-email').value, $('r-pass').value, $('r-nombre').value.trim());
+    // El nombre no lo escribe el empleado: lo toma de su ficha al canjear el código
+    const session = await signUp($('r-email').value, $('r-pass').value, null);
     await canjearCodigo(codigo);
     await cargarNegocio(session);
   } catch (e2) {
