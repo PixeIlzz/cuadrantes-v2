@@ -1,7 +1,7 @@
 {
-  "name": "Cuadrantes de turnos",
-  "short_name": "Cuadrantes",
-  "description": "Cuadrantes de turnos, equipo y tareas para hostelería.",
+  "name": "Brigada · Turnos y equipo",
+  "short_name": "Brigada",
+  "description": "Cuadrantes de turnos, equipo, tareas y solicitudes para hostelería.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

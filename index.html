@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#182135">
-<title>Cuadrantes</title>
+<title>Brigada · Turnos y equipo</title>
 <link rel="stylesheet" href="app.css">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Cuadrantes">
+<meta name="apple-mobile-web-app-title" content="Brigada">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="apple-touch-icon" href="icon-180.png">
 </head>
@@ -28,7 +28,7 @@
 <section id="vista-login" class="centro" hidden>
   <form id="form-login" class="login-card">
     <img src="icon-192.png" alt="" class="logo">
-    <h1>Cuadrantes</h1>
+    <h1>Brigada</h1>
     <label for="email">Email</label>
     <input id="email" type="email" autocomplete="username" required>
     <label for="password">Contraseña</label>
@@ -36,6 +36,10 @@
     <button id="btn-entrar" class="btn primary" type="submit">Entrar</button>
     <p id="login-error" class="login-msg" role="alert"></p>
     <p class="login-alt">¿Eres empleado y tienes un código? <a href="#" id="link-registro">Crear mi cuenta</a></p>
+    <div class="login-instalar">
+      <button class="btn small" id="btn-instalar-login" type="button" hidden>📲 Instalar la app</button>
+      <span class="note ayuda-ios" hidden>Para instalarla en iPhone: <b>Compartir</b> → <b>Añadir a pantalla de inicio</b>.</span>
+    </div>
   </form>
 
   <form id="form-registro" class="login-card" hidden>
@@ -69,9 +73,10 @@
     <button class="tab-btn solo-gestor" data-tab="solicitudes">Solicitudes <span id="badge-solicitudes" class="badge" hidden></span></button>
     <button class="tab-btn solo-gestor" data-tab="ajustes">Ajustes</button>
     <button class="tab-btn active solo-empleado" data-tab="emp-hoy">Hoy</button>
-    <button class="tab-btn solo-empleado" data-tab="emp-cuadrante">Cuadrante</button>
     <button class="tab-btn solo-empleado" data-tab="emp-turnos">Mis turnos</button>
+    <button class="tab-btn solo-empleado" data-tab="emp-cuadrante">Cuadrantes</button>
     <button class="tab-btn solo-empleado" data-tab="emp-solicitudes">Solicitudes</button>
+    <button class="tab-btn solo-empleado" data-tab="emp-ajustes">Ajustes</button>
   </nav>
   <button id="btn-salir" class="tab-btn">Cerrar sesión</button>
 </header>
@@ -86,6 +91,20 @@
 
   <section class="solo-gestor" id="tab-cuadrante" hidden>
     <div class="tablon" id="tablon-gestor" hidden></div>
+    <div class="week-strip-wrap">
+      <div class="week-strip" id="week-strip"></div>
+      <div class="week-leyenda">
+        <span class="lg lg-draft">Borrador</span>
+        <span class="lg lg-scheduled">Programada</span>
+        <span class="lg lg-publicada">Publicada</span>
+        <span class="lg lg-archivada">Archivada</span>
+        <span class="lg lg-nueva">Sin crear</span>
+        <span class="lg lg-sep">|</span>
+        <span class="lg lg-ojo-on">La ve el equipo</span>
+        <span class="lg lg-ojo-off">No la ve</span>
+      </div>
+    </div>
+
     <div class="toolbar">
       <div class="week-picker">
         <button class="btn small" id="wk-prev" type="button">‹</button>
@@ -109,20 +128,6 @@
           <input type="datetime-local" id="wk-manual">
           <button class="btn small" id="btn-manual" type="button">Guardar</button>
         </div>
-      </div>
-    </div>
-
-    <div class="week-strip-wrap">
-      <div class="week-strip" id="week-strip"></div>
-      <div class="week-leyenda">
-        <span class="lg lg-draft">Borrador</span>
-        <span class="lg lg-scheduled">Programada</span>
-        <span class="lg lg-publicada">Publicada</span>
-        <span class="lg lg-archivada">Archivada</span>
-        <span class="lg lg-nueva">Sin crear</span>
-        <span class="lg lg-sep">|</span>
-        <span class="lg lg-ojo-on">La ve el equipo</span>
-        <span class="lg lg-ojo-off">No la ve</span>
       </div>
     </div>
 
@@ -237,7 +242,7 @@
       <div class="setting-row">
         <button class="btn primary" id="btn-instalar" type="button" hidden>Instalar en este dispositivo</button>
         <span class="note">Instalada funciona como una app normal: icono propio, pantalla completa y arranque más rápido.</span>
-        <span class="note" id="ayuda-ios" hidden>En iPhone: toca el botón <b>Compartir</b> de Safari y elige <b>Añadir a pantalla de inicio</b>.</span>
+        <span class="note ayuda-ios" hidden>En iPhone: toca el botón <b>Compartir</b> de Safari y elige <b>Añadir a pantalla de inicio</b>.</span>
       </div>
     </div>
     <div class="panel">
@@ -312,6 +317,58 @@
   <section id="tab-emp-hoy" class="solo-empleado" hidden>
     <div class="tablon" id="tablon-emp-hoy" hidden></div>
     <div id="emp-hoy"></div>
+    <div class="panel">
+      <h2>Próximos turnos</h2>
+      <div id="emp-proximos"></div>
+    </div>
+  </section>
+
+  <!-- ============ EMPLEADO · AJUSTES ============ -->
+  <section id="tab-emp-ajustes" class="solo-empleado" hidden>
+    <div class="panel">
+      <h2>Mi cuenta</h2>
+      <div class="ajuste-lista">
+        <div class="ajuste-fila">
+          <span class="ajuste-et">Nombre</span>
+          <span class="ajuste-val" id="emp-aj-nombre"></span>
+        </div>
+        <div class="ajuste-fila">
+          <span class="ajuste-et">Email</span>
+          <span class="ajuste-val" id="emp-aj-email"></span>
+        </div>
+        <div class="ajuste-fila">
+          <span class="ajuste-et">Negocio</span>
+          <span class="ajuste-val" id="emp-aj-negocio"></span>
+        </div>
+        <div class="ajuste-fila">
+          <span class="ajuste-et">Turnos por semana</span>
+          <span class="ajuste-val" id="emp-aj-turnos"></span>
+        </div>
+      </div>
+      <p class="note">Si algún dato no es correcto, avisa a tu responsable: solo él puede cambiarlo.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Contraseña</h2>
+      <div class="pass-form">
+        <label>Contraseña nueva
+          <input type="password" id="emp-pass1" minlength="6" autocomplete="new-password">
+        </label>
+        <label>Repítela
+          <input type="password" id="emp-pass2" minlength="6" autocomplete="new-password">
+        </label>
+        <button class="btn primary" id="btn-cambiar-pass" type="button">Cambiar contraseña</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Instalar la aplicación</h2>
+      <div class="setting-row">
+        <button class="btn primary" id="btn-instalar-emp" type="button" hidden>Instalar en este dispositivo</button>
+        <span class="note">Instalada funciona como una app normal: icono propio y pantalla completa.</span>
+        <span class="note ayuda-ios" hidden>En iPhone: toca <b>Compartir</b> en Safari y elige <b>Añadir a pantalla de inicio</b>.</span>
+      </div>
+    </div>
   </section>
 
   <!-- ============ EMPLEADO · SOLICITUDES ============ -->
@@ -343,6 +400,10 @@
     <div class="panel">
       <h2>Mi calendario</h2>
       <div id="emp-calendario"></div>
+    </div>
+    <div class="panel">
+      <h2>Mis vacaciones</h2>
+      <div id="emp-vacaciones"></div>
     </div>
     <div id="mis-turnos"></div>
   </section>
