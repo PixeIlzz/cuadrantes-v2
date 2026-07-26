@@ -55,36 +55,40 @@ function mostrarAviso(worker) {
 
 /* ---------- Instalar como aplicación ---------- */
 let promptInstalacion = null;
+const IDS_INSTALAR = ['btn-instalar', 'btn-instalar-emp', 'btn-instalar-login'];
+
+function botonesInstalar() {
+  return IDS_INSTALAR.map((id) => $(id)).filter(Boolean);
+}
 
 function prepararInstalacion() {
+  const yaInstalada = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     promptInstalacion = e;
-    const b = $('btn-instalar');
-    if (b) b.hidden = false;
+    if (!yaInstalada) botonesInstalar().forEach((b) => { b.hidden = false; });
   });
 
   window.addEventListener('appinstalled', () => {
     promptInstalacion = null;
-    const b = $('btn-instalar');
-    if (b) b.hidden = true;
+    botonesInstalar().forEach((b) => { b.hidden = true; });
   });
 
-  const b = $('btn-instalar');
-  if (b) {
+  for (const b of botonesInstalar()) {
     b.addEventListener('click', async () => {
       if (!promptInstalacion) return;
       promptInstalacion.prompt();
       await promptInstalacion.userChoice;
       promptInstalacion = null;
-      b.hidden = true;
+      botonesInstalar().forEach((x) => { x.hidden = true; });
     });
   }
 
-  // En iPhone no existe beforeinstallprompt: se explica cómo hacerlo a mano
+  // iOS no dispara beforeinstallprompt: se explica el proceso manual
   const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  const yaInstalada = window.matchMedia('(display-mode: standalone)').matches
-    || window.navigator.standalone === true;
-  const ayuda = $('ayuda-ios');
-  if (ayuda && esIOS && !yaInstalada) ayuda.hidden = false;
+  if (esIOS && !yaInstalada) {
+    document.querySelectorAll('.ayuda-ios').forEach((e) => { e.hidden = false; });
+  }
 }

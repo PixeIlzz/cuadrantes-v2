@@ -12,6 +12,7 @@ import { initAvisos, abrirAvisos, pintarTablon } from './ui/avisos.js';
 import { initHoy, abrirHoy } from './ui/hoy.js';
 import { initTareas, abrirTareas, refrescarContadorTareas } from './ui/tareas.js';
 import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos, abrirEmpHoy } from './ui/empleado.js';
+import { initAjustesEmpleado, abrirAjustesEmpleado } from './ui/ajustes-empleado.js';
 import { canjearCodigo } from './data/invitaciones.js';
 import {
   initSolicitudes, abrirSolicitudes, refrescarContador,
@@ -33,7 +34,7 @@ window.addEventListener('unhandledrejection', (e) =>
 
 /* ---------- Pestañas ---------- */
 const PESTANAS = ['hoy', 'cuadrante', 'programar', 'equipo', 'tareas', 'solicitudes', 'ajustes',
-                  'emp-hoy', 'emp-cuadrante', 'emp-turnos', 'emp-solicitudes'];
+                  'emp-hoy', 'emp-cuadrante', 'emp-turnos', 'emp-solicitudes', 'emp-ajustes'];
 
 function cambiarPestana(nombre) {
   document.querySelectorAll('.tab-btn[data-tab]').forEach((b) =>
@@ -49,6 +50,7 @@ function cambiarPestana(nombre) {
   if (nombre === 'emp-cuadrante') abrirEmpCuadrante();
   if (nombre === 'emp-turnos') abrirMisTurnos();
   if (nombre === 'emp-solicitudes') abrirMisSolicitudes();
+  if (nombre === 'emp-ajustes') abrirAjustesEmpleado();
   if (nombre === 'solicitudes') abrirSolicitudes('pending');
 }
 
@@ -99,6 +101,7 @@ function mostrarApp(session, role, biz) {
   } else {
     initEmpleado();
     initMisSolicitudes();
+    initAjustesEmpleado();
     pintarTablon('tablon-empleado');
     pintarTablon('tablon-emp-hoy');
     cambiarPestana('emp-hoy');
