@@ -48,6 +48,7 @@ export function analizar(archivos) {
     config: null,
     trabajadores: [],     // {nombre, turnos, vacaciones:[{from,to}]}
     semanas: [],          // {startIso, etiqueta, cells:{clave:[nombre|ALL]}, notas, origen}
+    sinFecha: null,       // cuadrante a medias sin fecha, para asignarla a mano
     avisos: [],
   };
 
@@ -65,7 +66,9 @@ export function analizar(archivos) {
             .map((v) => ({ from: v.from, to: v.to })),
         });
       }
-      const start = fechaDesdeEtiqueta(json.dateLabel);
+      // 'pub' trae la fecha real; la etiqueta es el respaldo
+      const start = json.pub || fechaDesdeEtiqueta(json.dateLabel);
+      const cellsConGente = Object.values(json.cells || {}).some((l) => l && l.length);
       if (start) {
         const porNombre = {};
         json.workers.forEach((w) => { porNombre[w.id] = String(w.name || '').trim(); });
@@ -84,16 +87,31 @@ export function analizar(archivos) {
           config: json.config || null,
           origen: 'semana en curso (' + nombre + ')',
         });
-      } else if (json.dateLabel) {
-        res.avisos.push('La semana en curso tenía la etiqueta «' + json.dateLabel
-          + '», que no se pudo convertir en fecha. No se importa.');
+      } else if (cellsConGente) {
+        // Cuadrante a medias sin fecha: se ofrece asignarle una a mano
+        const porNombre = {};
+        json.workers.forEach((w) => { porNombre[w.id] = String(w.name || '').trim(); });
+        const cells = {};
+        for (const k in (json.cells || {})) {
+          const lista = (json.cells[k] || [])
+            .map((id) => (id === ALL_V1 ? '__TODOS__' : porNombre[id]))
+            .filter(Boolean);
+          if (lista.length) cells[k] = lista;
+        }
+        res.sinFecha = {
+          cells,
+          notas: limpiarNotas(json.dayNotes),
+          config: json.config || null,
+          celdas: Object.values(cells).reduce((n, l) => n + l.length, 0),
+          origen: nombre,
+        };
       }
     }
 
     if (tipo === 'v1-programadas' || tipo === 'v1-publicada') {
       const lista = tipo === 'v1-programadas' ? json : [json];
       for (const p of lista) {
-        const start = fechaDesdeEtiqueta(p.d);
+        const start = p.pub || fechaDesdeEtiqueta(p.d);
         if (!start) {
           res.avisos.push('Una semana con etiqueta «' + (p.d || 'sin fecha')
             + '» no se pudo convertir en fecha. No se importa.');
@@ -165,7 +183,22 @@ function limpiarNotas(n) {
    Importar de verdad
    ===================================================================== */
 export async function importarV1(plan, opciones = {}) {
-  const { aplicarConfig = true, importarSemanas = true } = opciones;
+  const { aplicarConfig = true, importarSemanas = true, fechaSinFecha = null } = opciones;
+
+  // Si el gestor ha puesto fecha al cuadrante suelto, entra como una semana más
+  if (fechaSinFecha && plan.sinFecha) {
+    const ya = plan.semanas.some((s) => s.startIso === fechaSinFecha);
+    if (!ya) {
+      plan = { ...plan, semanas: [...plan.semanas, {
+        startIso: fechaSinFecha,
+        etiqueta: '(sin etiqueta)',
+        cells: plan.sinFecha.cells,
+        notas: plan.sinFecha.notas,
+        config: plan.sinFecha.config,
+        origen: 'cuadrante en edición',
+      }].sort((a, b) => a.startIso.localeCompare(b.startIso)) };
+    }
+  }
   const biz = ctx.business.id;
   const log = [];
 
