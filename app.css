@@ -1178,3 +1178,43 @@ html[data-tema="oscuro"] .prox-fila.prox-hoy{background:var(--accent-soft)}
   width:1px;height:22px;background:var(--line);display:inline-block;margin:0 2px;
 }
 @media (max-width:760px){ .sep-acciones{display:none} }
+
+/* =========================================================
+   Importación y copias de seguridad
+   ========================================================= */
+
+.mig-opciones{display:flex;gap:16px;flex-wrap:wrap;margin:8px 0 10px}
+.mig-resumen{margin:12px 0}
+.mig-archivos{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.mig-archivo{
+  display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;
+  background:var(--gris-bg);border-radius:8px;padding:7px 11px;font-size:.8rem;
+}
+.mig-archivo b{font-size:.85rem}
+.mig-archivo span{color:var(--ink-soft)}
+.mig-plan{
+  border:1px solid var(--line);border-radius:var(--radius);
+  padding:10px 13px;margin-bottom:10px;
+}
+.mig-fila{
+  display:flex;justify-content:space-between;gap:12px;
+  padding:6px 0;border-bottom:1px dashed var(--line);font-size:.85rem;
+}
+.mig-fila:last-child{border-bottom:none}
+.mig-et{
+  font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--ink-soft);
+}
+.mig-val{font-weight:600}
+.mig-detalle{
+  font-size:.78rem;color:var(--ink-soft);line-height:1.5;margin-bottom:6px;
+}
+.mig-aviso{
+  font-size:.78rem;background:var(--t-ama-bg);border:1px solid var(--t-ama-brd);
+  color:var(--t-ama-txt);border-radius:8px;padding:8px 11px;margin-bottom:7px;line-height:1.4;
+}
+.mig-ok{
+  font-size:.9rem;font-weight:700;color:var(--ok);
+  background:var(--t-ver-bg);border-radius:8px;padding:9px 12px;margin-bottom:8px;
+}
+.mig-sep{border:none;border-top:1px dashed var(--line);margin:16px 0}

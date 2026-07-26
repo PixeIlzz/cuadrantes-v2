@@ -260,6 +260,42 @@
     </div>
 
     <div class="panel">
+      <h2>Importar datos de la versión anterior</h2>
+      <p class="note">Selecciona los archivos de la v1. Puedes elegir varios a la vez:
+        <b>cuadrante-datos.json</b> (copia de seguridad: equipo, vacaciones, ajustes y semana en curso),
+        <b>programadas.json</b> y <b>datos.json</b> (del repositorio de la v1, con las semanas programadas y la publicada).</p>
+      <div class="mig-opciones">
+        <label class="check"><input type="checkbox" id="v1-config" checked> Importar también días y puestos</label>
+        <label class="check"><input type="checkbox" id="v1-semanas" checked> Importar las semanas</label>
+      </div>
+      <div class="setting-row">
+        <button class="btn" id="btn-elegir-v1" type="button">Elegir archivos…</button>
+        <input type="file" id="file-v1" accept=".json,application/json" multiple hidden>
+      </div>
+      <div id="v1-resumen" class="mig-resumen"></div>
+      <button class="btn primary" id="btn-importar-v1" type="button" hidden>Importar ahora</button>
+    </div>
+
+    <div class="panel">
+      <h2>Copia de seguridad</h2>
+      <p class="note">Descarga todo lo de este negocio en un archivo: ajustes, equipo, vacaciones, semanas con sus turnos, avisos y tareas. Guárdalo en un sitio seguro; contiene nombres de personas.</p>
+      <div class="setting-row">
+        <button class="btn primary" id="btn-exportar-v2" type="button">Descargar copia de seguridad</button>
+      </div>
+      <hr class="mig-sep">
+      <p class="note">Restaurar una copia añade su contenido a este negocio. No borra nada de lo que ya tengas.</p>
+      <div class="mig-opciones">
+        <label class="check"><input type="checkbox" id="backup-config" checked> Restaurar también los ajustes</label>
+      </div>
+      <div class="setting-row">
+        <button class="btn" id="btn-elegir-backup" type="button">Elegir copia…</button>
+        <input type="file" id="file-backup" accept=".json,application/json" hidden>
+      </div>
+      <div id="backup-resumen" class="mig-resumen"></div>
+      <button class="btn primary" id="btn-restaurar" type="button" hidden>Restaurar esta copia</button>
+    </div>
+
+    <div class="panel">
       <h2>Instalar la aplicación</h2>
       <div class="setting-row">
         <button class="btn primary" id="btn-instalar" type="button" hidden>Instalar en este dispositivo</button>
