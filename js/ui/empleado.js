@@ -195,6 +195,7 @@ export async function abrirEmpHoy() {
 
     // Mis turnos de hoy + notas del día
     cont.appendChild(await tarjetaHoyTurnos(hoy));
+    pintarProximos();
   } catch (err) {
     cont.innerHTML = '';
     toast(err.message);
@@ -271,6 +272,140 @@ function nota(txt) {
   s.className = 'empty-note';
   s.textContent = txt;
   return s;
+}
+
+/* ---------- Próximos turnos (pantalla Hoy) ---------- */
+export async function pintarProximos() {
+  const cont = $('emp-proximos');
+  if (!cont) return;
+  cont.innerHTML = '<span class="empty-note">Cargando…</span>';
+  try {
+    const hoy = isoDe(new Date());
+    const filas = await misAsignaciones();
+    const vacs = await misVacaciones();
+
+    // Traducir cada asignación a su fecha real
+    const porFecha = {};
+    for (const a of filas) {
+      const sem = a.weeks;
+      if (!sem) continue;
+      const cfg = sem.config_snapshot || {};
+      const DAYS = cfg.days || [];
+      const ROLES = cfg.roles || [];
+      const base = DAYS.filter((d) => !d.night);
+      const idx = base.findIndex((b) => b.id === a.day_id.replace(/N$/, ''));
+      if (idx < 0) continue;
+      const iso = sumarDias(sem.start_date, idx);
+      if (iso < hoy) continue;                      // solo de hoy en adelante
+      const dia = DAYS.find((d) => d.id === a.day_id);
+      const rol = ROLES.find((r) => r.id === a.position_id);
+      (porFecha[iso] ||= []).push({
+        col: dia ? dia.label : '',
+        puesto: a.is_all ? 'Día completo (TODOS)' : (rol ? rol.label : ''),
+        todos: a.is_all,
+      });
+    }
+
+    const fechas = Object.keys(porFecha).sort().slice(0, 7);
+    cont.innerHTML = '';
+    if (fechas.length === 0) {
+      cont.innerHTML = '<span class="empty-note">No tienes turnos próximos en los cuadrantes publicados.</span>';
+      return;
+    }
+
+    for (const iso of fechas) {
+      const d = new Date(iso + 'T12:00:00');
+      const enVac = vacs.some((v) => v.start_date <= iso && v.end_date >= iso);
+
+      const fila = document.createElement('div');
+      fila.className = 'prox-fila' + (iso === hoy ? ' prox-hoy' : '');
+
+      const caja = document.createElement('div');
+      caja.className = 'prox-fecha';
+      caja.innerHTML = '<span class="prox-num"></span><span class="prox-dow"></span>';
+      caja.querySelector('.prox-num').textContent = d.getDate();
+      caja.querySelector('.prox-dow').textContent =
+        d.toLocaleDateString('es-ES', { weekday: 'short' }).replace('.', '');
+
+      const info = document.createElement('div');
+      info.className = 'prox-info';
+      for (const t of porFecha[iso]) {
+        const l = document.createElement('div');
+        l.className = 'prox-linea' + (t.todos ? ' todos' : '');
+        l.innerHTML = '<span class="prox-col"></span><span class="prox-puesto"></span>';
+        l.querySelector('.prox-col').textContent = t.col;
+        l.querySelector('.prox-puesto').textContent = t.puesto;
+        info.appendChild(l);
+      }
+      if (enVac) {
+        const v = document.createElement('div');
+        v.className = 'prox-aviso';
+        v.textContent = '🏖 Estás de vacaciones ese día';
+        info.appendChild(v);
+      }
+      if (iso === hoy) {
+        const h = document.createElement('span');
+        h.className = 'prox-etiqueta';
+        h.textContent = 'HOY';
+        info.appendChild(h);
+      }
+
+      fila.append(caja, info);
+      cont.appendChild(fila);
+    }
+  } catch (err) {
+    cont.innerHTML = '';
+    toast(err.message);
+  }
+}
+
+/* ---------- Mis vacaciones ---------- */
+export async function pintarMisVacaciones() {
+  const cont = $('emp-vacaciones');
+  if (!cont) return;
+  cont.innerHTML = '<span class="empty-note">Cargando…</span>';
+  try {
+    const hoy = isoDe(new Date());
+    const vacs = await misVacaciones();
+    cont.innerHTML = '';
+    if (vacs.length === 0) {
+      cont.innerHTML = '<span class="empty-note">No tienes periodos de vacaciones registrados. Puedes pedirlos desde Solicitudes.</span>';
+      return;
+    }
+    const futuras = vacs.filter((v) => v.end_date >= hoy);
+    const pasadas = vacs.filter((v) => v.end_date < hoy).reverse();
+
+    const bloque = (titulo, lista, apagado) => {
+      if (lista.length === 0) return;
+      const h = document.createElement('div');
+      h.className = 'vac-grupo-tit';
+      h.textContent = titulo;
+      cont.appendChild(h);
+      for (const v of lista) {
+        const dias = Math.round(
+          (new Date(v.end_date) - new Date(v.start_date)) / 86400000) + 1;
+        const enCurso = v.start_date <= hoy && v.end_date >= hoy;
+        const el = document.createElement('div');
+        el.className = 'vac-item' + (apagado ? ' apagada' : '') + (enCurso ? ' en-curso' : '');
+        el.innerHTML =
+          '<div class="vac-item-fechas"></div>' +
+          '<div class="vac-item-dias"></div>' +
+          (v.note ? '<div class="vac-item-nota"></div>' : '') +
+          (enCurso ? '<span class="vac-item-chip">EN CURSO</span>' : '');
+        el.querySelector('.vac-item-fechas').textContent =
+          'Del ' + fmtCorto(v.start_date) + ' al ' + fmtCorto(v.end_date);
+        el.querySelector('.vac-item-dias').textContent =
+          dias + (dias === 1 ? ' día' : ' días');
+        if (v.note) el.querySelector('.vac-item-nota').textContent = v.note;
+        cont.appendChild(el);
+      }
+    };
+    bloque('Próximas y en curso', futuras, false);
+    bloque('Anteriores', pasadas, true);
+  } catch (err) {
+    cont.innerHTML = '';
+    toast(err.message);
+  }
 }
 
 /* =====================================================================
@@ -444,6 +579,7 @@ export async function abrirMisTurnos() {
     cont.innerHTML = '';
     await cargarCalendario();
     pintarCalendario();
+    pintarMisVacaciones();
 
     if (semanas.length === 0) {
       const aviso = document.createElement('div');
