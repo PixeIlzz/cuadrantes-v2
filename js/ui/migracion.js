@@ -120,6 +120,33 @@ function pintarResumen(archivos) {
     c.appendChild(a);
   }
 
+  // Cuadrante sin fecha: se ofrece asignarle un lunes
+  if (planActual.sinFecha) {
+    const caja2 = document.createElement('div');
+    caja2.className = 'mig-sinfecha';
+    caja2.innerHTML =
+      '<div class="mig-sf-tit">Hay un cuadrante sin fecha</div>' +
+      '<div class="mig-detalle">En «' + planActual.sinFecha.origen + '» hay un cuadrante a medio montar con '
+      + planActual.sinFecha.celdas + ' turnos colocados, pero sin semana asignada. '
+      + 'Si quieres conservarlo, dime a qué semana pertenece; si lo dejas vacío, no se importa.</div>' +
+      '<label class="mig-sf-campo">Lunes de esa semana' +
+      '<input type="date" id="mig-fecha-suelta"></label>';
+    c.appendChild(caja2);
+    // Ajusta al lunes lo que se elija
+    setTimeout(() => {
+      const inp = $('mig-fecha-suelta');
+      if (!inp) return;
+      inp.addEventListener('change', () => {
+        if (!inp.value) return;
+        const [y, m, d] = inp.value.split('-').map(Number);
+        const f = new Date(y, m - 1, d);
+        f.setDate(f.getDate() - ((f.getDay() + 6) % 7));
+        const p2 = (n) => String(n).padStart(2, '0');
+        inp.value = f.getFullYear() + '-' + p2(f.getMonth() + 1) + '-' + p2(f.getDate());
+      });
+    }, 0);
+  }
+
   const nota = document.createElement('div');
   nota.className = 'mig-detalle';
   nota.textContent = 'Las semanas se importan ocultas: el equipo no las verá hasta que tú las muestres.';
@@ -140,9 +167,11 @@ async function ejecutarImportacion() {
   const btn = $('btn-importar-v1');
   btn.disabled = true; btn.textContent = 'Importando…';
   try {
+    const campoFecha = $('mig-fecha-suelta');
     const log = await importarV1(planActual, {
       aplicarConfig: $('v1-config').checked,
       importarSemanas: $('v1-semanas').checked,
+      fechaSinFecha: campoFecha && campoFecha.value ? campoFecha.value : null,
     });
     $('v1-resumen').innerHTML = '<div class="mig-ok">Importación terminada</div>'
       + log.map((l) => '<div class="mig-detalle">' + l + '</div>').join('');
