@@ -10,6 +10,7 @@ import { initCuadrante, abrirCuadrante } from './ui/cuadrante.js';
 import { initProgramadas, abrirProgramadas } from './ui/programadas.js';
 import { initAjustes, abrirAjustes } from './ui/ajustes.js';
 import { initAvisos, abrirAvisos, pintarTablon } from './ui/avisos.js';
+import { initMigracion } from './ui/migracion.js';
 import { initHoy, abrirHoy } from './ui/hoy.js';
 import { initTareas, abrirTareas, refrescarContadorTareas } from './ui/tareas.js';
 import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos, abrirEmpHoy } from './ui/empleado.js';
@@ -92,6 +93,7 @@ function mostrarApp(session, role, biz) {
     });
     initSolicitudes();
     initAvisos();
+    initMigracion();
     initHoy((destino) => cambiarPestana(destino));
     initTema('tema-gestor');
     initTareas();
