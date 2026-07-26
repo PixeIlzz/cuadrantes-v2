@@ -10,6 +10,7 @@ import {
   setVisibilidad, semanaTerminada,
 } from '../data/semanas.js';
 import { confirmar, elegirOpcion } from './confirmar.js';
+import { descargarPNG, compartirPNG, imprimir } from './exportar.js';
 import { ctx } from '../auth.js';
 
 const ALL_ID = 'ALL';
@@ -485,6 +486,23 @@ async function accionVaciar() {
   } catch (err) { toast(err.message); }
 }
 
+/* ---------- Exportar ---------- */
+function datosParaExportar() {
+  return {
+    negocio: ctx.business.name,
+    startDate: semana.start_date,
+    DAYS, ROLES, cells, notas,
+    nombre: (id) => { const w = workerById(id); return w ? w.name : '?'; },
+    vacDe: (id, iso) => { const w = workerById(id); return w ? onVacation(w, iso) : false; },
+  };
+}
+
+async function accionCompartir() {
+  const d = datosParaExportar();
+  const compartido = await compartirPNG(d);
+  if (!compartido) descargarPNG(d);   // si no hay compartir nativo, se descarga
+}
+
 /* ---------- Publicación ---------- */
 
 /* Devuelve la lista de incumplimientos de mínimos, como el chequeo de la v1 */
@@ -623,6 +641,9 @@ export function initCuadrante() {
   $('btn-manual').addEventListener('click', accionFechaManual);
   $('btn-copiar').addEventListener('click', accionCopiarDe);
   $('btn-vaciar').addEventListener('click', accionVaciar);
+  $('btn-png').addEventListener('click', () => descargarPNG(datosParaExportar()));
+  $('btn-compartir').addEventListener('click', accionCompartir);
+  $('btn-imprimir').addEventListener('click', () => imprimir(datosParaExportar()));
 }
 
 export async function abrirCuadrante(startIso = null) {
