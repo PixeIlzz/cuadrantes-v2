@@ -1218,3 +1218,17 @@ html[data-tema="oscuro"] .prox-fila.prox-hoy{background:var(--accent-soft)}
   background:var(--t-ver-bg);border-radius:8px;padding:9px 12px;margin-bottom:8px;
 }
 .mig-sep{border:none;border-top:1px dashed var(--line);margin:16px 0}
+
+.mig-sinfecha{
+  border:1px solid var(--t-ama-brd);background:var(--t-ama-bg);
+  border-radius:var(--radius);padding:11px 13px;margin-bottom:10px;
+}
+.mig-sf-tit{font-size:.85rem;font-weight:700;color:var(--t-ama-txt);margin-bottom:4px}
+.mig-sf-campo{
+  display:flex;flex-direction:column;gap:4px;margin-top:8px;
+  font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--ink-soft);max-width:200px;
+}
+.mig-sf-campo input{
+  border:1px solid var(--line);border-radius:7px;padding:6px 9px;font:inherit;font-size:.85rem;
+}
