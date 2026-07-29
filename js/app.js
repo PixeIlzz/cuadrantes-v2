@@ -1,5 +1,5 @@
 // Arranque, login y navegación por pestañas. v7
-import { ctx, signIn, signUp, signOut, getSession, pedirRecuperacion, cambiarPassword, alRecuperarPassword } from './auth.js';
+import { ctx, signIn, signUp, signOut, getSession, pedirRecuperacion, cambiarPassword, cambiarEmail, alRecuperarPassword } from './auth.js';
 import { sb } from './supabase.js';
 import { toast } from './ui/toast.js';
 import { initPWA } from './pwa.js';
@@ -12,6 +12,7 @@ import { initAjustes, abrirAjustes } from './ui/ajustes.js';
 import { initAvisos, abrirAvisos, pintarTablon } from './ui/avisos.js';
 import { initMigracion } from './ui/migracion.js';
 import { initPrivacidad } from './ui/privacidad.js';
+import { initNotificaciones, refrescarBadge, accionMarcarTodas, pintarPreferencias } from './ui/notificaciones.js';
 import { initHoy, abrirHoy } from './ui/hoy.js';
 import { initTareas, abrirTareas, refrescarContadorTareas } from './ui/tareas.js';
 import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos, abrirEmpHoy } from './ui/empleado.js';
@@ -108,6 +109,8 @@ function mostrarApp(session, role, biz) {
     initMigracion();
     initHoy((destino) => cambiarPestana(destino));
     initTema('tema-gestor');
+    initNotificaciones((destino) => cambiarPestana(destino));
+    pintarPreferencias('pref-notif-gestor', true);
     initTareas();
     refrescarContadorTareas();
     refrescarContador();              // aviso de pendientes al entrar
@@ -119,6 +122,8 @@ function mostrarApp(session, role, biz) {
     initMisSolicitudes();
     initAjustesEmpleado();
     initTema('tema-empleado');
+    initNotificaciones((destino) => cambiarPestana(destino));
+    pintarPreferencias('pref-notif-empleado', false);
     pintarTablon('tablon-empleado');
     pintarTablon('tablon-emp-hoy');
     cambiarPestana('emp-hoy');
@@ -168,6 +173,26 @@ $('form-login').addEventListener('submit', async (e) => {
     btn.disabled = false; btn.textContent = 'Entrar';
   }
 });
+
+/* ---------- Cambiar email ---------- */
+async function pedirCambioEmail(inputId, btn) {
+  const val = $(inputId).value.trim();
+  if (!val || !val.includes('@')) { toast('Escribe un email válido'); return; }
+  btn.disabled = true;
+  try {
+    await cambiarEmail(val);
+    $(inputId).value = '';
+    toast('Te hemos enviado un correo a ' + val + '. Ábrelo para confirmar el cambio.');
+  } catch (err) { toast(err.message); }
+  finally { btn.disabled = false; }
+}
+const beg = $('btn-cambiar-email');
+if (beg) beg.addEventListener('click', () => pedirCambioEmail('gestor-email-nuevo', beg));
+const bee = $('btn-emp-cambiar-email');
+if (bee) bee.addEventListener('click', () => pedirCambioEmail('emp-email-nuevo', bee));
+
+const bmt = $('btn-marcar-todas');
+if (bmt) bmt.addEventListener('click', accionMarcarTodas);
 
 /* ---------- Recuperar contraseña ---------- */
 $('link-olvide').addEventListener('click', (e) => {

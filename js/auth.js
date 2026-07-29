@@ -66,6 +66,18 @@ export async function pedirRecuperacion(email) {
   if (error) throw new Error(traducirRecuperacion(error.message));
 }
 
+export async function cambiarEmail(nuevo) {
+  const { error } = await sb.auth.updateUser({ email: nuevo.trim() });
+  if (error) throw new Error(traducirEmail(error.message));
+}
+
+function traducirEmail(msg) {
+  if (/already|registrado|in use/i.test(msg)) return 'Ese email ya está en uso.';
+  if (/invalid/i.test(msg)) return 'El email no es válido.';
+  if (/rate/i.test(msg)) return 'Demasiados intentos. Espera unos minutos.';
+  return msg;
+}
+
 export async function cambiarPassword(nueva) {
   const { error } = await sb.auth.updateUser({ password: nueva });
   if (error) throw new Error(error.message);
