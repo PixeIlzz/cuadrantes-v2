@@ -1253,3 +1253,58 @@ html[data-tema="oscuro"] .prox-fila.prox-hoy{background:var(--accent-soft)}
   background:var(--t-ama-bg);border:1px solid var(--t-ama-brd);
   color:var(--t-ama-txt);border-radius:8px;padding:10px 12px;margin-top:6px;
 }
+
+/* =========================================================
+   Campanita y panel de notificaciones
+   ========================================================= */
+.campana{
+  position:relative;background:transparent;border:1.5px solid rgba(255,255,255,.25);
+  border-radius:999px;width:38px;height:38px;font-size:1.05rem;cursor:pointer;
+  color:#fff;display:grid;place-items:center;flex:0 0 auto;
+}
+.campana:hover{background:rgba(255,255,255,.1)}
+.campana .badge{
+  position:absolute;top:-4px;right:-4px;background:var(--bad);color:#fff;
+  min-width:18px;height:18px;border-radius:9px;font-size:.62rem;line-height:18px;
+  padding:0 4px;font-weight:700;
+}
+.panel-notif{
+  position:absolute;top:64px;right:12px;z-index:200;width:min(360px,92vw);
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:0 12px 40px rgba(0,0,0,.25);overflow:hidden;
+}
+.notif-cab{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px;border-bottom:1px solid var(--line);font-weight:700;font-size:.9rem;
+}
+.notif-lista{max-height:60vh;overflow-y:auto}
+.notif-vacio{padding:24px 14px;text-align:center;color:var(--ink-soft);font-size:.85rem}
+.notif-item{
+  display:flex;gap:11px;width:100%;text-align:left;background:none;border:none;
+  border-bottom:1px solid var(--line);padding:12px 14px;cursor:pointer;font:inherit;
+  align-items:flex-start;
+}
+.notif-item:hover{background:var(--gris-bg)}
+.notif-item.no-leida{background:var(--accent-soft)}
+.notif-item.no-leida:hover{background:var(--accent-soft)}
+.notif-ico{font-size:1.1rem;flex:0 0 auto;margin-top:1px}
+.notif-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.notif-tit{font-weight:700;font-size:.85rem}
+.notif-body{font-size:.8rem;color:var(--ink-soft);line-height:1.35}
+.notif-time{font-size:.68rem;color:var(--gris-txt2);margin-top:2px}
+
+/* Preferencias de notificaciones */
+.pref-lista{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+.pref-fila{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:11px 0;border-bottom:1px dashed var(--line);cursor:pointer;
+}
+.pref-fila:last-child{border-bottom:none}
+.pref-label{font-size:.88rem;font-weight:500}
+.pref-switch{width:20px;height:20px;accent-color:var(--accent);cursor:pointer;flex:0 0 auto}
+
+/* Cambiar email */
+.email-form{display:flex;flex-direction:column;gap:9px;margin-top:10px;max-width:360px}
+.email-form label{display:flex;flex-direction:column;gap:4px;font-size:.78rem;font-weight:600;color:var(--ink-soft)}
+.email-form input{border:1px solid var(--line);border-radius:8px;padding:9px 11px;font:inherit;font-size:.9rem}
+.email-form .btn{align-self:flex-start}

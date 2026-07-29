@@ -1,7 +1,7 @@
 /* Service worker de Cuadrantes.
    Sube VERSION en cada despliegue: al cambiar, el navegador detecta el
    service worker nuevo, descarga los archivos y avisa al usuario. */
-const VERSION = 'v11';
+const VERSION = 'v12';
 const CACHE = 'cuadrantes-' + VERSION;
 
 const ARCHIVOS = [
@@ -30,6 +30,7 @@ const ARCHIVOS = [
   './js/ui/exportar.js',
   './js/ui/migracion.js',
   './js/ui/privacidad.js',
+  './js/ui/notificaciones.js',
   './js/data/migracion.js',
   './js/ui/solicitudes.js',
   './js/ui/empleado.js',
@@ -41,6 +42,7 @@ const ARCHIVOS = [
   './js/data/solicitudes.js',
   './js/data/avisos.js',
   './js/data/tareas.js',
+  './js/data/notificaciones.js',
 ];
 
 self.addEventListener('install', (e) => {

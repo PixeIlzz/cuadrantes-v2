@@ -130,7 +130,17 @@
     <button class="tab-btn solo-empleado" data-tab="emp-solicitudes">Solicitudes</button>
     <button class="tab-btn solo-empleado" data-tab="emp-ajustes">Ajustes</button>
   </nav>
-  <button id="btn-salir" class="tab-btn">Cerrar sesión</button>
+  <button class="campana" id="btn-campana" type="button" aria-label="Notificaciones">
+      🔔<span id="badge-campana" class="badge" hidden></span>
+    </button>
+    <button id="btn-salir" class="tab-btn">Cerrar sesión</button>
+    <div id="panel-notif" class="panel-notif" hidden>
+      <div class="notif-cab">
+        <span>Notificaciones</span>
+        <button class="btn small" id="btn-marcar-todas" type="button">Marcar todas</button>
+      </div>
+      <div id="notif-lista" class="notif-lista"></div>
+    </div>
 </header>
 
 <main>
@@ -292,6 +302,19 @@
     <div class="panel">
       <h2>Cuenta</h2>
       <div class="setting-row"><span class="note" id="ajustes-cuenta"></span></div>
+      <div class="email-form">
+        <label>Cambiar mi email de acceso
+          <input type="email" id="gestor-email-nuevo" autocomplete="email" placeholder="nuevo@correo.com">
+        </label>
+        <button class="btn" id="btn-cambiar-email" type="button">Cambiar email</button>
+        <span class="note">Te enviaremos un correo de confirmación a la dirección nueva. El cambio no se aplica hasta que lo confirmes.</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Notificaciones</h2>
+      <p class="note">Elige de qué quieres que te avisemos.</p>
+      <div id="pref-notif-gestor" class="pref-lista"></div>
     </div>
 
     <div class="panel">
@@ -454,6 +477,23 @@
         </div>
       </div>
       <p class="note">Si algún dato no es correcto, avisa a tu responsable: solo él puede cambiarlo.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Notificaciones</h2>
+      <p class="note">Elige de qué quieres que te avisemos.</p>
+      <div id="pref-notif-empleado" class="pref-lista"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Cambiar mi email</h2>
+      <div class="email-form">
+        <label>Email nuevo
+          <input type="email" id="emp-email-nuevo" autocomplete="email" placeholder="nuevo@correo.com">
+        </label>
+        <button class="btn" id="btn-emp-cambiar-email" type="button">Cambiar email</button>
+        <span class="note">Recibirás un correo de confirmación en la dirección nueva.</span>
+      </div>
     </div>
 
     <div class="panel">
