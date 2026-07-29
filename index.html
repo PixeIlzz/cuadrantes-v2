@@ -15,6 +15,14 @@
         && window.matchMedia('(prefers-color-scheme: dark)').matches);
       document.documentElement.setAttribute('data-tema', osc ? 'oscuro' : 'claro');
     } catch (e) {}
+    /* Supabase limpia el hash nada más cargar su librería. Guardamos aquí,
+       lo primero de todo, si venimos de un enlace de recuperación. */
+    try {
+      var h = window.location.hash || '';
+      if (h.indexOf('type=recovery') !== -1 || h.indexOf('recuperar') !== -1) {
+        window.__staffpoint_recovery = true;
+      }
+    } catch (e) {}
   })();
 </script>
 <link rel="manifest" href="manifest.json">
