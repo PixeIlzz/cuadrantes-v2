@@ -47,11 +47,36 @@
     <input id="password" type="password" autocomplete="current-password" required>
     <button id="btn-entrar" class="btn primary" type="submit">Entrar</button>
     <p id="login-error" class="login-msg" role="alert"></p>
+    <p class="login-alt"><a href="#" id="link-olvide">He olvidado mi contraseña</a></p>
     <p class="login-alt">¿Eres empleado y tienes un código? <a href="#" id="link-registro">Crear mi cuenta</a></p>
+    <p class="login-alt"><a href="#" class="link-privacidad">Privacidad y datos</a></p>
     <div class="login-instalar">
       <button class="btn small" id="btn-instalar-login" type="button" hidden>📲 Instalar la app</button>
       <span class="note ayuda-ios" hidden>Para instalarla en iPhone: <b>Compartir</b> → <b>Añadir a pantalla de inicio</b>.</span>
     </div>
+  </form>
+
+  <form id="form-recuperar" class="login-card" hidden>
+    <img src="icon-192.png" alt="" class="logo">
+    <h1>Recuperar acceso</h1>
+    <p class="login-claim">Te enviaremos un enlace a tu correo</p>
+    <label for="rec-email">Email</label>
+    <input id="rec-email" type="email" autocomplete="username" required>
+    <button id="btn-recuperar" class="btn primary" type="submit">Enviar enlace</button>
+    <p id="recuperar-msg" class="login-msg" role="alert"></p>
+    <p class="login-alt"><a href="#" id="link-volver-login2">Volver a iniciar sesión</a></p>
+  </form>
+
+  <form id="form-nueva-pass" class="login-card" hidden>
+    <img src="icon-192.png" alt="" class="logo">
+    <h1>Nueva contraseña</h1>
+    <p class="login-claim">Elige una contraseña para tu cuenta</p>
+    <label for="np1">Contraseña nueva</label>
+    <input id="np1" type="password" minlength="6" autocomplete="new-password" required>
+    <label for="np2">Repítela</label>
+    <input id="np2" type="password" minlength="6" autocomplete="new-password" required>
+    <button id="btn-nueva-pass" class="btn primary" type="submit">Guardar y entrar</button>
+    <p id="nueva-pass-msg" class="login-msg" role="alert"></p>
   </form>
 
   <form id="form-registro" class="login-card" hidden>
@@ -260,6 +285,15 @@
     </div>
 
     <div class="panel">
+      <h2>Privacidad y protección de datos</h2>
+      <p class="note">StaffPoint guarda nombres, turnos, vacaciones y solicitudes de tu equipo: son datos personales y la ley te obliga a informarles.</p>
+      <div class="setting-row">
+        <button class="btn" id="btn-ver-privacidad" type="button">Ver el aviso de privacidad</button>
+        <button class="btn" id="btn-copiar-aviso" type="button">Copiar texto para el equipo</button>
+      </div>
+    </div>
+
+    <div class="panel">
       <h2>Importar datos de la versión anterior</h2>
       <p class="note">Selecciona los archivos de la v1. Puedes elegir varios a la vez:
         <b>cuadrante-datos.json</b> (copia de seguridad: equipo, vacaciones, ajustes y semana en curso),
@@ -416,6 +450,14 @@
           <input type="password" id="emp-pass2" minlength="6" autocomplete="new-password">
         </label>
         <button class="btn primary" id="btn-cambiar-pass" type="button">Cambiar contraseña</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Privacidad</h2>
+      <p class="note">Aquí puedes ver qué datos tuyos guarda la aplicación, quién los ve y cuáles son tus derechos.</p>
+      <div class="setting-row">
+        <button class="btn" id="btn-privacidad-emp" type="button">Ver el aviso de privacidad</button>
       </div>
     </div>
 

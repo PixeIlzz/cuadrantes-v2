@@ -1232,3 +1232,24 @@ html[data-tema="oscuro"] .prox-fila.prox-hoy{background:var(--accent-soft)}
 .mig-sf-campo input{
   border:1px solid var(--line);border-radius:7px;padding:6px 9px;font:inherit;font-size:.85rem;
 }
+
+/* =========================================================
+   Aviso de privacidad
+   ========================================================= */
+.modal-privacidad{max-width:560px;text-align:left}
+.priv-tit{
+  font-size:1.05rem;font-weight:700;margin-bottom:12px;
+  text-transform:uppercase;letter-spacing:.04em;
+}
+.priv-cuerpo{max-height:62vh;overflow-y:auto;margin-bottom:16px;padding-right:4px}
+.priv-bloque{margin-bottom:13px}
+.priv-h{
+  font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--accent);margin-bottom:3px;
+}
+.priv-p{font-size:.85rem;line-height:1.5;color:var(--ink)}
+.priv-nota-gestor{
+  font-size:.8rem;line-height:1.5;
+  background:var(--t-ama-bg);border:1px solid var(--t-ama-brd);
+  color:var(--t-ama-txt);border-radius:8px;padding:10px 12px;margin-top:6px;
+}
