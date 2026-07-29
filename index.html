@@ -22,6 +22,14 @@
       if (h.indexOf('type=recovery') !== -1 || h.indexOf('recuperar') !== -1) {
         window.__staffpoint_recovery = true;
       }
+      /* Si por lo que sea quedara un doble hash de versiones antiguas,
+         lo normalizamos para que Supabase lea bien su token. */
+      if ((h.match(/#/g) || []).length > 1) {
+        var real = h.substring(h.indexOf('#', 1));   // desde el segundo #
+        if (real.indexOf('access_token') !== -1) {
+          history.replaceState(null, '', location.pathname + location.search + real);
+        }
+      }
     } catch (e) {}
   })();
 </script>
