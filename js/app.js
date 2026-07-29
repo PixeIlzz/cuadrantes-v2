@@ -1,5 +1,5 @@
 // Arranque, login y navegación por pestañas. v7
-import { ctx, signIn, signUp, signOut, getSession } from './auth.js';
+import { ctx, signIn, signUp, signOut, getSession, pedirRecuperacion, cambiarPassword } from './auth.js';
 import { sb } from './supabase.js';
 import { toast } from './ui/toast.js';
 import { initPWA } from './pwa.js';
@@ -11,6 +11,7 @@ import { initProgramadas, abrirProgramadas } from './ui/programadas.js';
 import { initAjustes, abrirAjustes } from './ui/ajustes.js';
 import { initAvisos, abrirAvisos, pintarTablon } from './ui/avisos.js';
 import { initMigracion } from './ui/migracion.js';
+import { initPrivacidad } from './ui/privacidad.js';
 import { initHoy, abrirHoy } from './ui/hoy.js';
 import { initTareas, abrirTareas, refrescarContadorTareas } from './ui/tareas.js';
 import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos, abrirEmpHoy } from './ui/empleado.js';
@@ -61,7 +62,15 @@ document.querySelectorAll('.tab-btn[data-tab]').forEach((btn) => {
 });
 
 /* ---------- Vistas ---------- */
+function soloFormulario(id) {
+  for (const f of ['form-login','form-registro','form-recuperar','form-nueva-pass']) {
+    const el = $(f);
+    if (el) el.hidden = (f !== id);
+  }
+}
+
 function mostrarLogin() {
+  soloFormulario('form-login');
   $('vista-login').hidden = false;
   $('vista-app').hidden = true;
   $('cargando').hidden = true;
@@ -156,6 +165,55 @@ $('form-login').addEventListener('submit', async (e) => {
   }
 });
 
+/* ---------- Recuperar contraseña ---------- */
+$('link-olvide').addEventListener('click', (e) => {
+  e.preventDefault();
+  soloFormulario('form-recuperar');
+  $('rec-email').value = $('email').value;
+});
+$('link-volver-login2').addEventListener('click', (e) => {
+  e.preventDefault();
+  soloFormulario('form-login');
+});
+
+$('form-recuperar').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = $('btn-recuperar');
+  const msg = $('recuperar-msg');
+  msg.style.color = '#c62838'; msg.textContent = '';
+  btn.disabled = true; btn.textContent = 'Enviando…';
+  try {
+    await pedirRecuperacion($('rec-email').value);
+    msg.style.color = '#1d7a4f';
+    msg.textContent = 'Si esa dirección tiene cuenta, te llegará un correo con el enlace. Revisa también la carpeta de spam.';
+  } catch (err) {
+    msg.textContent = err.message;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Enviar enlace';
+  }
+});
+
+$('form-nueva-pass').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = $('btn-nueva-pass');
+  const msg = $('nueva-pass-msg');
+  msg.style.color = '#c62838'; msg.textContent = '';
+  const p1 = $('np1').value, p2 = $('np2').value;
+  if (p1.length < 6) { msg.textContent = 'La contraseña debe tener al menos 6 caracteres.'; return; }
+  if (p1 !== p2) { msg.textContent = 'Las dos contraseñas no coinciden.'; return; }
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  try {
+    await cambiarPassword(p1);
+    history.replaceState(null, '', location.pathname);
+    const session = await getSession();
+    if (session) await cargarNegocio(session);
+    else { soloFormulario('form-login'); toast('Contraseña cambiada. Ya puedes entrar.'); }
+  } catch (err) {
+    msg.textContent = err.message;
+    btn.disabled = false; btn.textContent = 'Guardar y entrar';
+  }
+});
+
 /* ---------- Registro con código de invitación ---------- */
 $('link-registro').addEventListener('click', (e) => {
   e.preventDefault();
@@ -223,10 +281,22 @@ $('btn-salir').addEventListener('click', async () => {
 /* ---------- Arranque ---------- */
 initPWA();
 
+initPrivacidad();
+
+/* Al volver del correo de recuperación, Supabase deja la sesión abierta
+   y el marcador #recuperar en la URL: se pide la contraseña nueva. */
+const vieneDeRecuperar = location.hash.includes('recuperar')
+  || location.hash.includes('type=recovery');
+
 try {
   paso('Comprobando sesión…');
   const session = await getSession();
-  if (session) {
+  if (vieneDeRecuperar && session) {
+    $('vista-login').hidden = false;
+    $('vista-app').hidden = true;
+    $('cargando').hidden = true;
+    soloFormulario('form-nueva-pass');
+  } else if (session) {
     await cargarNegocio(session);
   } else {
     mostrarLogin();

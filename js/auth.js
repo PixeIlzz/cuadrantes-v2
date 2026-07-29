@@ -48,6 +48,29 @@ export async function signUp(email, password, nombre) {
   return data.session;
 }
 
+/* Envía el correo de recuperación. La URL de vuelta apunta a la propia app
+   con el marcador #recuperar, que el arranque detecta. */
+export async function pedirRecuperacion(email) {
+  const destino = location.origin + location.pathname + '#recuperar';
+  const { error } = await sb.auth.resetPasswordForEmail(email.trim(), {
+    redirectTo: destino,
+  });
+  if (error) throw new Error(traducirRecuperacion(error.message));
+}
+
+export async function cambiarPassword(nueva) {
+  const { error } = await sb.auth.updateUser({ password: nueva });
+  if (error) throw new Error(error.message);
+}
+
+function traducirRecuperacion(msg) {
+  if (/rate limit|too many/i.test(msg))
+    return 'Se han pedido demasiados correos. Espera unos minutos.';
+  if (/not authorized|not allowed/i.test(msg))
+    return 'El servicio de correo todavía no está configurado. Avisa a tu responsable.';
+  return msg;
+}
+
 function traducirRegistro(msg) {
   if (/already registered|already been registered/i.test(msg))
     return 'Ya existe una cuenta con ese email. Inicia sesión.';
