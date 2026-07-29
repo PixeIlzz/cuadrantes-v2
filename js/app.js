@@ -1,5 +1,5 @@
 // Arranque, login y navegación por pestañas. v7
-import { ctx, signIn, signUp, signOut, getSession, pedirRecuperacion, cambiarPassword } from './auth.js';
+import { ctx, signIn, signUp, signOut, getSession, pedirRecuperacion, cambiarPassword, alRecuperarPassword } from './auth.js';
 import { sb } from './supabase.js';
 import { toast } from './ui/toast.js';
 import { initPWA } from './pwa.js';
@@ -18,9 +18,12 @@ import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos, abrirEmpHoy } from './
 import { initAjustesEmpleado, abrirAjustesEmpleado } from './ui/ajustes-empleado.js';
 import { canjearCodigo, nombreDelCodigo } from './data/invitaciones.js';
 import {
+
   initSolicitudes, abrirSolicitudes, refrescarContador,
   initMisSolicitudes, abrirMisSolicitudes,
 } from './ui/solicitudes.js';
+
+let recuperando = false;   // true mientras el usuario cambia su contrasena desde el correo
 
 const $ = (id) => document.getElementById(id);
 const errorLogin = $('login-error');
@@ -123,6 +126,7 @@ function mostrarApp(session, role, biz) {
 }
 
 async function cargarNegocio(session) {
+  if (recuperando) return;   // durante la recuperación no se entra a la app
   paso('Cargando tu negocio…');
   const { data: mem, error: e1 } = await sb
     .from('memberships').select('role, business_id');
@@ -204,6 +208,7 @@ $('form-nueva-pass').addEventListener('submit', async (e) => {
   btn.disabled = true; btn.textContent = 'Guardando…';
   try {
     await cambiarPassword(p1);
+    recuperando = false;
     history.replaceState(null, '', location.pathname);
     const session = await getSession();
     if (session) await cargarNegocio(session);
@@ -283,19 +288,27 @@ initPWA();
 
 initPrivacidad();
 
-/* Al volver del correo de recuperación, Supabase deja la sesión abierta
-   y el marcador #recuperar en la URL: se pide la contraseña nueva. */
-const vieneDeRecuperar = location.hash.includes('recuperar')
-  || location.hash.includes('type=recovery');
+function mostrarNuevaPassword() {
+  recuperando = true;
+  $('vista-login').hidden = false;
+  $('vista-app').hidden = true;
+  $('cargando').hidden = true;
+  soloFormulario('form-nueva-pass');
+}
+
+/* Vía fiable: el evento que dispara Supabase al volver del correo */
+alRecuperarPassword(mostrarNuevaPassword);
+
+/* Respaldo: si el enlace trae el tipo recovery en la URL, por si el evento
+   llegara antes de registrar el listener */
+const hashRecovery = location.hash.includes('type=recovery')
+  || location.hash.includes('recuperar');
 
 try {
   paso('Comprobando sesión…');
   const session = await getSession();
-  if (vieneDeRecuperar && session) {
-    $('vista-login').hidden = false;
-    $('vista-app').hidden = true;
-    $('cargando').hidden = true;
-    soloFormulario('form-nueva-pass');
+  if (hashRecovery && session) {
+    mostrarNuevaPassword();
   } else if (session) {
     await cargarNegocio(session);
   } else {

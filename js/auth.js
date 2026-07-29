@@ -50,6 +50,14 @@ export async function signUp(email, password, nombre) {
 
 /* Envía el correo de recuperación. La URL de vuelta apunta a la propia app
    con el marcador #recuperar, que el arranque detecta. */
+/* Supabase dispara PASSWORD_RECOVERY cuando el usuario vuelve del enlace
+   del correo. Es más fiable que leer la URL a mano. */
+export function alRecuperarPassword(callback) {
+  sb.auth.onAuthStateChange((evento) => {
+    if (evento === 'PASSWORD_RECOVERY') callback();
+  });
+}
+
 export async function pedirRecuperacion(email) {
   const destino = location.origin + location.pathname + '#recuperar';
   const { error } = await sb.auth.resetPasswordForEmail(email.trim(), {
