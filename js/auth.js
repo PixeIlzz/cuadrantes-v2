@@ -59,7 +59,7 @@ export function alRecuperarPassword(callback) {
 }
 
 export async function pedirRecuperacion(email) {
-  const destino = location.origin + location.pathname + '#recuperar';
+  const destino = location.origin + location.pathname;
   const { error } = await sb.auth.resetPasswordForEmail(email.trim(), {
     redirectTo: destino,
   });
