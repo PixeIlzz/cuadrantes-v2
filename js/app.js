@@ -299,9 +299,10 @@ function mostrarNuevaPassword() {
 /* Vía fiable: el evento que dispara Supabase al volver del correo */
 alRecuperarPassword(mostrarNuevaPassword);
 
-/* Respaldo: si el enlace trae el tipo recovery en la URL, por si el evento
-   llegara antes de registrar el listener */
-const hashRecovery = location.hash.includes('type=recovery')
+/* Respaldo: el hash se capturó en index.html antes de que Supabase lo
+   limpiara. También miramos el hash actual por si aún estuviera. */
+const hashRecovery = window.__staffpoint_recovery === true
+  || location.hash.includes('type=recovery')
   || location.hash.includes('recuperar');
 
 try {
