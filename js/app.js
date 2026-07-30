@@ -326,9 +326,11 @@ alRecuperarPassword(mostrarNuevaPassword);
 
 /* Respaldo: el hash se capturó en index.html antes de que Supabase lo
    limpiara. También miramos el hash actual por si aún estuviera. */
-const hashRecovery = window.__staffpoint_recovery === true
-  || location.hash.includes('type=recovery')
-  || location.hash.includes('recuperar');
+// Solo es recuperación si el tipo es recovery (no signup, que es confirmar registro)
+const hashRecovery = (window.__staffpoint_recovery === true
+    || location.hash.includes('type=recovery')
+    || location.hash.includes('recuperar'))
+  && !location.hash.includes('type=signup');
 
 try {
   paso('Comprobando sesión…');

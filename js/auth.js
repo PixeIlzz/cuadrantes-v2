@@ -38,7 +38,11 @@ export async function signUp(email, password, nombre) {
   const { data, error } = await sb.auth.signUp({
     email: email.trim(),
     password,
-    options: { data: { full_name: nombre } },
+    options: {
+      data: { full_name: nombre },
+      // El enlace del correo debe volver a la app, no a la raíz del dominio.
+      emailRedirectTo: location.origin + location.pathname,
+    },
   });
   if (error) throw new Error(traducirRegistro(error.message));
   if (!data.session) {
