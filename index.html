@@ -20,7 +20,8 @@
     try {
       var h = window.location.hash || '';
       if ((h.indexOf('type=recovery') !== -1 || h.indexOf('recuperar') !== -1)
-          && h.indexOf('type=signup') === -1) {
+          && h.indexOf('type=signup') === -1
+          && h.indexOf('type=email_change') === -1) {
         window.__staffpoint_recovery = true;
       }
       /* Si por lo que sea quedara un doble hash de versiones antiguas,
