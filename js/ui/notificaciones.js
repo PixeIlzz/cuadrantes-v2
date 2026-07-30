@@ -1,7 +1,8 @@
 // Campanita de notificaciones + centro de preferencias en Ajustes.
 import { toast } from './toast.js';
+import { confirmar } from './confirmar.js';
 import {
-  listarNotificaciones, contarNoLeidas, marcarLeida, marcarTodasLeidas,
+  listarNotificaciones, contarNoLeidas, marcarLeida, marcarTodasLeidas, borrarTodas,
   leerPreferencias, guardarPreferencia, TIPOS_GESTOR, TIPOS_EMPLEADO,
 } from '../data/notificaciones.js';
 
@@ -94,6 +95,19 @@ function fila(n) {
     if (n.link_tab && irAPestana) irAPestana(n.link_tab);
   });
   return el;
+}
+
+export async function accionBorrarTodas() {
+  const ok = await confirmar('¿Borrar todas tus notificaciones? No se puede deshacer.',
+    { textoOk: 'Borrar', peligro: true });
+  if (!ok) return;
+  try {
+    await borrarTodas();
+    refrescarBadge();
+    const lista = $('notif-lista');
+    if (lista) lista.innerHTML = '<div class="notif-vacio">No tienes notificaciones.</div>';
+    toast('Notificaciones borradas');
+  } catch (err) { toast(err.message); }
 }
 
 export async function accionMarcarTodas() {

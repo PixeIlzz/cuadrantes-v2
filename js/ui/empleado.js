@@ -51,33 +51,12 @@ export async function abrirEmpCuadrante() {
     if (semanas.length === 0) {
       $('emp-week-label').textContent = '';
       cont.innerHTML = '<span class="empty-note">Todavía no hay ningún cuadrante publicado.</span>';
-      $('emp-people').innerHTML = '';
       return;
     }
-    pintarPersonas();
     await pintarSemana();
   } catch (err) {
     cont.innerHTML = '';
     toast(err.message);
-  }
-}
-
-function pintarPersonas() {
-  const box = $('emp-people');
-  box.innerHTML = '';
-  for (const w of equipo) {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'people-chip'
-      + (resaltado === w.id ? ' on' : '')
-      + (ctx.workerId === w.id ? ' yo' : '');
-    b.textContent = w.name + (ctx.workerId === w.id ? ' (tú)' : '');
-    b.addEventListener('click', () => {
-      resaltado = (resaltado === w.id) ? null : w.id;
-      pintarPersonas();
-      pintarSemana();
-    });
-    box.appendChild(b);
   }
 }
 
@@ -133,11 +112,20 @@ async function pintarSemana() {
           zone.appendChild(vac);
         }
         for (const id of lista) {
-          const chip = document.createElement('div');
-          chip.className = 'chip solo-lectura'
+          const chip = document.createElement('button');
+          chip.type = 'button';
+          chip.className = 'chip chip-selec'
             + (id === ALL_ID ? ' all-chip' : '')
-            + (resaltado && id === resaltado ? ' hl' : '');
+            + (ctx.workerId === id ? ' yo' : '')
+            + (resaltado && id === resaltado ? ' hl' : '')
+            + (resaltado && id !== resaltado && id !== ALL_ID ? ' atenuado' : '');
           chip.textContent = id === ALL_ID ? 'TODOS' : nombre(id);
+          if (id !== ALL_ID) {
+            chip.addEventListener('click', () => {
+              resaltado = (resaltado === id) ? null : id;
+              pintarSemana();
+            });
+          }
           zone.appendChild(chip);
         }
         block.appendChild(zone);
@@ -440,8 +428,10 @@ async function cargarCalendario() {
     const iso = sumarDias(sem.start_date, idx);
     const ri = ROLES.findIndex((r) => r.id === a.position_id);
     const rol = ROLES[ri];
+    // En 'Mis turnos' solo importa si trabajo ese día, no de qué puesto.
+    // Un único color para todos los turnos; el día completo se distingue.
     (diasConTurno[iso] ||= []).push({
-      color: a.is_all ? 'var(--ink)' : colorPuesto(ri < 0 ? 0 : ri),
+      color: a.is_all ? 'var(--par)' : 'var(--accent)',
       label: a.is_all ? 'Día completo' : (rol ? rol.label : ''),
     });
   }
@@ -540,11 +530,11 @@ function pintarCalendario() {
     } else if (turnos.length) {
       const puntos = document.createElement('span');
       puntos.className = 'cal-puntos';
-      for (const t of turnos.slice(0, 3)) {
-        const p = document.createElement('i');
-        p.style.background = t.color;
-        puntos.appendChild(p);
-      }
+      // Un solo punto por día: azul si trabajo, naranja si es día completo.
+      const hayCompleto = turnos.some((x) => x.label === 'Día completo');
+      const p = document.createElement('i');
+      p.style.background = hayCompleto ? 'var(--par)' : 'var(--accent)';
+      puntos.appendChild(p);
       c.appendChild(puntos);
     }
 
@@ -559,7 +549,8 @@ function pintarCalendario() {
 
   const ley = document.createElement('div');
   ley.className = 'cal-leyenda';
-  ley.innerHTML = '<span class="cl cl-turno">Con turno</span>'
+  ley.innerHTML = '<span class="cl cl-turno">Trabajo</span>'
+    + '<span class="cl cl-completo">Día completo</span>'
     + '<span class="cl cl-vac">Vacaciones</span>'
     + '<span class="cl cl-hoy">Hoy</span>';
   cont.appendChild(ley);
