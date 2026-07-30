@@ -13,6 +13,7 @@ import { initAvisos, abrirAvisos, pintarTablon } from './ui/avisos.js';
 import { initMigracion } from './ui/migracion.js';
 import { initPrivacidad } from './ui/privacidad.js';
 import { initNotificaciones, refrescarBadge, accionMarcarTodas, accionBorrarTodas, pintarPreferencias } from './ui/notificaciones.js';
+import { initPushUI } from './ui/push.js';
 import { initHoy, abrirHoy } from './ui/hoy.js';
 import { initTareas, abrirTareas, refrescarContadorTareas } from './ui/tareas.js';
 import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos, abrirEmpHoy } from './ui/empleado.js';
@@ -111,6 +112,7 @@ function mostrarApp(session, role, biz) {
     initTema('tema-gestor');
     initNotificaciones((destino) => cambiarPestana(destino));
     pintarPreferencias('pref-notif-gestor', true);
+    initPushUI('btn-push-gestor');
     initTareas();
     refrescarContadorTareas();
     refrescarContador();              // aviso de pendientes al entrar
@@ -124,6 +126,7 @@ function mostrarApp(session, role, biz) {
     initTema('tema-empleado');
     initNotificaciones((destino) => cambiarPestana(destino));
     pintarPreferencias('pref-notif-empleado', false);
+    initPushUI('btn-push-empleado');
     pintarTablon('tablon-empleado');
     pintarTablon('tablon-emp-hoy');
     cambiarPestana('emp-hoy');
@@ -198,6 +201,21 @@ async function pedirCambioEmail(inputId, btn) {
 }
 const beg = $('btn-cambiar-email');
 if (beg) beg.addEventListener('click', () => pedirCambioEmail('gestor-email-nuevo', beg));
+
+// Cambio de contraseña del gestor
+const bgp = $('btn-gestor-cambiar-pass');
+if (bgp) bgp.addEventListener('click', async () => {
+  const p1 = $('gestor-pass1').value, p2 = $('gestor-pass2').value;
+  if (p1.length < 6) { toast('La contraseña debe tener al menos 6 caracteres'); return; }
+  if (p1 !== p2) { toast('Las dos contraseñas no coinciden'); return; }
+  bgp.disabled = true; bgp.textContent = 'Guardando…';
+  try {
+    await cambiarPassword(p1);
+    $('gestor-pass1').value = ''; $('gestor-pass2').value = '';
+    toast('Contraseña cambiada');
+  } catch (err) { toast('No se pudo cambiar: ' + err.message); }
+  finally { bgp.disabled = false; bgp.textContent = 'Cambiar contraseña'; }
+});
 const bee = $('btn-emp-cambiar-email');
 if (bee) bee.addEventListener('click', () => pedirCambioEmail('emp-email-nuevo', bee));
 
@@ -331,6 +349,15 @@ $('btn-salir').addEventListener('click', async () => {
 
 /* ---------- Arranque ---------- */
 initPWA();
+
+// Cuando se pulsa una notificación push, el SW nos dice a qué pestaña ir
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', (e) => {
+    if (e.data && e.data.tipo === 'abrir-tab' && e.data.tab) {
+      try { cambiarPestana(e.data.tab); } catch (_) {}
+    }
+  });
+}
 
 initPrivacidad();
 
