@@ -1326,3 +1326,6 @@ html[data-tema="oscuro"] .prox-fila.prox-hoy{background:var(--accent-soft)}
 .notif-acciones{display:flex;gap:6px}
 .btn.small.peligro{color:var(--bad);border-color:var(--bad)}
 .btn.small.peligro:hover{background:var(--bad);color:#fff}
+
+/* Botón de activar push */
+.push-btn{margin-top:10px}

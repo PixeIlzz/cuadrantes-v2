@@ -1,7 +1,7 @@
 /* Service worker de Cuadrantes.
    Sube VERSION en cada despliegue: al cambiar, el navegador detecta el
    service worker nuevo, descarga los archivos y avisa al usuario. */
-const VERSION = 'v16';
+const VERSION = 'v17';
 const CACHE = 'cuadrantes-' + VERSION;
 
 const ARCHIVOS = [
@@ -31,6 +31,7 @@ const ARCHIVOS = [
   './js/ui/migracion.js',
   './js/ui/privacidad.js',
   './js/ui/notificaciones.js',
+  './js/ui/push.js',
   './js/data/migracion.js',
   './js/ui/solicitudes.js',
   './js/ui/empleado.js',
@@ -95,5 +96,38 @@ self.addEventListener('fetch', (e) => {
       }
       throw new Error('Sin conexión y sin copia guardada');
     }
+  })());
+});
+
+/* =========================================================
+   Notificaciones push (Entrega B)
+   ========================================================= */
+self.addEventListener('push', (e) => {
+  let datos = { title: 'StaffPoint', body: '', tab: '' };
+  try { if (e.data) datos = { ...datos, ...e.data.json() }; } catch (_) {}
+  const opciones = {
+    body: datos.body,
+    icon: './icon-192.png',
+    badge: './icon-192.png',
+    data: { tab: datos.tab || '' },
+    vibrate: [80, 40, 80],
+  };
+  e.waitUntil(self.registration.showNotification(datos.title, opciones));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const tab = (e.notification.data && e.notification.data.tab) || '';
+  const destino = self.location.origin + self.location.pathname.replace(/sw\.js$/, '')
+    + (tab ? '#tab=' + tab : '');
+  e.waitUntil((async () => {
+    const clientes = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const c of clientes) {
+      if (c.url.includes(self.location.pathname.replace(/sw\.js$/, '')) && 'focus' in c) {
+        c.postMessage({ tipo: 'abrir-tab', tab });
+        return c.focus();
+      }
+    }
+    if (self.clients.openWindow) return self.clients.openWindow(destino);
   })());
 });

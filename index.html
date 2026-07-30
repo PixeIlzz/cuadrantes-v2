@@ -314,12 +314,23 @@
         <button class="btn" id="btn-cambiar-email" type="button">Cambiar email</button>
         <span class="note">Te enviaremos un correo de confirmación a la dirección nueva. El cambio no se aplica hasta que lo confirmes.</span>
       </div>
+      <div class="pass-form">
+        <label>Contraseña nueva
+          <input type="password" id="gestor-pass1" minlength="6" autocomplete="new-password">
+        </label>
+        <label>Repítela
+          <input type="password" id="gestor-pass2" minlength="6" autocomplete="new-password">
+        </label>
+        <button class="btn" id="btn-gestor-cambiar-pass" type="button">Cambiar contraseña</button>
+      </div>
     </div>
 
     <div class="panel">
       <h2>Notificaciones</h2>
       <p class="note">Elige de qué quieres que te avisemos.</p>
       <div id="pref-notif-gestor" class="pref-lista"></div>
+      <button class="btn primary push-btn" id="btn-push-gestor" type="button">Activar avisos en este dispositivo</button>
+      <p class="note">Los avisos llegan aunque tengas la app cerrada. En iPhone, primero añade la app a la pantalla de inicio.</p>
     </div>
 
     <div class="panel">
@@ -487,6 +498,8 @@
       <h2>Notificaciones</h2>
       <p class="note">Elige de qué quieres que te avisemos.</p>
       <div id="pref-notif-empleado" class="pref-lista"></div>
+      <button class="btn primary push-btn" id="btn-push-empleado" type="button">Activar avisos en este dispositivo</button>
+      <p class="note">Los avisos llegan aunque tengas la app cerrada. En iPhone, primero añade la app a la pantalla de inicio.</p>
     </div>
 
     <div class="panel">
