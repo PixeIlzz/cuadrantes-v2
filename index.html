@@ -139,7 +139,10 @@
     <div id="panel-notif" class="panel-notif" hidden>
       <div class="notif-cab">
         <span>Notificaciones</span>
-        <button class="btn small" id="btn-marcar-todas" type="button">Marcar todas</button>
+        <div class="notif-acciones">
+          <button class="btn small" id="btn-marcar-todas" type="button">Marcar leídas</button>
+          <button class="btn small peligro" id="btn-borrar-notif" type="button">Borrar</button>
+        </div>
       </div>
       <div id="notif-lista" class="notif-lista"></div>
     </div>
@@ -439,7 +442,6 @@
         <button class="btn small" id="emp-next" type="button">›</button>
       </div>
     </div>
-    <div class="people-bar" id="emp-people"></div>
     <p class="strip-hint">Toca un nombre para resaltar sus turnos en el cuadrante.</p>
     <div class="grid-scroller">
       <div class="grid" id="emp-grid"></div>

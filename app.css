@@ -853,7 +853,8 @@ button{font:inherit;cursor:pointer}
 .cal-leyenda{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;justify-content:center}
 .cl{font-size:.7rem;color:var(--ink-soft);display:flex;align-items:center;gap:5px}
 .cl::before{content:'';width:11px;height:11px;border-radius:50%;display:block}
-.cl-turno::before{background:var(--t-azu-bg);border:1px solid var(--t-azu-brd)}
+.cl-turno::before{background:var(--accent)}
+.cl-completo::before{background:var(--par)}
 .cl-vac::before{background:var(--t-cya-bg);border:1px solid var(--t-cya-brd)}
 .cl-hoy::before{background:var(--oscuro)}
 
@@ -1308,3 +1309,20 @@ html[data-tema="oscuro"] .prox-fila.prox-hoy{background:var(--accent-soft)}
 .email-form label{display:flex;flex-direction:column;gap:4px;font-size:.78rem;font-weight:600;color:var(--ink-soft)}
 .email-form input{border:1px solid var(--line);border-radius:8px;padding:9px 11px;font:inherit;font-size:.9rem}
 .email-form .btn{align-self:flex-start}
+
+
+/* Cuadrante del empleado: chips pulsables para resaltar a una persona */
+.chip-selec{
+  cursor:pointer;border:none;font:inherit;
+  transition:opacity .12s, transform .12s;
+}
+.chip-selec:hover{transform:translateY(-1px)}
+.chip-selec.atenuado{opacity:.32}
+.chip-selec.hl{outline:2px solid var(--accent);outline-offset:1px;opacity:1}
+.chip-selec.yo{font-weight:700}
+.chip-selec.yo::after{content:' ·';color:var(--accent)}
+
+/* Acciones del panel de notificaciones */
+.notif-acciones{display:flex;gap:6px}
+.btn.small.peligro{color:var(--bad);border-color:var(--bad)}
+.btn.small.peligro:hover{background:var(--bad);color:#fff}
