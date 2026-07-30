@@ -48,6 +48,15 @@ export async function marcarTodasLeidas() {
   if (error) throw new Error(error.message);
 }
 
+export async function borrarTodas() {
+  // Borra solo las del usuario (la RLS ya lo garantiza, pero filtramos igual)
+  const { error } = await sb
+    .from('notifications')
+    .delete()
+    .not('id', 'is', null);
+  if (error) throw new Error('No se pudieron borrar: ' + error.message);
+}
+
 /* Preferencias: qué tipos quiere el usuario */
 export async function leerPreferencias() {
   const { data, error } = await sb
