@@ -12,7 +12,7 @@ import { initAjustes, abrirAjustes } from './ui/ajustes.js';
 import { initAvisos, abrirAvisos, pintarTablon } from './ui/avisos.js';
 import { initMigracion } from './ui/migracion.js';
 import { initPrivacidad } from './ui/privacidad.js';
-import { initNotificaciones, refrescarBadge, accionMarcarTodas, pintarPreferencias } from './ui/notificaciones.js';
+import { initNotificaciones, refrescarBadge, accionMarcarTodas, accionBorrarTodas, pintarPreferencias } from './ui/notificaciones.js';
 import { initHoy, abrirHoy } from './ui/hoy.js';
 import { initTareas, abrirTareas, refrescarContadorTareas } from './ui/tareas.js';
 import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos, abrirEmpHoy } from './ui/empleado.js';
@@ -203,6 +203,8 @@ if (bee) bee.addEventListener('click', () => pedirCambioEmail('emp-email-nuevo',
 
 const bmt = $('btn-marcar-todas');
 if (bmt) bmt.addEventListener('click', accionMarcarTodas);
+const bbn = $('btn-borrar-notif');
+if (bbn) bbn.addEventListener('click', accionBorrarTodas);
 
 /* ---------- Recuperar contraseña ---------- */
 $('link-olvide').addEventListener('click', (e) => {
