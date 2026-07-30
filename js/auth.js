@@ -34,13 +34,13 @@ function traducirError(msg) {
 
 /* Registro de empleado. Con la confirmación de email desactivada,
    signUp ya devuelve sesión iniciada. */
-export async function signUp(email, password, nombre) {
+export async function signUp(email, password, nombre, codigo) {
   const { data, error } = await sb.auth.signUp({
     email: email.trim(),
     password,
     options: {
-      data: { full_name: nombre },
-      // El enlace del correo debe volver a la app, no a la raíz del dominio.
+      // Guardamos el código en los metadatos: se canjea tras confirmar el email.
+      data: { full_name: nombre, invite_code: codigo || null },
       emailRedirectTo: location.origin + location.pathname,
     },
   });
@@ -70,8 +70,24 @@ export async function pedirRecuperacion(email) {
   if (error) throw new Error(traducirRecuperacion(error.message));
 }
 
+/* Devuelve el código de invitación que quedó guardado al registrarse,
+   para canjearlo una vez el usuario tiene sesión (tras confirmar el email). */
+export async function codigoPendiente() {
+  const { data } = await sb.auth.getUser();
+  return (data && data.user && data.user.user_metadata
+    && data.user.user_metadata.invite_code) || null;
+}
+
+/* Borra el código de los metadatos una vez canjeado, para no repetir */
+export async function limpiarCodigoPendiente() {
+  try { await sb.auth.updateUser({ data: { invite_code: null } }); } catch (_) {}
+}
+
 export async function cambiarEmail(nuevo) {
-  const { error } = await sb.auth.updateUser({ email: nuevo.trim() });
+  const { error } = await sb.auth.updateUser(
+    { email: nuevo.trim() },
+    { emailRedirectTo: location.origin + location.pathname }
+  );
   if (error) throw new Error(traducirEmail(error.message));
 }
 

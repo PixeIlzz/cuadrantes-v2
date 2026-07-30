@@ -1,5 +1,5 @@
 // Arranque, login y navegación por pestañas. v7
-import { ctx, signIn, signUp, signOut, getSession, pedirRecuperacion, cambiarPassword, cambiarEmail, alRecuperarPassword } from './auth.js';
+import { ctx, signIn, signUp, signOut, getSession, pedirRecuperacion, cambiarPassword, cambiarEmail, alRecuperarPassword, codigoPendiente, limpiarCodigoPendiente } from './auth.js';
 import { sb } from './supabase.js';
 import { toast } from './ui/toast.js';
 import { initPWA } from './pwa.js';
@@ -132,6 +132,16 @@ function mostrarApp(session, role, biz) {
 
 async function cargarNegocio(session) {
   if (recuperando) return;   // durante la recuperación no se entra a la app
+
+  // Si quedó un código de invitación pendiente (registro con confirmación de email),
+  // se canjea ahora que ya hay sesión, antes de comprobar el negocio.
+  try {
+    const pendiente = await codigoPendiente();
+    if (pendiente) {
+      await canjearCodigo(pendiente);
+      await limpiarCodigoPendiente();
+    }
+  } catch (_) { /* si falla, se verá el aviso de 'sin negocio' y podrá reintentar */ }
   paso('Cargando tu negocio…');
   const { data: mem, error: e1 } = await sb
     .from('memberships').select('role, business_id');
@@ -288,10 +298,19 @@ $('form-registro').addEventListener('submit', async (e) => {
   try {
     const codigo = $('r-codigo').value.trim().toUpperCase();
     if (codigo.length < 4) throw new Error('Escribe el código que te ha dado tu responsable.');
-    // El nombre no lo escribe el empleado: lo toma de su ficha al canjear el código
-    const session = await signUp($('r-email').value, $('r-pass').value, null);
-    await canjearCodigo(codigo);
-    await cargarNegocio(session);
+    // El nombre viene de la ficha. El código se guarda y se canjea tras confirmar el email.
+    const session = await signUp($('r-email').value, $('r-pass').value, null, codigo);
+    if (session) {
+      // Confirmación de email desactivada: hay sesión inmediata, se canjea ya.
+      await canjearCodigo(codigo);
+      await limpiarCodigoPendiente();
+      await cargarNegocio(session);
+    } else {
+      // Confirmación activada: aún no hay sesión. Se avisa y se canjeará al confirmar.
+      err.style.color = '#1d7a4f';
+      err.textContent = 'Te hemos enviado un correo para confirmar tu cuenta. '
+        + 'Ábrelo y pulsa el enlace para entrar.';
+    }
   } catch (e2) {
     err.textContent = e2.message || String(e2);
   } finally {
@@ -330,7 +349,13 @@ alRecuperarPassword(mostrarNuevaPassword);
 const hashRecovery = (window.__staffpoint_recovery === true
     || location.hash.includes('type=recovery')
     || location.hash.includes('recuperar'))
-  && !location.hash.includes('type=signup');
+  && !location.hash.includes('type=signup')
+  && !location.hash.includes('type=email_change');
+
+// Aviso al volver de confirmar un cambio de email
+if (location.hash.includes('type=email_change')) {
+  setTimeout(() => { try { toast('Email actualizado correctamente.'); } catch (_) {} }, 800);
+}
 
 try {
   paso('Comprobando sesión…');
