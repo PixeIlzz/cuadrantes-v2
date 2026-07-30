@@ -530,11 +530,12 @@ function pintarCalendario() {
     } else if (turnos.length) {
       const puntos = document.createElement('span');
       puntos.className = 'cal-puntos';
-      // Un solo punto por día: azul si trabajo, naranja si es día completo.
-      const hayCompleto = turnos.some((x) => x.label === 'Día completo');
-      const p = document.createElement('i');
-      p.style.background = hayCompleto ? 'var(--par)' : 'var(--accent)';
-      puntos.appendChild(p);
+      // Un punto por turno (máx 3). Día completo en naranja, turnos normales en azul.
+      for (const t of turnos.slice(0, 3)) {
+        const p = document.createElement('i');
+        p.style.background = (t.label === 'Día completo') ? 'var(--par)' : 'var(--accent)';
+        puntos.appendChild(p);
+      }
       c.appendChild(puntos);
     }
 

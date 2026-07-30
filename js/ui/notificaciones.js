@@ -12,7 +12,8 @@ let sondeo = null;
 
 const ICONO = {
   request_new: '📩', request_resolved: '✅',
-  week_published: '📅', announcement: '📣', other: '🔔',
+  week_published: '📅', announcement: '📣',
+  employee_joined: '👤', other: '🔔',
 };
 
 function haceCuanto(iso) {
