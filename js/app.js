@@ -67,6 +67,29 @@ document.querySelectorAll('.tab-btn[data-tab]').forEach((btn) => {
 });
 
 /* ---------- Vistas ---------- */
+/* Muestra u oculta las pestañas de solicitudes (gestor y empleado)
+   según la preferencia guardada en el negocio. */
+function aplicarVisibilidadSolicitudes() {
+  const activas = !(ctx.business && ctx.business.config
+    && ctx.business.config.solicitudes_activas === false);
+  // Solo tocamos la pestaña del rol actual, para no romper la separación gestor/empleado
+  const selector = (ctx.role === 'manager')
+    ? '[data-tab="solicitudes"]' : '[data-tab="emp-solicitudes"]';
+  const btn = document.querySelector(selector);
+  if (btn) {
+    // Si se desactiva, se oculta. Si se activa, se muestra (su clase de rol ya la controla mostrarApp).
+    btn.hidden = !activas;
+  }
+  // Si estabas en esa pestaña y se desactiva, vuelve a Hoy
+  if (!activas) {
+    const actual = document.querySelector('.tab-btn.active');
+    if (actual && /solicitudes/.test(actual.dataset.tab || '')) {
+      cambiarPestana(ctx.role === 'manager' ? 'hoy' : 'emp-hoy');
+    }
+  }
+  return activas;
+}
+
 function soloFormulario(id) {
   for (const f of ['form-login','form-registro','form-recuperar','form-nueva-pass']) {
     const el = $(f);
@@ -112,6 +135,20 @@ function mostrarApp(session, role, biz) {
     initTema('tema-gestor');
     initNotificaciones((destino) => cambiarPestana(destino));
     pintarPreferencias('pref-notif-gestor', true);
+    // Interruptor de solicitudes
+    const swSol = $('sw-solicitudes');
+    if (swSol) {
+      swSol.checked = !(ctx.business.config && ctx.business.config.solicitudes_activas === false);
+      swSol.addEventListener('change', async () => {
+        const cfg = { ...(ctx.business.config || {}), solicitudes_activas: swSol.checked };
+        const { error } = await sb.from('businesses').update({ config: cfg }).eq('id', ctx.business.id);
+        if (error) { swSol.checked = !swSol.checked; toast('No se pudo guardar: ' + error.message); return; }
+        ctx.business.config = cfg;
+        aplicarVisibilidadSolicitudes();
+        toast(swSol.checked ? 'Solicitudes activadas' : 'Solicitudes desactivadas');
+      });
+    }
+    aplicarVisibilidadSolicitudes();
     initPushUI('btn-push-gestor');
     initTareas();
     refrescarContadorTareas();
@@ -126,6 +163,7 @@ function mostrarApp(session, role, biz) {
     initTema('tema-empleado');
     initNotificaciones((destino) => cambiarPestana(destino));
     pintarPreferencias('pref-notif-empleado', false);
+    aplicarVisibilidadSolicitudes();
     initPushUI('btn-push-empleado');
     pintarTablon('tablon-empleado');
     pintarTablon('tablon-emp-hoy');
