@@ -181,8 +181,8 @@ export async function abrirEmpHoy() {
       cont.appendChild(p);
     }
 
-    // Mis turnos de hoy + notas del día
-    cont.appendChild(await tarjetaHoyTurnos(hoy));
+    // Mis turnos de hoy + notas del día (si está de vacaciones, no se muestran turnos)
+    cont.appendChild(await tarjetaHoyTurnos(hoy, !!vacHoy));
     pintarProximos();
   } catch (err) {
     cont.innerHTML = '';
@@ -190,12 +190,18 @@ export async function abrirEmpHoy() {
   }
 }
 
-async function tarjetaHoyTurnos(hoy) {
+async function tarjetaHoyTurnos(hoy, enVacaciones) {
   const p = document.createElement('div');
   p.className = 'panel';
   const h = document.createElement('h2');
   h.textContent = 'Mi jornada de hoy';
   p.appendChild(h);
+
+  // De vacaciones: no se muestran turnos, aunque haya un TODOS ese día
+  if (enVacaciones) {
+    p.appendChild(nota('Hoy estás de vacaciones. No tienes jornada.'));
+    return p;
+  }
 
   // Buscar la semana visible que contiene hoy
   const sem = semanas.find((s) => s.start_date <= hoy && sumarDias(s.start_date, 6) >= hoy);
@@ -317,19 +323,21 @@ export async function pintarProximos() {
 
       const info = document.createElement('div');
       info.className = 'prox-info';
-      for (const t of porFecha[iso]) {
-        const l = document.createElement('div');
-        l.className = 'prox-linea' + (t.todos ? ' todos' : '');
-        l.innerHTML = '<span class="prox-col"></span><span class="prox-puesto"></span>';
-        l.querySelector('.prox-col').textContent = t.col;
-        l.querySelector('.prox-puesto').textContent = t.puesto;
-        info.appendChild(l);
-      }
       if (enVac) {
+        // De vacaciones: no se muestran los turnos de ese día, solo el aviso
         const v = document.createElement('div');
         v.className = 'prox-aviso';
         v.textContent = '🏖 Estás de vacaciones ese día';
         info.appendChild(v);
+      } else {
+        for (const t of porFecha[iso]) {
+          const l = document.createElement('div');
+          l.className = 'prox-linea' + (t.todos ? ' todos' : '');
+          l.innerHTML = '<span class="prox-col"></span><span class="prox-puesto"></span>';
+          l.querySelector('.prox-col').textContent = t.col;
+          l.querySelector('.prox-puesto').textContent = t.puesto;
+          info.appendChild(l);
+        }
       }
       if (iso === hoy) {
         const h = document.createElement('span');
