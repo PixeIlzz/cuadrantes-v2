@@ -11,6 +11,29 @@ function soportado() {
   return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 }
 
+export function esIOS() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+export function estaInstalada() {
+  return window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+}
+
+/* Diagnóstico para el diálogo: qué mensaje mostrar según el dispositivo */
+export function situacionPush() {
+  if (!('Notification' in window) || !('PushManager' in window)) {
+    // iPhone en Safari sin instalar entra aquí: el push existe pero solo instalada
+    if (esIOS() && !estaInstalada()) return 'ios-sin-instalar';
+    return 'no-soportado';
+  }
+  if (esIOS() && !estaInstalada()) return 'ios-sin-instalar';
+  if (Notification.permission === 'denied') return 'bloqueado';
+  if (Notification.permission === 'granted') return 'ya-activo';
+  return 'disponible';
+}
+
 /* Convierte la clave de texto a bytes, como pide el navegador */
 function urlBase64ToUint8Array(base64) {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4);
