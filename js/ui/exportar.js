@@ -149,10 +149,7 @@ export function dibujarCuadrante(datos, escala = 2) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '700 16px system-ui, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('TODOS', x + COL / 2, y + 58);
-      ctx.fillStyle = C.suave;
-      ctx.font = '11px system-ui, sans-serif';
-      ctx.fillText('DÍA COMPLETO', x + COL / 2, y + 92);
+      ctx.fillText('TODOS', x + COL / 2, y + 66);
       ctx.textAlign = 'left';
       y += 120;
     } else {

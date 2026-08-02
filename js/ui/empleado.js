@@ -94,8 +94,7 @@ async function pintarSemana() {
     if (dayHasAll(d.id)) {
       const block = document.createElement('div');
       block.className = 'all-day';
-      block.innerHTML = '<div class="chip all-chip all-day-chip"><span>TODOS</span></div>'
-        + '<div class="all-day-note">Día completo</div>';
+      block.innerHTML = '<div class="chip all-chip all-day-chip"><span>TODOS</span></div>';
       col.appendChild(block);
     } else {
       ROLES.forEach((r, ri) => {
@@ -234,7 +233,7 @@ async function tarjetaHoyTurnos(hoy, enVacaciones) {
       el.className = 'turno-row' + (a.is_all ? ' todos' : '');
       el.innerHTML = '<span class="turno-dia">' + esc(col.label) + '</span>'
         + '<span class="turno-puesto">'
-        + (a.is_all ? 'Día completo (TODOS)' : esc(r ? r.label : '')) + '</span>';
+        + (a.is_all ? 'TODOS' : esc(r ? r.label : '')) + '</span>';
       p.appendChild(el);
     }
   }
@@ -295,7 +294,7 @@ export async function pintarProximos() {
       const rol = ROLES.find((r) => r.id === a.position_id);
       (porFecha[iso] ||= []).push({
         col: dia ? dia.label : '',
-        puesto: a.is_all ? 'Día completo (TODOS)' : (rol ? rol.label : ''),
+        puesto: a.is_all ? 'TODOS' : (rol ? rol.label : ''),
         todos: a.is_all,
       });
     }
@@ -436,11 +435,11 @@ async function cargarCalendario() {
     const iso = sumarDias(sem.start_date, idx);
     const ri = ROLES.findIndex((r) => r.id === a.position_id);
     const rol = ROLES[ri];
-    // En 'Mis turnos' solo importa si trabajo ese día, no de qué puesto.
-    // Un único color para todos los turnos; el día completo se distingue.
+    // Marcamos si este turno es nocturno para detectar 'día + noche' en la misma fecha
+    const esNoche = /N$/.test(a.day_id);
     (diasConTurno[iso] ||= []).push({
-      color: a.is_all ? 'var(--par)' : 'var(--accent)',
-      label: a.is_all ? 'Día completo' : (rol ? rol.label : ''),
+      noche: esNoche,
+      label: rol ? rol.label : '',
     });
   }
 
@@ -538,12 +537,13 @@ function pintarCalendario() {
     } else if (turnos.length) {
       const puntos = document.createElement('span');
       puntos.className = 'cal-puntos';
-      // Un punto por turno (máx 3). Día completo en naranja, turnos normales en azul.
-      for (const t of turnos.slice(0, 3)) {
-        const p = document.createElement('i');
-        p.style.background = (t.label === 'Día completo') ? 'var(--par)' : 'var(--accent)';
-        puntos.appendChild(p);
-      }
+      // Un solo punto por día: naranja si trabaja día Y noche, azul en el resto
+      const hayDia = turnos.some((t) => !t.noche);
+      const hayNoche = turnos.some((t) => t.noche);
+      const completo = hayDia && hayNoche;
+      const p = document.createElement('i');
+      p.style.background = completo ? 'var(--par)' : 'var(--accent)';
+      puntos.appendChild(p);
       c.appendChild(puntos);
     }
 
@@ -559,7 +559,7 @@ function pintarCalendario() {
   const ley = document.createElement('div');
   ley.className = 'cal-leyenda';
   ley.innerHTML = '<span class="cl cl-turno">Trabajo</span>'
-    + '<span class="cl cl-completo">Día completo</span>'
+    + '<span class="cl cl-completo">Día y noche</span>'
     + '<span class="cl cl-vac">Vacaciones</span>'
     + '<span class="cl cl-hoy">Hoy</span>';
   cont.appendChild(ley);
@@ -608,7 +608,7 @@ export async function abrirMisTurnos() {
           orden: DAYS.findIndex((x) => x.id === a.day_id),
           fecha: iBase >= 0 ? sumarDias(s.start_date, iBase) : null,
           dia: d.label,
-          puesto: a.is_all ? 'Día completo (TODOS)' : (r ? r.label : ''),
+          puesto: a.is_all ? 'TODOS' : (r ? r.label : ''),
           todos: a.is_all,
         });
       }

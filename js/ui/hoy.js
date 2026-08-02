@@ -133,7 +133,7 @@ async function tarjetaTurnosHoy(hoy, lunes, semana, equipo) {
     if (delDia.some((a) => a.is_all)) {
       const chip = document.createElement('span');
       chip.className = 'persona-chip persona-todos';
-      chip.textContent = 'TODOS · día completo';
+      chip.textContent = 'TODOS';
       bloque.appendChild(chip);
       algo = true;
     } else if (delDia.length === 0) {

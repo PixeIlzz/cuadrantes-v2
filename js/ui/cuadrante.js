@@ -280,10 +280,6 @@ function renderGrid() {
         renderStrip(); renderGrid(); scheduleSave();
       });
       block.appendChild(chip);
-      const note = document.createElement('div');
-      note.className = 'all-day-note';
-      note.textContent = 'Día completo';
-      block.appendChild(note);
       block.addEventListener('click', () => {
         if (selectedId && selectedId !== ALL_ID)
           toast('Ese día está cubierto por TODOS. Quítalo para asignar por puestos.');

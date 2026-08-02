@@ -219,6 +219,10 @@ async function enviar() {
     await abrirMisSolicitudes();
   } catch (err) {
     toast(err.message);
+    // Si se desactivaron mientras tanto, poner la app al día ocultando la pestaña
+    if (/desactivadas/i.test(err.message)) {
+      window.dispatchEvent(new CustomEvent('solicitudes-desactivadas'));
+    }
   } finally {
     btn.disabled = false; btn.textContent = 'Enviar solicitud';
   }
