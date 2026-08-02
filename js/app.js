@@ -14,6 +14,7 @@ import { initMigracion } from './ui/migracion.js';
 import { initPrivacidad } from './ui/privacidad.js';
 import { initNotificaciones, refrescarBadge, accionMarcarTodas, accionBorrarTodas, pintarPreferencias } from './ui/notificaciones.js';
 import { initPushUI } from './ui/push.js';
+import { ofrecerAvisos } from './ui/push-bienvenida.js';
 import { initHoy, abrirHoy } from './ui/hoy.js';
 import { initTareas, abrirTareas, refrescarContadorTareas } from './ui/tareas.js';
 import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos, abrirEmpHoy } from './ui/empleado.js';
@@ -90,6 +91,15 @@ function aplicarVisibilidadSolicitudes() {
   return activas;
 }
 
+// Si el empleado intenta enviar y el servidor dice que están desactivadas,
+// actualizamos su config local y ocultamos la pestaña sin esperar recarga.
+window.addEventListener('solicitudes-desactivadas', () => {
+  if (ctx.business) {
+    ctx.business.config = { ...(ctx.business.config || {}), solicitudes_activas: false };
+    aplicarVisibilidadSolicitudes();
+  }
+});
+
 function soloFormulario(id) {
   for (const f of ['form-login','form-registro','form-recuperar','form-nueva-pass']) {
     const el = $(f);
@@ -150,6 +160,7 @@ function mostrarApp(session, role, biz) {
     }
     aplicarVisibilidadSolicitudes();
     initPushUI('btn-push-gestor');
+    ofrecerAvisos();
     initTareas();
     refrescarContadorTareas();
     refrescarContador();              // aviso de pendientes al entrar
@@ -165,6 +176,7 @@ function mostrarApp(session, role, biz) {
     pintarPreferencias('pref-notif-empleado', false);
     aplicarVisibilidadSolicitudes();
     initPushUI('btn-push-empleado');
+    ofrecerAvisos();
     pintarTablon('tablon-empleado');
     pintarTablon('tablon-emp-hoy');
     cambiarPestana('emp-hoy');
