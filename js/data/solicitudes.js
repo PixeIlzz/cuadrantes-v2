@@ -4,7 +4,25 @@ import { ctx } from '../auth.js';
 
 /* --- Empleado --- */
 
+/* Comprueba en el servidor si el negocio tiene las solicitudes activas.
+   Evita el caso de un empleado con la app abierta y la config vieja. */
+export async function solicitudesActivas() {
+  const { data, error } = await sb
+    .from('businesses')
+    .select('config')
+    .eq('id', ctx.business.id)
+    .single();
+  if (error) return true;   // ante la duda, no bloqueamos
+  return !(data && data.config && data.config.solicitudes_activas === false);
+}
+
 export async function crearSolicitud({ tipo, desde, hasta, mensaje }) {
+  // Verificación fresca contra el servidor, no contra la config cargada
+  const activas = await solicitudesActivas();
+  if (!activas) {
+    throw new Error('Las solicitudes están desactivadas ahora mismo. '
+      + 'Habla con tu responsable si necesitas pedir algo.');
+  }
   const { data, error } = await sb
     .from('requests')
     .insert({
