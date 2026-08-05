@@ -1344,3 +1344,28 @@ html[data-tema="oscuro"] .prox-fila.prox-hoy{background:var(--accent-soft)}
 .pb-nota{font-size:.8rem;color:var(--ink-soft);margin-bottom:14px}
 .pb-botones{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 .pb-botones .btn{flex:1;min-width:120px}
+
+/* =========================================================
+   Banner de aviso de cambios en semana visible
+   ========================================================= */
+.banner-cambios{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  background:linear-gradient(135deg, var(--t-ama-bg2), var(--t-ama-bg));
+  border:2px solid var(--t-ama-acc);
+  border-radius:var(--radius);
+  padding:13px 16px;margin-bottom:14px;
+  animation:bc-aparece .3s ease;
+  box-shadow:0 3px 12px rgba(201,162,39,.18);
+}
+@keyframes bc-aparece{
+  from{opacity:0;transform:translateY(-6px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.bc-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.bc-txt b{font-size:.92rem;color:var(--t-ama-txt)}
+.bc-txt span{font-size:.82rem;color:var(--ink-soft)}
+.banner-cambios .btn{flex:0 0 auto;white-space:nowrap}
+@media (max-width:560px){
+  .banner-cambios{flex-direction:column;align-items:stretch}
+  .banner-cambios .btn{width:100%}
+}
