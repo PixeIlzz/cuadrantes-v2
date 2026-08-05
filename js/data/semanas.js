@@ -248,3 +248,11 @@ export async function borrarSemanasRango(desde, hasta) {
   if (error) throw new Error('No se pudieron borrar: ' + error.message);
   return data || 0;
 }
+
+/* Avisa a todo el equipo de que una semana ya visible ha cambiado.
+   Devuelve a cuántas personas se notificó. */
+export async function avisarCambioSemana(weekId) {
+  const { data, error } = await sb.rpc('avisar_cambio_semana', { p_week_id: weekId });
+  if (error) throw new Error('No se pudo avisar: ' + error.message);
+  return data || 0;
+}
