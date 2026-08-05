@@ -7,7 +7,7 @@ import {
   programarSemana, copiarSemana,
   listarSemanas, fmtMomento, localAIso, ETIQUETA_ESTADO,
   estadoBase, esVisible, modoVisibilidad, iconoOjo, textoVisibilidad,
-  setVisibilidad, semanaTerminada,
+  setVisibilidad, semanaTerminada, avisarCambioSemana,
 } from '../data/semanas.js';
 import { confirmar, elegirOpcion } from './confirmar.js';
 import { descargarPNG, compartirPNG, imprimir } from './exportar.js';
@@ -83,12 +83,36 @@ function scheduleSave() {
     try {
       await guardarSemana(semana.id, filasParaGuardar(), notas);
       setSync('ok');
+      // Si la semana ya la ve el equipo, ofrecer avisar del cambio
+      if (semana && esVisible(semana)) mostrarBannerCambios(true);
     } catch (err) {
       setSync('err');
       toast(err.message);
     }
   }, 700);
 }
+let hayCambiosSinAvisar = false;
+function mostrarBannerCambios(visible) {
+  hayCambiosSinAvisar = visible;
+  const b = $('banner-cambios');
+  if (b) b.hidden = !visible;
+}
+
+async function accionAvisarCambios() {
+  const btn = $('btn-avisar-cambios');
+  if (!semana) return;
+  btn.disabled = true; btn.textContent = 'Avisando…';
+  try {
+    const n = await avisarCambioSemana(semana.id);
+    mostrarBannerCambios(false);
+    toast('Aviso enviado a ' + n + (n === 1 ? ' persona.' : ' personas.'));
+  } catch (err) {
+    toast(err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '📢 Avisar al equipo';
+  }
+}
+
 function filasParaGuardar() {
   const filas = [];
   for (const k in cells) {
@@ -113,6 +137,7 @@ async function cargar(startIso) {
   $('grid').innerHTML = '<span class="empty-note">Cargando semana…</span>';
   try {
     equipo = await listarEquipo();
+    mostrarBannerCambios(false);
     semana = await obtenerOCrearSemana(startIso);
 
     const cfg = semana.config_snapshot || {};
@@ -637,6 +662,7 @@ export function initCuadrante() {
   $('btn-manual').addEventListener('click', accionFechaManual);
   $('btn-copiar').addEventListener('click', accionCopiarDe);
   $('btn-vaciar').addEventListener('click', accionVaciar);
+  $('btn-avisar-cambios').addEventListener('click', accionAvisarCambios);
   $('btn-png').addEventListener('click', () => descargarPNG(datosParaExportar()));
   $('btn-compartir').addEventListener('click', accionCompartir);
   $('btn-imprimir').addEventListener('click', () => imprimir(datosParaExportar()));
