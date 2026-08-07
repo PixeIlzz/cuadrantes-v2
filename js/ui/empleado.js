@@ -4,7 +4,7 @@ import { ctx } from '../auth.js';
 import {
   semanasVisibles, asignacionesDe, plantilla, misAsignaciones, misVacaciones,
 } from '../data/empleado.js';
-import { etiquetaSemana, sumarDias, fmtCorto } from '../data/semanas.js';
+import { etiquetaSemana, sumarDias, fmtCorto, lunesDe } from '../data/semanas.js';
 
 const ALL_ID = 'ALL';
 const $ = (id) => document.getElementById(id);
@@ -28,10 +28,27 @@ async function cargarBase() {
   if (!ctx.business) throw new Error('La sesión no se cargó del todo. Cierra sesión y vuelve a entrar.');
   equipo = await plantilla();
   semanas = await semanasVisibles();
-  // La más reciente ya publicada es la primera (orden descendente)
-  idx = 0;
+  // Arrancar en la semana actual; si no está visible, en la más cercana.
+  idx = indiceSemanaActual();
   resaltado = ctx.workerId || null;
   cargado = true;
+}
+
+/* Índice de la semana que contiene hoy; si no existe, la más cercana.
+   'semanas' viene en orden descendente (la más nueva primero). */
+function indiceSemanaActual() {
+  if (!semanas.length) return 0;
+  const hoyLunes = lunesDe(new Date());
+  // Coincidencia exacta con la semana de hoy
+  const exacta = semanas.findIndex((s) => s.start_date === hoyLunes);
+  if (exacta >= 0) return exacta;
+  // Si no, la de menor distancia en días a hoy
+  let mejor = 0, mejorDist = Infinity;
+  for (let i = 0; i < semanas.length; i++) {
+    const d = Math.abs(new Date(semanas[i].start_date) - new Date(hoyLunes));
+    if (d < mejorDist) { mejorDist = d; mejor = i; }
+  }
+  return mejor;
 }
 
 function mover(paso) {

@@ -83,19 +83,46 @@ function scheduleSave() {
     try {
       await guardarSemana(semana.id, filasParaGuardar(), notas);
       setSync('ok');
-      // Si la semana ya la ve el equipo, ofrecer avisar del cambio
-      if (semana && esVisible(semana)) mostrarBannerCambios(true);
+      // Si la semana ya la ve el equipo, marcar cambio sin avisar (persistente)
+      if (semana && esVisible(semana)) {
+        marcarPendiente(semana.id, true);
+        refrescarBannerCambios();
+      }
     } catch (err) {
       setSync('err');
       toast(err.message);
     }
   }, 700);
 }
-let hayCambiosSinAvisar = false;
-function mostrarBannerCambios(visible) {
-  hayCambiosSinAvisar = visible;
+/* Semanas con cambios sin avisar (por id). Se persiste para sobrevivir recargas. */
+const CLAVE_PEND = 'staffpoint-cambios-pendientes';
+function leerPendientes() {
+  try { return new Set(JSON.parse(localStorage.getItem(CLAVE_PEND) || '[]')); }
+  catch (_) { return new Set(); }
+}
+function guardarPendientes(set) {
+  try { localStorage.setItem(CLAVE_PEND, JSON.stringify([...set])); } catch (_) {}
+}
+function marcarPendiente(weekId, pendiente) {
+  const set = leerPendientes();
+  if (pendiente) set.add(weekId); else set.delete(weekId);
+  guardarPendientes(set);
+  actualizarAvisoPestana();
+}
+
+/* Muestra el banner según si ESTA semana tiene cambios pendientes */
+function refrescarBannerCambios() {
   const b = $('banner-cambios');
-  if (b) b.hidden = !visible;
+  if (!b) return;
+  const pendiente = semana && leerPendientes().has(semana.id);
+  b.hidden = !pendiente;
+}
+
+/* Símbolo de peligro en la pestaña Cuadrante si hay CUALQUIER semana pendiente */
+export function actualizarAvisoPestana() {
+  const hay = leerPendientes().size > 0;
+  const tab = document.querySelector('.tab-btn[data-tab="cuadrante"]');
+  if (tab) tab.classList.toggle('tab-alerta', hay);
 }
 
 async function accionAvisarCambios() {
@@ -104,7 +131,8 @@ async function accionAvisarCambios() {
   btn.disabled = true; btn.textContent = 'Avisando…';
   try {
     const n = await avisarCambioSemana(semana.id);
-    mostrarBannerCambios(false);
+    marcarPendiente(semana.id, false);
+    refrescarBannerCambios();
     toast('Aviso enviado a ' + n + (n === 1 ? ' persona.' : ' personas.'));
   } catch (err) {
     toast(err.message);
@@ -137,7 +165,6 @@ async function cargar(startIso) {
   $('grid').innerHTML = '<span class="empty-note">Cargando semana…</span>';
   try {
     equipo = await listarEquipo();
-    mostrarBannerCambios(false);
     semana = await obtenerOCrearSemana(startIso);
 
     const cfg = semana.config_snapshot || {};
@@ -158,6 +185,8 @@ async function cargar(startIso) {
     selectedId = null;
     pintarSelector();
     renderStrip();
+    refrescarBannerCambios();
+    actualizarAvisoPestana();
     renderGrid();
     pintarTiraSemanas();
   } catch (err) {
