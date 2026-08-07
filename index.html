@@ -123,11 +123,13 @@
     <button class="tab-btn solo-gestor" data-tab="cuadrante">Cuadrante</button>
     <button class="tab-btn solo-gestor" data-tab="programar">Programadas</button>
     <button class="tab-btn solo-gestor" data-tab="equipo">Equipo</button>
+    <button class="tab-btn solo-gestor solo-probador" data-tab="fichaje" hidden>Fichaje 🧪</button>
     <button class="tab-btn solo-gestor" data-tab="tareas">Tareas <span id="badge-tareas" class="badge" hidden></span></button>
     <button class="tab-btn solo-gestor" data-tab="solicitudes">Solicitudes <span id="badge-solicitudes" class="badge" hidden></span></button>
     <button class="tab-btn solo-gestor" data-tab="ajustes">Ajustes</button>
     <button class="tab-btn active solo-empleado" data-tab="emp-hoy">Hoy</button>
     <button class="tab-btn solo-empleado" data-tab="emp-turnos">Mis turnos</button>
+    <button class="tab-btn solo-empleado solo-probador" data-tab="emp-fichaje" hidden>Fichar 🧪</button>
     <button class="tab-btn solo-empleado" data-tab="emp-cuadrante">Cuadrantes</button>
     <button class="tab-btn solo-empleado" data-tab="emp-solicitudes">Solicitudes</button>
     <button class="tab-btn solo-empleado" data-tab="emp-ajustes">Ajustes</button>
@@ -254,6 +256,11 @@
   </section>
 
   <!-- ============ TAB TAREAS ============ -->
+  <section class="solo-gestor" id="tab-fichaje" hidden>
+    <div class="fich-testeo-aviso">🧪 Módulo en pruebas · solo lo ves tú</div>
+    <div id="fichaje-gestor"></div>
+  </section>
+
   <section class="solo-gestor" id="tab-tareas" hidden>
     <div class="panel">
       <h2>Para hoy</h2>
@@ -311,6 +318,13 @@
 
   <!-- ============ TAB AJUSTES ============ -->
   <section class="solo-gestor" id="tab-ajustes" hidden>
+    <div class="panel solo-probador" id="panel-fichaje-ajustes" hidden>
+      <h2>Fichaje · horario previsto 🧪</h2>
+      <p class="note">Define el horario de cada día. Si alguien ficha más tarde del inicio previsto, se marcará el retraso. Puedes añadir varios tramos por día (jornada partida).</p>
+      <div id="fichaje-horarios"></div>
+      <button class="btn primary" id="btn-guardar-fichaje" type="button">Guardar horario</button>
+    </div>
+
     <div class="panel">
       <h2>Cuenta</h2>
       <div class="setting-row"><span class="note" id="ajustes-cuenta"></span></div>
@@ -460,6 +474,11 @@
     </div>
   </section>
   <!-- ============ EMPLEADO · CUADRANTE ============ -->
+  <section class="solo-empleado" id="tab-emp-fichaje" hidden>
+    <div class="fich-testeo-aviso">🧪 Módulo en pruebas</div>
+    <div id="emp-fichaje"></div>
+  </section>
+
   <section id="tab-emp-cuadrante" class="solo-empleado" hidden>
     <div class="tablon" id="tablon-empleado" hidden></div>
     <div class="toolbar">

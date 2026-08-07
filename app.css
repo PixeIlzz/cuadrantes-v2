@@ -1378,3 +1378,86 @@ html[data-tema="oscuro"] .prox-fila.prox-hoy{background:var(--accent-soft)}
   font-size:.7rem;line-height:1;
   filter:drop-shadow(0 0 1px rgba(0,0,0,.3));
 }
+
+/* =========================================================
+   FICHAJE (módulo en pruebas)
+   ========================================================= */
+.fich-testeo-aviso{
+  background:repeating-linear-gradient(45deg,#2a2f3a,#2a2f3a 10px,#232833 10px,#232833 20px);
+  color:#ffd166;font-size:.8rem;font-weight:700;text-align:center;
+  padding:6px 10px;border-radius:8px;margin-bottom:12px;letter-spacing:.03em;
+}
+html[data-tema="oscuro"] .fich-testeo-aviso{color:#ffd166}
+
+/* --- Empleado: botón central --- */
+.fich-tarjeta{
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:24px 20px;margin-bottom:16px;
+}
+.fich-reloj{font-size:2.4rem;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:1px}
+.fich-estado{font-size:.95rem;font-weight:600;padding:4px 14px;border-radius:999px}
+.fich-estado.dentro{background:var(--t-ver-bg);color:var(--t-ver-txt)}
+.fich-estado.fuera{background:var(--gris-bg);color:var(--ink-soft)}
+.fich-desde{font-size:.82rem;color:var(--ink-soft)}
+.fich-boton{
+  margin-top:8px;width:190px;height:190px;border-radius:50%;border:none;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  font-size:2.6rem;color:#fff;transition:transform .1s, box-shadow .2s;
+}
+.fich-boton span{font-size:1rem;font-weight:700}
+.fich-boton.entrada{background:linear-gradient(135deg,#1d9a5f,#157a49);box-shadow:0 8px 24px rgba(29,154,95,.35)}
+.fich-boton.salida{background:linear-gradient(135deg,#d4574e,#b23b33);box-shadow:0 8px 24px rgba(212,87,78,.35)}
+.fich-boton:active{transform:scale(.96)}
+.fich-boton:disabled{opacity:.6}
+
+.fich-lista{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.fich-fila{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:8px;background:var(--gris-bg);font-size:.9rem;
+}
+.fich-fila.entrada{border-left:3px solid var(--ok)}
+.fich-fila.salida{border-left:3px solid var(--bad)}
+.fich-fila.estimado{background:var(--t-roj-bg)}
+.ff-tipo{font-weight:600}
+.ff-hora{font-variant-numeric:tabular-nums}
+.ff-hora em{color:var(--bad);font-style:normal;font-size:.78rem}
+.ff-corr{color:var(--t-azu-txt)!important}
+.ff-retraso{color:var(--par);font-weight:700;font-size:.82rem}
+.fich-total,.fich-dia-total{margin-top:10px;font-size:.95rem;text-align:right}
+.fich-resumen{margin-top:14px;padding:12px;background:var(--accent-soft);border-radius:10px;
+  font-size:1rem;text-align:center;color:var(--accent)}
+
+/* --- Gestor: equipo hoy --- */
+.fich-h2{margin-bottom:12px;text-transform:capitalize}
+.fich-equipo{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.fich-emp{
+  text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:12px;
+  padding:12px 14px;cursor:pointer;font:inherit;transition:border-color .15s, transform .1s;
+}
+.fich-emp:hover{border-color:var(--accent);transform:translateY(-2px)}
+.fich-emp.dentro{border-color:var(--ok);background:var(--t-ver-bg)}
+.fe-nombre{font-weight:700;font-size:.95rem;margin-bottom:3px}
+.fe-estado{font-size:.76rem;color:var(--ink-soft);line-height:1.3}
+.fe-total{margin-top:6px;font-weight:700;font-variant-numeric:tabular-nums}
+
+/* --- Gestor: detalle empleado --- */
+.fich-det-cab{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.fich-det-nombre{margin:0}
+.fich-modos{display:flex;gap:6px;margin-bottom:10px}
+.fich-modo{border:1.5px solid var(--line);background:var(--card);color:var(--ink);
+  border-radius:8px;padding:6px 16px;font:inherit;font-weight:600;cursor:pointer}
+.fich-modo.activo{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.fich-nav{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:14px}
+.fich-nav-et{font-weight:600;min-width:160px;text-align:center;text-transform:capitalize}
+.fich-dia{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.fich-dia-tit{font-weight:700;font-size:.9rem;margin-bottom:8px;text-transform:capitalize;
+  border-bottom:1px solid var(--line);padding-bottom:6px}
+
+/* --- Ajustes: horario --- */
+.fh-dia{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.fh-dia-tit{font-weight:700;font-size:.88rem;margin-bottom:8px}
+.fh-tramos{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.fh-tramo{display:flex;align-items:center;gap:8px}
+.fh-tramo input[type=time]{border:1px solid var(--line);border-radius:7px;padding:6px 9px;font:inherit}
+.fh-quitar{background:none;border:none;color:var(--bad);cursor:pointer;font-size:1rem;padding:2px 6px}
