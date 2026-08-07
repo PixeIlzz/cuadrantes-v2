@@ -1369,3 +1369,12 @@ html[data-tema="oscuro"] .prox-fila.prox-hoy{background:var(--accent-soft)}
   .banner-cambios{flex-direction:column;align-items:stretch}
   .banner-cambios .btn{width:100%}
 }
+
+/* Aviso de peligro en la pestaña Cuadrante (cambios sin avisar) */
+.tab-btn.tab-alerta{position:relative}
+.tab-btn.tab-alerta::after{
+  content:'⚠';
+  position:absolute;top:2px;right:2px;
+  font-size:.7rem;line-height:1;
+  filter:drop-shadow(0 0 1px rgba(0,0,0,.3));
+}
