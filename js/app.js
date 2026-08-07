@@ -6,7 +6,7 @@ import { initPWA } from './pwa.js';
 import { initTema } from './ui/tema.js';
 import { confirmar } from './ui/confirmar.js';
 import { initEquipo, abrirEquipo } from './ui/equipo.js';
-import { initCuadrante, abrirCuadrante } from './ui/cuadrante.js';
+import { initCuadrante, actualizarAvisoPestana, abrirCuadrante } from './ui/cuadrante.js';
 import { initProgramadas, abrirProgramadas } from './ui/programadas.js';
 import { initAjustes, abrirAjustes } from './ui/ajustes.js';
 import { initAvisos, abrirAvisos, pintarTablon } from './ui/avisos.js';
@@ -133,6 +133,7 @@ function mostrarApp(session, role, biz) {
   if (esGestor) {
     initEquipo();
     initCuadrante();
+    actualizarAvisoPestana();   // muestra ⚠ en la pestaña si hay cambios sin avisar
     initAjustes();
     initProgramadas((startIso) => {   // "Editar" desde Programadas abre esa semana
       cambiarPestana('cuadrante');
