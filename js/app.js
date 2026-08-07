@@ -15,6 +15,7 @@ import { initPrivacidad } from './ui/privacidad.js';
 import { initNotificaciones, refrescarBadge, accionMarcarTodas, accionBorrarTodas, pintarPreferencias } from './ui/notificaciones.js';
 import { initPushUI } from './ui/push.js';
 import { ofrecerAvisos } from './ui/push-bienvenida.js';
+import { abrirFichajeEmpleado, abrirFichajeGestor, pintarAjustesFichaje } from './ui/fichaje.js';
 import { initHoy, abrirHoy } from './ui/hoy.js';
 import { initTareas, abrirTareas, refrescarContadorTareas } from './ui/tareas.js';
 import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos, abrirEmpHoy } from './ui/empleado.js';
@@ -42,8 +43,8 @@ window.addEventListener('unhandledrejection', (e) =>
   fallo('Fallo: ' + (e.reason?.message || e.reason)));
 
 /* ---------- Pestañas ---------- */
-const PESTANAS = ['hoy', 'cuadrante', 'programar', 'equipo', 'tareas', 'solicitudes', 'ajustes',
-                  'emp-hoy', 'emp-cuadrante', 'emp-turnos', 'emp-solicitudes', 'emp-ajustes'];
+const PESTANAS = ['hoy', 'cuadrante', 'programar', 'equipo', 'fichaje', 'tareas', 'solicitudes', 'ajustes',
+                  'emp-hoy', 'emp-fichaje', 'emp-cuadrante', 'emp-turnos', 'emp-solicitudes', 'emp-ajustes'];
 
 function cambiarPestana(nombre) {
   document.querySelectorAll('.tab-btn[data-tab]').forEach((b) =>
@@ -55,12 +56,14 @@ function cambiarPestana(nombre) {
   if (nombre === 'equipo') abrirEquipo();
   if (nombre === 'cuadrante') abrirCuadrante();
   if (nombre === 'programar') abrirProgramadas();
-  if (nombre === 'ajustes') { abrirAjustes(); abrirAvisos(); }
+  if (nombre === 'ajustes') { abrirAjustes(); abrirAvisos(); if (ctx.esProbador) pintarAjustesFichaje(); }
   if (nombre === 'emp-cuadrante') abrirEmpCuadrante();
   if (nombre === 'emp-turnos') abrirMisTurnos();
   if (nombre === 'emp-solicitudes') abrirMisSolicitudes();
   if (nombre === 'emp-ajustes') abrirAjustesEmpleado();
   if (nombre === 'solicitudes') abrirSolicitudes('pending');
+  if (nombre === 'fichaje') abrirFichajeGestor();
+  if (nombre === 'emp-fichaje') abrirFichajeEmpleado();
 }
 
 document.querySelectorAll('.tab-btn[data-tab]').forEach((btn) => {
@@ -129,6 +132,16 @@ function mostrarApp(session, role, biz) {
   const esGestor = (role === 'manager');
   document.querySelectorAll('.solo-gestor').forEach((e) => { e.hidden = !esGestor; });
   document.querySelectorAll('.solo-empleado').forEach((e) => { e.hidden = esGestor; });
+  // Módulo de fichaje: solo visible para cuentas de prueba
+  document.querySelectorAll('.solo-probador').forEach((e) => {
+    // respeta también la separación de rol: si es panel de gestor y soy empleado, sigue oculto
+    const esDeGestor = e.classList.contains('solo-gestor');
+    const esDeEmpleado = e.classList.contains('solo-empleado');
+    let ocultarPorRol = false;
+    if (esDeGestor && !esGestor) ocultarPorRol = true;
+    if (esDeEmpleado && esGestor) ocultarPorRol = true;
+    e.hidden = !ctx.esProbador || ocultarPorRol;
+  });
 
   if (esGestor) {
     initEquipo();
@@ -208,6 +221,12 @@ async function cargarNegocio(session) {
     .eq('id', mem[0].business_id).maybeSingle();
   if (e2) throw new Error('businesses: ' + e2.message);
   if (!biz) throw new Error('No se pudo cargar el negocio.');
+
+  // ¿Es cuenta de prueba? (para el módulo de fichaje en desarrollo)
+  try {
+    const { data: prof } = await sb.rpc('soy_probador');
+    ctx.esProbador = prof === true;
+  } catch (_) { ctx.esProbador = false; }
 
   ctx.workerId = null;
   if (mem[0].role === 'employee') {
