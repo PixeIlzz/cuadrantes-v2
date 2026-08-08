@@ -31,9 +31,14 @@ export async function ficharKiosco(token, workerId, pin) {
     body: { device_token: token, worker_id: workerId, pin },
   });
   if (error) {
-    // El cuerpo del error trae { error: 'CODIGO' }
+    // Intentamos sacar el motivo real (código corto o mensaje del servidor)
     let code = 'ERROR';
-    try { const b = await error.context.json(); code = b.error || code; } catch (_) {}
+    try {
+      const b = await error.context.json();
+      code = b.error || b.msg || b.message || JSON.stringify(b);
+    } catch (_) {
+      code = error.message || code;
+    }
     throw new Error(code);
   }
   if (data && data.error) throw new Error(data.error);
@@ -64,4 +69,25 @@ export async function tengoPin(businessId) {
   const { data, error } = await sb.rpc('tengo_pin', { p_business_id: businessId });
   if (error) throw new Error(error.message);
   return data === true;
+}
+
+/* ---- Gestión de kioscos (gestor) ---- */
+export async function listarKioscos(businessId) {
+  const { data, error } = await sb
+    .from('kioscos')
+    .select('id, nombre, activo, created_at')
+    .eq('business_id', businessId)
+    .order('created_at', { ascending: true });
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
+export async function renombrarKiosco(id, nombre) {
+  const { error } = await sb.from('kioscos').update({ nombre }).eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+export async function eliminarKiosco(id) {
+  const { error } = await sb.from('kioscos').delete().eq('id', id);
+  if (error) throw new Error(error.message);
 }
