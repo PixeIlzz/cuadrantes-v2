@@ -8,6 +8,7 @@ import { confirmar } from './confirmar.js';
 import {
   reclamarToken, vincularKiosco, equipoKiosco, ficharKiosco,
   negociosGestor, ponerMiPin, tengoPin,
+  listarKioscos, renombrarKiosco, eliminarKiosco,
 } from '../data/kiosco.js';
 
 const $ = (id) => document.getElementById(id);
@@ -43,10 +44,12 @@ export function arrancarKiosco() {
   // El gestor que escanea trae #kiosco-claim: NO es modo kiosco, arranque normal.
   if (hash.startsWith('#kiosco-claim')) return false;
 
+  // Una tablet ya emparejada arranca SIEMPRE en el kiosco, ignore el hash que quede.
   const token = localStorage.getItem(CLAVE_TOKEN);
-  if (hash === '#emparejar-kiosko') { mostrarEmparejamiento(); return true; }
   if (token) { mostrarKiosco(token); return true; }
-  if (hash === '#kiosco') { mostrarEmparejamiento(); return true; }
+
+  // Sin token: solo si venimos a emparejar.
+  if (hash === '#emparejar-kiosko' || hash === '#kiosco') { mostrarEmparejamiento(); return true; }
   return false;
 }
 
@@ -85,6 +88,7 @@ export async function mostrarEmparejamiento() {
       if (token) {
         clearInterval(pollTimer); pollTimer = null;
         localStorage.setItem(CLAVE_TOKEN, token);
+        history.replaceState(null, '', location.pathname + location.search);
         if (estado) estado.textContent = '¡Vinculado! Abriendo el kiosco…';
         setTimeout(() => mostrarKiosco(token), 700);
       }
@@ -370,7 +374,7 @@ async function enviarFichaje(token, worker, pin, err, ov) {
     mostrarConfirmacion(worker, r.tipo, r.momento);
   } catch (e) {
     const code = (e.message || 'ERROR').trim();
-    err.textContent = MENSAJES[code] || MENSAJES.ERROR;
+    err.textContent = MENSAJES[code] || ('No se pudo fichar · ' + code);
     if (code === 'KIOSCO_INVALIDO') setTimeout(() => desvincular(true), 1200);
   }
 }
@@ -404,8 +408,86 @@ async function desvincular(silencioso) {
 }
 
 /* =========================================================
-   "Configurar mi PIN" — empleado, dentro de la app con sesión
+   LISTA DE KIOSCOS (gestor · Ajustes) — renombrar / eliminar
    ========================================================= */
+export async function pintarKioscos(ctx) {
+  const cont = $('kioscos-lista');
+  if (!cont || !ctx || !ctx.business) return;
+  cont.innerHTML = '<div class="empty-note">Cargando…</div>';
+
+  let lista;
+  try { lista = await listarKioscos(ctx.business.id); }
+  catch (_) { cont.innerHTML = '<div class="empty-note">No se pudieron cargar los kioscos.</div>'; return; }
+
+  cont.innerHTML = '';
+  if (lista.length === 0) {
+    cont.innerHTML = '<div class="empty-note">Aún no hay ninguna tablet vinculada.</div>';
+    return;
+  }
+
+  for (const k of lista) {
+    const fila = document.createElement('div');
+    fila.className = 'kiosco-fila';
+    pintarFilaKiosco(fila, k, ctx);
+    cont.appendChild(fila);
+  }
+}
+
+function pintarFilaKiosco(fila, k, ctx) {
+  fila.innerHTML = '';
+  const nom = document.createElement('span');
+  nom.className = 'kiosco-fila-nombre';
+  nom.textContent = k.nombre;
+  fila.appendChild(nom);
+
+  const acc = document.createElement('div');
+  acc.className = 'kiosco-fila-acc';
+
+  const bRen = document.createElement('button');
+  bRen.className = 'btn small'; bRen.type = 'button'; bRen.textContent = 'Renombrar';
+  bRen.onclick = () => editarNombreKiosco(fila, k, ctx);
+
+  const bDel = document.createElement('button');
+  bDel.className = 'btn small peligro'; bDel.type = 'button'; bDel.textContent = 'Eliminar';
+  bDel.onclick = async () => {
+    const ok = await confirmar('¿Eliminar el kiosco «' + k.nombre + '»? Esa tablet dejará de poder fichar.', {
+      textoOk: 'Eliminar', peligro: true,
+    });
+    if (!ok) return;
+    try { await eliminarKiosco(k.id); toast('Kiosco eliminado'); pintarKioscos(ctx); }
+    catch (e) { toast('No se pudo eliminar: ' + e.message); }
+  };
+
+  acc.appendChild(bRen); acc.appendChild(bDel);
+  fila.appendChild(acc);
+}
+
+function editarNombreKiosco(fila, k, ctx) {
+  fila.innerHTML = '';
+  const inp = document.createElement('input');
+  inp.type = 'text'; inp.value = k.nombre; inp.maxLength = 30; inp.className = 'kiosco-fila-input';
+  fila.appendChild(inp);
+
+  const acc = document.createElement('div');
+  acc.className = 'kiosco-fila-acc';
+
+  const bOk = document.createElement('button');
+  bOk.className = 'btn small primary'; bOk.type = 'button'; bOk.textContent = 'Guardar';
+  bOk.onclick = async () => {
+    const nombre = (inp.value || '').trim();
+    if (!nombre) { toast('Ponle un nombre'); return; }
+    try { await renombrarKiosco(k.id, nombre); toast('Nombre actualizado'); pintarKioscos(ctx); }
+    catch (e) { toast('No se pudo: ' + e.message); }
+  };
+
+  const bNo = document.createElement('button');
+  bNo.className = 'btn small'; bNo.type = 'button'; bNo.textContent = 'Cancelar';
+  bNo.onclick = () => pintarKioscos(ctx);
+
+  acc.appendChild(bOk); acc.appendChild(bNo);
+  fila.appendChild(acc);
+  inp.focus();
+}
 export async function pintarPinEmpleado(ctx) {
   const cont = $('pin-empleado');
   if (!cont || !ctx || !ctx.business) return;
