@@ -16,6 +16,7 @@ import { initNotificaciones, refrescarBadge, accionMarcarTodas, accionBorrarToda
 import { initPushUI } from './ui/push.js';
 import { ofrecerAvisos } from './ui/push-bienvenida.js';
 import { abrirFichajeEmpleado, abrirFichajeGestor, pintarAjustesFichaje } from './ui/fichaje.js';
+import { abrirMiRegistro } from './ui/mi-registro.js';
 import { initHoy, abrirHoy } from './ui/hoy.js';
 import { initTareas, abrirTareas, refrescarContadorTareas } from './ui/tareas.js';
 import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos, abrirEmpHoy } from './ui/empleado.js';
@@ -64,7 +65,7 @@ function cambiarPestana(nombre) {
   if (nombre === 'emp-ajustes') { abrirAjustesEmpleado(); if (ctx.esProbador) pintarPinEmpleado(ctx); }
   if (nombre === 'solicitudes') abrirSolicitudes('pending');
   if (nombre === 'fichaje') abrirFichajeGestor();
-  if (nombre === 'emp-fichaje') abrirFichajeEmpleado();
+  if (nombre === 'emp-fichaje') abrirMiRegistro();
 }
 
 document.querySelectorAll('.tab-btn[data-tab]').forEach((btn) => {
