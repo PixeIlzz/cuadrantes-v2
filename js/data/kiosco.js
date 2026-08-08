@@ -24,6 +24,13 @@ export async function equipoKiosco(token) {
   return data || [];
 }
 
+/* Estado en vivo del equipo: dentro/desde + horario previsto del negocio. */
+export async function estadoKiosco(token) {
+  const { data, error } = await sb.rpc('kiosco_estado', { p_device_token: token });
+  if (error) throw new Error(error.message);
+  return data || { horarios: {}, workers: [] };
+}
+
 /* Fichar desde el kiosco. La Edge Function añade la IP real y valida todo.
    Devuelve { ok, tipo, momento } o lanza un código de error corto. */
 export async function ficharKiosco(token, workerId, pin) {
