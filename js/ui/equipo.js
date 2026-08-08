@@ -134,7 +134,10 @@ function filaTrabajador(w) {
   invBtn.title = 'Código de acceso para el empleado';
   invBtn.addEventListener('click', () => mostrarInvitacion(w, invPanel));
 
-  row.append(nameIn, hoursIn, lbl, nifBtn, vacBtn, invBtn, del);
+  const acciones = document.createElement('div');
+  acciones.className = 'worker-acc';
+  acciones.append(hoursIn, lbl, nifBtn, vacBtn, invBtn, del);
+  row.append(nameIn, acciones);
 
   // Panel de vacaciones
   const panel = document.createElement('div');

@@ -368,6 +368,7 @@ async function pintarDetalle() {
   }
 
   let totalPeriodo = 0;
+  let estMin = 0, diasConHorario = 0, diasPuntuales = 0, retrasos = 0;
   const cfg = horarioNegocio();
   for (const dia of Object.keys(porDia).sort()) {
     const bloque = document.createElement('div');
@@ -392,6 +393,17 @@ async function pintarDetalle() {
     }
     const t = totalTrabajado(porDia[dia]);
     totalPeriodo += totalSeg(porDia[dia]);
+
+    // Estadísticas de puntualidad/saldo (solo días con horario previsto)
+    const estDia = minEstablecidoDia(cfg, claveDia);
+    if (estDia > 0) {
+      estMin += estDia;
+      diasConHorario += 1;
+      const primeraEntrada = porDia[dia].find((x) => x.tipo === 'entrada');
+      if (primeraEntrada && calcularRetraso(primeraEntrada, claveDia, cfg)) retrasos += 1;
+      else diasPuntuales += 1;
+    }
+
     const tt = document.createElement('div');
     tt.className = 'fich-dia-total';
     tt.innerHTML = 'Total del día: <b>' + t + '</b>';
@@ -399,9 +411,23 @@ async function pintarDetalle() {
     cont.appendChild(bloque);
   }
 
+  // Resumen de puntualidad y saldo del periodo
+  const estSeg = estMin * 60;
+  const saldoSeg = totalPeriodo - estSeg;
+  const signo = saldoSeg >= 0 ? '+' : '−';
+  const punt = diasConHorario > 0 ? Math.round((diasPuntuales / diasConHorario) * 100) : null;
+
   const resumen = document.createElement('div');
-  resumen.className = 'fich-resumen';
-  resumen.innerHTML = 'Total del periodo: <b>' + segAHMS(totalPeriodo) + '</b>';
+  resumen.className = 'fich-stats';
+  const stat = (lbl, val, cls) =>
+    '<div class="fs-item ' + (cls || '') + '"><div class="fs-val">' + val + '</div>'
+    + '<div class="fs-lbl">' + lbl + '</div></div>';
+  resumen.innerHTML =
+    stat('Realizado', segAHMS(totalPeriodo)) +
+    (estMin > 0 ? stat('Establecido', segAHMS(estSeg)) : '') +
+    (estMin > 0 ? stat('Saldo', signo + segAHMS(Math.abs(saldoSeg)), saldoSeg >= 0 ? 'ok' : 'bad') : '') +
+    (punt !== null ? stat('Puntualidad', punt + '%', punt >= 90 ? 'ok' : (punt >= 70 ? '' : 'bad')) : '') +
+    (diasConHorario > 0 ? stat('Retrasos', String(retrasos), retrasos ? 'bad' : 'ok') : '');
   cont.appendChild(resumen);
 }
 
