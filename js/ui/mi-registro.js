@@ -1,7 +1,7 @@
 // Vista "Mi registro" del empleado: sus fichajes por día / semana / mes / año.
 // Reutiliza el mismo estilo visual que "mis turnos". v1
 import { ctx } from '../auth.js';
-import { fichajesDe, horarioNegocio } from '../data/fichaje.js';
+import { fichajesDe, horarioNegocio, miEstado, misFichajesHoy, suscribirFichajes, cerrarCanal } from '../data/fichaje.js';
 import { isoDe, lunesDe, sumarDias, etiquetaSemana } from '../data/semanas.js';
 
 const $ = (id) => document.getElementById(id);
@@ -12,12 +12,30 @@ const ETI = { dia: 'Día', semana: 'Semana', mes: 'Mes', anio: 'Año' };
 
 let modo = 'semana';
 let ancla = new Date();
+let headerTimer = null;
+let canalRt = null;
 
 export async function abrirMiRegistro() {
   const cont = $('emp-fichaje');
   if (!cont) return;
 
+  // Limpiamos timers/canal de una apertura anterior
+  if (headerTimer) { clearInterval(headerTimer); headerTimer = null; }
+  if (canalRt) { cerrarCanal(canalRt); canalRt = null; }
+
   cont.innerHTML = '';
+
+  // --- Cabecera: estado actual del fichaje (siempre arriba) ---
+  const estado = document.createElement('div');
+  estado.id = 'reg-estado';
+  estado.className = 'reg-estado';
+  estado.innerHTML =
+    '<div class="re-fecha"></div>' +
+    '<div class="re-timer">00:00:00</div>' +
+    '<div class="re-estado-txt"></div>' +
+    '<div class="re-sub"></div>';
+  cont.appendChild(estado);
+
   const barra = document.createElement('div');
   barra.className = 'reg-barra';
   barra.innerHTML =
@@ -43,7 +61,85 @@ export async function abrirMiRegistro() {
   $('reg-ant').onclick = () => { mover(-1); };
   $('reg-sig').onclick = () => { mover(1); };
 
+  await pintarEstadoActual();
   await pintarLista();
+
+  // Timer en vivo (1 s) y Realtime (se repinta al fichar en el kiosco)
+  headerTimer = setInterval(actualizarEstadoHeader, 1000);
+  if (ctx.business) {
+    canalRt = suscribirFichajes(ctx.business.id, () => {
+      pintarEstadoActual();
+      pintarLista();
+    });
+  }
+}
+
+/* ---------- Cabecera de estado actual ---------- */
+async function pintarEstadoActual() {
+  const cont = $('reg-estado');
+  if (!cont) return;
+  let estado, hoy;
+  try { estado = await miEstado(); hoy = await misFichajesHoy(); }
+  catch (_) { return; }
+
+  const cfg = horarioNegocio();
+  const claveDia = DIAS[(new Date().getDay() + 6) % 7];
+  const tarde = (estado.dentro && estado.desde)
+    ? !!calcularRetraso({ tipo: 'entrada', momento: estado.desde }, claveDia, cfg) : false;
+
+  cont.dataset.dentro = estado.dentro ? '1' : '';
+  cont.dataset.desde = estado.desde || '';
+  cont.dataset.tarde = tarde ? '1' : '';
+  cont.dataset.max = String(minEstablecido(cfg, claveDia));
+  cont.dataset.hoymin = String(totalMin(hoy));
+
+  cont.querySelector('.re-fecha').textContent =
+    new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+  cont.querySelector('.re-sub').textContent =
+    (estado.dentro && estado.desde) ? ('Entrada a las ' + hora(estado.desde)) : '';
+
+  actualizarEstadoHeader();
+}
+
+function actualizarEstadoHeader() {
+  const cont = $('reg-estado');
+  if (!cont) return;
+  const txt = cont.querySelector('.re-estado-txt');
+  const timer = cont.querySelector('.re-timer');
+  if (!txt || !timer) return;
+
+  if (cont.dataset.dentro === '1' && cont.dataset.desde) {
+    const ms = Date.now() - new Date(cont.dataset.desde).getTime();
+    const max = Number(cont.dataset.max) || 0;
+    const exceso = max > 0 && (ms / 60000) > max;
+    const rojo = cont.dataset.tarde === '1' || exceso;
+    timer.textContent = fmtDurHMS(ms);
+    txt.textContent = rojo
+      ? (cont.dataset.tarde === '1' ? 'Trabajando · fichaste tarde' : 'Trabajando · exceso de horas')
+      : 'Estás trabajando';
+    cont.className = 'reg-estado ' + (rojo ? 'rojo' : 'activo');
+  } else {
+    const hoymin = Number(cont.dataset.hoymin) || 0;
+    timer.textContent = hoymin > 0 ? minAHoras(hoymin) : '00:00:00';
+    txt.textContent = hoymin > 0 ? 'No estás fichado · hoy llevas' : 'No has fichado hoy';
+    cont.className = 'reg-estado';
+  }
+}
+
+function minEstablecido(cfg, claveDia) {
+  const tramos = (cfg.horarios && cfg.horarios[claveDia]) || [];
+  let t = 0;
+  for (const x of tramos) {
+    const a = hhmmAMin(x.desde), b = hhmmAMin(x.hasta);
+    if (a != null && b != null && b > a) t += b - a;
+  }
+  return t;
+}
+function fmtDurHMS(ms) {
+  const t = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
+  const p = (n) => String(n).padStart(2, '0');
+  return p(h) + ':' + p(m) + ':' + p(s);
 }
 
 function mover(dir) {
