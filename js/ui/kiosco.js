@@ -2,6 +2,7 @@
 // vinculación desde el gestor y "configurar mi PIN" del empleado.
 // El emparejamiento y la pantalla de fichaje corren SIN sesión. v1
 import QRCode from 'https://esm.sh/qrcode@1.5.4';
+import jsQR from 'https://esm.sh/jsqr@1.4.0';
 import { toast } from './toast.js';
 import { confirmar } from './confirmar.js';
 import {
@@ -108,12 +109,15 @@ export async function revisarVinculacionPendiente(ctx) {
   const code = m ? m[1] : null;
   history.replaceState(null, '', location.pathname + location.search);
   if (!code) return;
+  await vincularConCodigo(ctx, code);
+}
 
+/* Núcleo de la vinculación: pide negocio + nombre y llama al servidor. */
+async function vincularConCodigo(ctx, code) {
   if (!ctx || ctx.role !== 'manager') {
     toast('Solo un gestor puede vincular un kiosco.');
     return;
   }
-
   let negocios = [];
   try { negocios = await negociosGestor(); } catch (_) {}
   if (negocios.length === 0) { toast('No se encontró tu negocio.'); return; }
@@ -126,6 +130,72 @@ export async function revisarVinculacionPendiente(ctx) {
   } catch (err) {
     toast('No se pudo vincular: ' + err.message);
   }
+}
+
+/* =========================================================
+   ESCANEAR EL QR CON LA CÁMARA (desde Ajustes del gestor)
+   ========================================================= */
+export async function escanearYVincular(ctx) {
+  if (!ctx || ctx.role !== 'manager') {
+    toast('Solo un gestor puede vincular un kiosco.');
+    return;
+  }
+
+  const ov = document.createElement('div');
+  ov.className = 'kiosco-scan-ov';
+  ov.innerHTML =
+    '<div class="kiosco-scan">' +
+      '<video id="kscan-video" playsinline muted></video>' +
+      '<div class="kscan-marco"></div>' +
+      '<p class="kscan-txt">Apunta al QR que muestra la tablet</p>' +
+      '<button class="btn" id="kscan-cerrar" type="button">Cancelar</button>' +
+    '</div>';
+  document.body.appendChild(ov);
+
+  const video = ov.querySelector('#kscan-video');
+  const canvas = document.createElement('canvas');
+  const cx = canvas.getContext('2d', { willReadFrequently: true });
+  let stream = null, raf = null, activo = true;
+
+  const cerrar = () => {
+    activo = false;
+    if (raf) cancelAnimationFrame(raf);
+    if (stream) stream.getTracks().forEach((t) => t.stop());
+    ov.remove();
+  };
+  ov.querySelector('#kscan-cerrar').onclick = cerrar;
+
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } }, audio: false,
+    });
+  } catch (_) {
+    cerrar();
+    toast('No se pudo abrir la cámara. Revisa los permisos del navegador.');
+    return;
+  }
+  video.srcObject = stream;
+  await video.play().catch(() => {});
+
+  const tick = () => {
+    if (!activo) return;
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      cx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      let res = null;
+      try {
+        const img = cx.getImageData(0, 0, canvas.width, canvas.height);
+        res = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+      } catch (_) {}
+      if (res && res.data) {
+        const m = res.data.match(/code=([a-f0-9]+)/i);
+        if (m) { cerrar(); vincularConCodigo(ctx, m[1]); return; }
+      }
+    }
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
 }
 
 /* Modal: elegir negocio (si hay varios) + nombre del kiosco */
