@@ -96,6 +96,20 @@ export function horarioNegocio() {
   return (ctx.business.config && ctx.business.config.fichaje) || { horarios: {}, cierre_auto: '' };
 }
 
+export async function estadoDeWorker(workerId) {
+  const { data, error } = await sb.from('time_entries')
+    .select('tipo, momento')
+    .eq('worker_id', workerId)
+    .order('momento', { ascending: false })
+    .limit(1);
+  if (error) throw new Error(error.message);
+  const ult = (data && data[0]) || null;
+  return {
+    dentro: !!ult && ult.tipo === 'entrada',
+    desde: (ult && ult.tipo === 'entrada') ? ult.momento : null,
+  };
+}
+
 export function datosLegales() {
   return (ctx.business.config && ctx.business.config.legal) || { razon_social: '', cif: '' };
 }
