@@ -134,13 +134,18 @@ button{font:inherit;cursor:pointer}
 .add-form input[type=number]{flex:1;min-width:90px;max-width:120px}
 .worker-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .worker-row{
-  display:flex;align-items:center;gap:8px;
-  border:1px solid var(--line);border-radius:var(--radius);padding:8px 10px;
+  display:flex;flex-direction:column;gap:8px;
+  border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;
 }
-.worker-row input[type=text]{flex:2;min-width:100px;border:none;font:inherit;font-weight:600;background:transparent}
+.worker-row>input[type=text]{
+  width:100%;border:none;font:inherit;font-weight:600;background:transparent;
+  padding:2px 0;font-size:1.02rem;
+}
+.worker-acc{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .worker-row input[type=number]{width:64px;border:1px solid var(--line);border-radius:6px;padding:5px;font:inherit;text-align:center}
 .worker-row .h-label{font-size:.75rem;color:var(--ink-soft)}
-.worker-row .del{background:none;border:none;color:var(--bad);font-size:1.05rem;font-weight:700;padding:4px 8px}
+.worker-acc .btn.small{white-space:nowrap}
+.worker-acc .del{margin-left:auto;background:none;border:none;color:var(--bad);font-size:1.05rem;font-weight:700;padding:4px 8px}
 .del{background:none;border:none;color:var(--bad);font-weight:700;padding:4px 8px;cursor:pointer}
 .setting-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .setting-row .note{font-size:.78rem;color:var(--ink-soft);flex-basis:100%}
@@ -1720,3 +1725,17 @@ html[data-tema="oscuro"] .fich-testeo-aviso{color:#ffd166}
   border:none;background:none;padding:0;margin:0 0 1.3rem;box-shadow:none;
 }
 .ajustes-bloque-body .panel:last-child{margin-bottom:0}
+
+/* ---- Resumen de puntualidad / saldo (detalle gestor) ---- */
+.fich-stats{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:.6rem;
+  margin-top:1rem;
+}
+.fs-item{
+  background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:.8rem .6rem;text-align:center;
+}
+.fs-val{font-size:1.15rem;font-weight:800;font-variant-numeric:tabular-nums}
+.fs-lbl{font-size:.72rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-top:.2rem}
+.fs-item.ok .fs-val{color:var(--coc)}
+.fs-item.bad .fs-val{color:var(--bad)}
