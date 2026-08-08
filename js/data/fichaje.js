@@ -96,6 +96,16 @@ export function horarioNegocio() {
   return (ctx.business.config && ctx.business.config.fichaje) || { horarios: {}, cierre_auto: '' };
 }
 
+export function datosLegales() {
+  return (ctx.business.config && ctx.business.config.legal) || { razon_social: '', cif: '' };
+}
+export async function guardarDatosLegales(legal) {
+  const cfg = { ...(ctx.business.config || {}), legal };
+  const { error } = await sb.from('businesses').update({ config: cfg }).eq('id', ctx.business.id);
+  if (error) throw new Error('No se pudo guardar: ' + error.message);
+  ctx.business.config = cfg;
+}
+
 export async function guardarHorarioFichaje(fichajeConfig) {
   const cfg = { ...(ctx.business.config || {}), fichaje: fichajeConfig };
   const { error } = await sb.from('businesses').update({ config: cfg }).eq('id', ctx.business.id);
