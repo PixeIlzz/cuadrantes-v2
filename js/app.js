@@ -20,7 +20,7 @@ import { initHoy, abrirHoy } from './ui/hoy.js';
 import { initTareas, abrirTareas, refrescarContadorTareas } from './ui/tareas.js';
 import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos, abrirEmpHoy } from './ui/empleado.js';
 import { initAjustesEmpleado, abrirAjustesEmpleado } from './ui/ajustes-empleado.js';
-import { arrancarKiosco, mostrarEmparejamiento, revisarVinculacionPendiente, pintarPinEmpleado, escanearYVincular } from './ui/kiosco.js';
+import { arrancarKiosco, mostrarEmparejamiento, revisarVinculacionPendiente, pintarPinEmpleado, escanearYVincular, pintarKioscos } from './ui/kiosco.js';
 import { canjearCodigo, nombreDelCodigo } from './data/invitaciones.js';
 import {
 
@@ -57,7 +57,7 @@ function cambiarPestana(nombre) {
   if (nombre === 'equipo') abrirEquipo();
   if (nombre === 'cuadrante') abrirCuadrante();
   if (nombre === 'programar') abrirProgramadas();
-  if (nombre === 'ajustes') { abrirAjustes(); abrirAvisos(); if (ctx.esProbador) pintarAjustesFichaje(); }
+  if (nombre === 'ajustes') { abrirAjustes(); abrirAvisos(); if (ctx.esProbador) { pintarAjustesFichaje(); pintarKioscos(ctx); } }
   if (nombre === 'emp-cuadrante') abrirEmpCuadrante();
   if (nombre === 'emp-turnos') abrirMisTurnos();
   if (nombre === 'emp-solicitudes') abrirMisSolicitudes();
