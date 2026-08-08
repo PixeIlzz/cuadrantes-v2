@@ -9,6 +9,19 @@ export async function fichar() {
   return data;
 }
 
+/* Realtime: avisa (cb) cuando cambia algún fichaje del negocio.
+   La RLS limita lo que llega a cada usuario. Devuelve el canal. */
+export function suscribirFichajes(businessId, cb) {
+  return sb.channel('fichajes-' + businessId)
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'time_entries', filter: 'business_id=eq.' + businessId },
+      cb)
+    .subscribe();
+}
+export function cerrarCanal(canal) {
+  if (canal) sb.removeChannel(canal);
+}
+
 /* Fichajes de un trabajador en un rango de fechas (ISO). */
 export async function fichajesDe(workerId, desdeIso, hastaIso) {
   const { data, error } = await sb
