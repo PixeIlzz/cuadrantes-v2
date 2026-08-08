@@ -1671,3 +1671,26 @@ html[data-tema="oscuro"] .fich-testeo-aviso{color:#ffd166}
 .legal-form{display:flex;flex-direction:column;gap:.7rem;max-width:360px}
 .legal-form label{display:flex;flex-direction:column;font-size:.85rem;color:var(--ink-soft);gap:.3rem}
 .legal-form input{padding:.6rem;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);font-size:1rem}
+
+/* ============================================================
+   Homogeneidad: cabeceras de grupo en Ajustes + estados
+   ============================================================ */
+.ajustes-grupo{
+  font-size:.75rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--ink-soft);margin:1.8rem .2rem .1rem;
+}
+.ajustes-grupo:first-child{margin-top:.2rem}
+
+/* NIF en la ficha del trabajador */
+.worker-nif{
+  width:104px;padding:.4rem;border:1px solid var(--line);border-radius:8px;
+  background:var(--paper);color:var(--ink);text-transform:uppercase;font-size:.9rem;
+}
+.worker-nif::placeholder{text-transform:none}
+
+/* Estado + timer en las tarjetas de "Hoy" (gestor) */
+.fich-emp .fe-timer{font-weight:800;font-variant-numeric:tabular-nums;min-height:1rem;font-size:1.05rem}
+.fich-emp.activo{border-color:var(--coc);box-shadow:inset 0 0 0 2px var(--coc)}
+.fich-emp.activo .fe-timer,.fich-emp.activo .fe-estado{color:var(--coc)}
+.fich-emp.rojo{border-color:var(--bad);box-shadow:inset 0 0 0 2px var(--bad)}
+.fich-emp.rojo .fe-timer,.fich-emp.rojo .fe-estado{color:var(--bad)}
