@@ -50,8 +50,9 @@ function llegoTarde(desdeIso) {
 }
 function fmtDur(ms) {
   const tot = Math.max(0, Math.floor(ms / 1000));
-  const h = Math.floor(tot / 3600), m = Math.floor((tot % 3600) / 60);
-  return h > 0 ? (h + 'h ' + String(m).padStart(2, '0') + 'm') : (m + ' min');
+  const h = Math.floor(tot / 3600), m = Math.floor((tot % 3600) / 60), s = tot % 60;
+  const p = (n) => String(n).padStart(2, '0');
+  return p(h) + ':' + p(m) + ':' + p(s);
 }
 
 /* ---------- utilidades ---------- */
