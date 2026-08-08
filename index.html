@@ -70,6 +70,7 @@
     <p class="login-alt"><a href="#" class="link-privacidad">Privacidad y datos</a></p>
     <div class="login-instalar">
       <button class="btn small" id="btn-instalar-login" type="button" hidden>📲 Instalar la app</button>
+      <button class="btn small" id="btn-emparejar-kiosko" type="button">🖥️ Emparejar kiosko</button>
       <span class="note ayuda-ios" hidden>Para instalarla en iPhone: <b>Compartir</b> → <b>Añadir a pantalla de inicio</b>.</span>
     </div>
   </form>
@@ -529,6 +530,16 @@
       <p class="note">Si algún dato no es correcto, avisa a tu responsable: solo él puede cambiarlo.</p>
     </div>
 
+    <div class="panel solo-probador" id="panel-pin-empleado" hidden>
+      <h2>Mi PIN de fichaje 🧪</h2>
+      <p class="note" id="pin-empleado-estado">…</p>
+      <div id="pin-empleado" class="pin-form">
+        <input type="password" id="pin-empleado-input" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="4 a 6 dígitos">
+        <button class="btn primary" id="pin-empleado-guardar" type="button">Guardar PIN</button>
+      </div>
+      <p class="note">Con este PIN fichas en la tablet del local. No lo compartas con nadie.</p>
+    </div>
+
     <div class="panel">
       <h2>Notificaciones</h2>
       <p class="note">Elige de qué quieres que te avisemos.</p>
@@ -623,6 +634,33 @@
   </section>
 </main>
 </div>
+
+<!-- ============ KIOSCO · EMPAREJAR ============ -->
+<section id="vista-kiosco-emparejar" class="centro" hidden>
+  <div class="kiosco-card">
+    <img src="icon-192.png" alt="" class="logo">
+    <h1>Emparejar kiosko</h1>
+    <p class="kiosco-sub">Escanea este código desde la app con una cuenta de <b>gestor</b>.</p>
+    <img id="kiosco-qr" class="kiosco-qr" alt="Código QR de emparejamiento">
+    <div id="kiosco-qr-alt" class="kiosco-qr-alt" hidden></div>
+    <p id="kiosco-emp-estado" class="kiosco-estado">Preparando…</p>
+    <button class="btn" id="kiosco-emp-cancelar" type="button">Cancelar</button>
+  </div>
+</section>
+
+<!-- ============ KIOSCO · FICHAJE ============ -->
+<section id="vista-kiosco" class="kiosco-pantalla" hidden>
+  <header class="kiosco-cab">
+    <div class="kiosco-marca">StaffPoint · Fichaje</div>
+    <div id="kiosco-reloj" class="kiosco-reloj">--:--</div>
+  </header>
+  <p class="kiosco-instruccion">Toca tu nombre para fichar entrada o salida</p>
+  <div id="kiosco-grid" class="kiosco-grid"></div>
+  <button id="kiosco-salir" class="kiosco-salir" type="button">Salir del modo kiosco</button>
+
+  <div id="kiosco-pin" class="kiosco-pin" hidden></div>
+  <div id="kiosco-confirma" class="kiosco-confirma" hidden></div>
+</section>
 
 <div id="toast"></div>
 

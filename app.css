@@ -1461,3 +1461,122 @@ html[data-tema="oscuro"] .fich-testeo-aviso{color:#ffd166}
 .fh-tramo{display:flex;align-items:center;gap:8px}
 .fh-tramo input[type=time]{border:1px solid var(--line);border-radius:7px;padding:6px 9px;font:inherit}
 .fh-quitar{background:none;border:none;color:var(--bad);cursor:pointer;font-size:1rem;padding:2px 6px}
+
+/* =========================================================
+   MODO KIOSCO (fichaje presencial) — v1
+   ========================================================= */
+/* Botón emparejar en el login */
+.login-instalar{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;justify-content:center}
+
+/* ---- Pantalla de emparejamiento ---- */
+.kiosco-card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:1.6rem;max-width:360px;width:100%;text-align:center;
+  box-shadow:0 6px 24px rgba(0,0,0,.08);
+}
+.kiosco-card .logo{width:52px;height:52px;border-radius:12px;margin-bottom:.4rem}
+.kiosco-card h1{font-size:1.5rem;margin-bottom:.3rem}
+.kiosco-sub{color:var(--ink-soft);font-size:.9rem;margin-bottom:1rem}
+.kiosco-qr{width:260px;max-width:80%;height:auto;border-radius:12px;background:#fff;padding:10px;border:1px solid var(--line)}
+.kiosco-qr-alt{word-break:break-all;font-size:.75rem;color:var(--ink-soft);background:var(--gris-bg);padding:.6rem;border-radius:8px;margin-top:.5rem}
+.kiosco-estado{margin:1rem 0;color:var(--accent);font-weight:600}
+
+/* ---- Pantalla de fichaje (pantalla completa) ---- */
+.kiosco-pantalla{
+  position:fixed;inset:0;z-index:50;background:var(--paper);color:var(--ink);
+  display:flex;flex-direction:column;padding:1rem 1rem 1.4rem;overflow-y:auto;
+}
+.kiosco-cab{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.4rem .2rem 1rem;border-bottom:1px solid var(--line);margin-bottom:1rem;
+}
+.kiosco-marca{font-weight:700;color:var(--ink-soft);letter-spacing:.02em}
+.kiosco-reloj{font-size:2.2rem;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.kiosco-instruccion{text-align:center;color:var(--ink-soft);margin-bottom:1rem}
+.kiosco-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+  gap:.8rem;flex:1;align-content:start;
+}
+.kiosco-emp{
+  display:flex;flex-direction:column;align-items:center;gap:.6rem;
+  padding:1.1rem .6rem;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;cursor:pointer;transition:transform .06s,border-color .12s;
+  min-height:130px;justify-content:center;
+}
+.kiosco-emp:active{transform:scale(.97)}
+.kiosco-emp .ke-avatar{
+  width:56px;height:56px;border-radius:50%;background:var(--accent-soft);
+  color:var(--accent);display:flex;align-items:center;justify-content:center;
+  font-size:1.4rem;font-weight:800;
+}
+.kiosco-emp .ke-nombre{font-weight:700;text-align:center;line-height:1.15}
+.kiosco-emp.sin-pin{opacity:.55}
+.kiosco-salir{
+  margin:1.4rem auto 0;background:none;border:none;color:var(--gris-txt2);
+  font-size:.8rem;text-decoration:underline;cursor:pointer;padding:.4rem;
+}
+.kiosco-error{text-align:center;padding:2rem 1rem;display:flex;flex-direction:column;gap:1rem;align-items:center}
+
+/* ---- Teclado de PIN ---- */
+.kiosco-pin{
+  position:fixed;inset:0;z-index:60;background:rgba(10,14,23,.55);
+  display:flex;align-items:center;justify-content:center;padding:1rem;
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+}
+.kpin-caja{
+  background:var(--card);border-radius:18px;padding:1.4rem;width:100%;max-width:320px;
+  text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.3);
+}
+.kpin-nombre{font-weight:700;font-size:1.1rem;margin-bottom:.6rem}
+.kpin-puntos{font-size:1.8rem;letter-spacing:.3rem;min-height:2rem;color:var(--accent)}
+.kpin-err{color:var(--bad);min-height:1.2rem;font-size:.85rem;margin:.3rem 0 .6rem}
+.kpin-teclado{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem}
+.kpin-tecla{
+  padding:1rem 0;font-size:1.4rem;font-weight:700;border-radius:12px;
+  border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;
+}
+.kpin-tecla:active{background:var(--gris-bg2)}
+.kpin-tecla.ok{background:var(--accent);color:var(--sobre-oscuro);border-color:var(--accent)}
+.kpin-tecla.borrar{color:var(--bad)}
+.kpin-cancelar{
+  margin-top:.9rem;background:none;border:none;color:var(--gris-txt);
+  cursor:pointer;padding:.4rem;font-size:.9rem;
+}
+
+/* ---- Confirmación a pantalla completa ---- */
+.kiosco-confirma{
+  position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:.4rem;color:#fff;
+  animation:kc-in .18s ease-out;
+}
+.kiosco-confirma.entrada{background:var(--coc)}
+.kiosco-confirma.salida{background:var(--accent)}
+.kiosco-confirma .kc-emoji{font-size:4rem}
+.kiosco-confirma .kc-txt{font-size:1.6rem;font-weight:800}
+.kiosco-confirma .kc-nombre{font-size:1.2rem}
+.kiosco-confirma .kc-hora{font-size:2.4rem;font-weight:800;font-variant-numeric:tabular-nums;margin-top:.2rem}
+@keyframes kc-in{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+
+/* ---- Modal de vinculación (gestor) ---- */
+.kiosco-modal-ov{
+  position:fixed;inset:0;z-index:80;background:rgba(10,14,23,.5);
+  display:flex;align-items:center;justify-content:center;padding:1rem;
+}
+.kiosco-modal{
+  background:var(--card);border-radius:16px;padding:1.4rem;width:100%;max-width:340px;
+  box-shadow:0 10px 40px rgba(0,0,0,.3);
+}
+.kiosco-modal h3{margin-bottom:1rem}
+.kiosco-modal .km-campo{display:flex;flex-direction:column;gap:.3rem;margin-bottom:.9rem;font-size:.85rem;color:var(--ink-soft)}
+.kiosco-modal input,.kiosco-modal select{
+  padding:.6rem;border:1px solid var(--line);border-radius:8px;
+  background:var(--paper);color:var(--ink);font-size:1rem;
+}
+.kiosco-modal-btns{display:flex;gap:.6rem;justify-content:flex-end;margin-top:.4rem}
+
+/* ---- Configurar mi PIN (empleado) ---- */
+.pin-form{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin:.4rem 0}
+.pin-form input{
+  padding:.6rem;border:1px solid var(--line);border-radius:8px;
+  background:var(--paper);color:var(--ink);font-size:1rem;width:160px;letter-spacing:.2rem;
+}
