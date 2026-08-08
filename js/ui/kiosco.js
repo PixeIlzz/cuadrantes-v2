@@ -362,6 +362,7 @@ const MENSAJES = {
   SIN_PIN: 'Configura tu PIN en la app primero',
   IP_NO_PERMITIDA: 'Este dispositivo no está en la red del local',
   KIOSCO_INVALIDO: 'Dispositivo no vinculado',
+  BLOQUEADO: 'Demasiados intentos. Espera unos minutos.',
   FALTAN_DATOS: 'No se pudo fichar, inténtalo de nuevo',
   ERROR: 'No se pudo fichar, inténtalo de nuevo',
 };
@@ -369,7 +370,7 @@ const MENSAJES = {
 async function enviarFichaje(token, worker, pin, err, ov) {
   err.textContent = 'Fichando…';
   try {
-    const r = await ficharKiosco(token, worker.id, pin);   // { ok, tipo, momento }
+    const r = await ficharKiosco(token, worker.worker_id, pin);   // { ok, tipo, momento }
     ov.hidden = true;
     mostrarConfirmacion(worker, r.tipo, r.momento);
   } catch (e) {
