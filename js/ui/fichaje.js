@@ -5,8 +5,9 @@ import { ctx } from '../auth.js';
 import {
   fichar, misFichajesHoy, miEstado, fichajesHoyEquipo, fichajesDe,
   horarioNegocio, guardarHorarioFichaje, corregirFichaje, borrarFichaje,
+  datosLegales, guardarDatosLegales,
 } from '../data/fichaje.js';
-import { listarEquipo } from '../data/equipo.js';
+import { listarEquipo, actualizarTrabajador } from '../data/equipo.js';
 import { etiquetaSemana, lunesDe, sumarDias, isoDe } from '../data/semanas.js';
 
 const $ = (id) => document.getElementById(id);
@@ -17,7 +18,7 @@ let relojTimer = null;
 
 /* Hora legible desde un timestamp */
 function hora(iso) {
-  return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit',
+  return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit',
     timeZone: 'Atlantic/Canary' });
 }
 function minutosDelDia(iso) {
@@ -132,20 +133,25 @@ async function pintarFichajeEmpleado(cont) {
 }
 
 /* Suma tramos entrada->salida. Devuelve "Xh Ym". */
-function totalTrabajado(fichajes) {
-  let mins = 0, entrada = null;
+function totalSeg(fichajes) {
+  let s = 0, entrada = null;
   for (const f of fichajes) {
     if (f.tipo === 'entrada') entrada = new Date(f.momento);
     else if (f.tipo === 'salida' && entrada) {
-      mins += Math.round((new Date(f.momento) - entrada) / 60000);
+      s += Math.round((new Date(f.momento) - entrada) / 1000);
       entrada = null;
     }
   }
-  // Si sigue dentro, cuenta hasta ahora
-  if (entrada) mins += Math.round((Date.now() - entrada) / 60000);
-  const h = Math.floor(mins / 60), m = mins % 60;
-  return h + 'h ' + String(m).padStart(2, '0') + 'm';
+  if (entrada) s += Math.round((Date.now() - entrada) / 1000);
+  return s;
 }
+function segAHMS(seg) {
+  const t = Math.max(0, Math.floor(seg));
+  const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
+  const p = (n) => String(n).padStart(2, '0');
+  return p(h) + ':' + p(m) + ':' + p(s);
+}
+function totalTrabajado(fichajes) { return segAHMS(totalSeg(fichajes)); }
 
 // ==========================================================
 //  GESTOR
@@ -197,10 +203,11 @@ async function pintarEquipoHoy(cont) {
 }
 
 /* Detalle de un empleado con navegación día/semana/mes */
-let detWorker = null, detModo = 'semana', detAncla = null;
+let detWorker = null, detModo = 'dia', detAncla = null;
+let detFsCache = null, detEtiquetaCache = '';
 
 async function abrirDetalleEmpleado(w) {
-  detWorker = w; detModo = 'semana'; detAncla = new Date();
+  detWorker = w; detModo = 'dia'; detAncla = new Date();
   await pintarDetalle();
 }
 
@@ -227,6 +234,7 @@ async function pintarDetalle() {
   let fs;
   try { fs = await fichajesDe(detWorker.id, desde, hasta); }
   catch (err) { cont.innerHTML = '<span class="empty-note">' + err.message + '</span>'; return; }
+  detFsCache = fs; detEtiquetaCache = etiqueta;
 
   cont.innerHTML = '';
 
@@ -266,6 +274,39 @@ async function pintarDetalle() {
   nav.append(prev, et, next);
   cont.appendChild(nav);
 
+  // Barra de acciones: NIF del trabajador + exportar el registro
+  const acc = document.createElement('div');
+  acc.className = 'fich-det-acc';
+  const nifWrap = document.createElement('div');
+  nifWrap.className = 'fich-nif';
+  nifWrap.innerHTML = '<label>NIF</label><input type="text" id="det-nif" maxlength="12" placeholder="00000000A">';
+  nifWrap.querySelector('#det-nif').value = detWorker.nif || '';
+  const bNif = document.createElement('button');
+  bNif.type = 'button'; bNif.className = 'btn small'; bNif.textContent = 'Guardar NIF';
+  bNif.addEventListener('click', async () => {
+    const nif = (nifWrap.querySelector('#det-nif').value || '').trim().toUpperCase();
+    try {
+      await actualizarTrabajador(detWorker.id, { nif });
+      detWorker.nif = nif;
+      const w = equipoCache.find((x) => x.id === detWorker.id); if (w) w.nif = nif;
+      toast('NIF guardado');
+    } catch (e) { toast('No se pudo: ' + e.message); }
+  });
+  nifWrap.appendChild(bNif);
+  acc.appendChild(nifWrap);
+
+  const exp = document.createElement('div');
+  exp.className = 'fich-exp';
+  const bPdf = document.createElement('button');
+  bPdf.type = 'button'; bPdf.className = 'btn small primary'; bPdf.textContent = 'Exportar PDF';
+  bPdf.addEventListener('click', exportarRegistroPDF);
+  const bCsv = document.createElement('button');
+  bCsv.type = 'button'; bCsv.className = 'btn small'; bCsv.textContent = 'CSV';
+  bCsv.addEventListener('click', exportarRegistroCSV);
+  exp.append(bPdf, bCsv);
+  acc.appendChild(exp);
+  cont.appendChild(acc);
+
   // Agrupar por día
   const porDia = {};
   for (const f of fs) {
@@ -302,7 +343,7 @@ async function pintarDetalle() {
       bloque.appendChild(fila);
     }
     const t = totalTrabajado(porDia[dia]);
-    totalPeriodo += totalMin(porDia[dia]);
+    totalPeriodo += totalSeg(porDia[dia]);
     const tt = document.createElement('div');
     tt.className = 'fich-dia-total';
     tt.innerHTML = 'Total del día: <b>' + t + '</b>';
@@ -312,7 +353,7 @@ async function pintarDetalle() {
 
   const resumen = document.createElement('div');
   resumen.className = 'fich-resumen';
-  resumen.innerHTML = 'Total del periodo: <b>' + minAHoras(totalPeriodo) + '</b>';
+  resumen.innerHTML = 'Total del periodo: <b>' + segAHMS(totalPeriodo) + '</b>';
   cont.appendChild(resumen);
 }
 
@@ -359,6 +400,109 @@ function totalMin(fichajes) {
 function minAHoras(mins) {
   const h = Math.floor(mins/60), m = mins%60;
   return h + 'h ' + String(m).padStart(2,'0') + 'm';
+}
+
+// ==========================================================
+//  EXPORTAR registro (PDF imprimible + CSV)
+// ==========================================================
+function agruparPorDia(fs) {
+  const porDia = {};
+  for (const f of fs) {
+    const d = new Date(f.momento).toLocaleDateString('es-CA', { timeZone: 'Atlantic/Canary' });
+    (porDia[d] ||= []).push(f);
+  }
+  return porDia;
+}
+function esc(t) {
+  return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function exportarRegistroPDF() {
+  if (!detWorker || !detFsCache) return;
+  const leg = datosLegales();
+  const porDia = agruparPorDia(detFsCache);
+  let filas = '', totalSegPeriodo = 0;
+  for (const dia of Object.keys(porDia).sort()) {
+    const fecha = new Date(dia + 'T12:00:00').toLocaleDateString('es-ES',
+      { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+    const items = porDia[dia];
+    let primera = true;
+    for (const f of items) {
+      filas += '<tr><td>' + (primera ? esc(fecha) : '') + '</td><td>'
+        + (f.tipo === 'entrada' ? 'Entrada' : 'Salida') + '</td><td>' + hora(f.momento)
+        + (f.estimado ? ' (est.)' : '') + (f.origen === 'gestor' ? ' (corr.)' : '') + '</td></tr>';
+      primera = false;
+    }
+    const seg = totalSeg(items); totalSegPeriodo += seg;
+    filas += '<tr class="tot"><td></td><td>Total del día</td><td>' + segAHMS(seg) + '</td></tr>';
+  }
+  const win = window.open('', '_blank');
+  if (!win) { toast('Permite las ventanas emergentes para exportar'); return; }
+  win.document.write(
+    '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Registro de jornada</title>'
+    + '<style>body{font-family:Arial,Helvetica,sans-serif;color:#111;padding:24px;font-size:12px}'
+    + 'h1{font-size:16px;margin:0 0 6px}table{width:100%;border-collapse:collapse;margin-top:10px}'
+    + 'th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}th{background:#f2f2f2}'
+    + 'tr.tot td{font-weight:bold;background:#fafafa}.datos{margin:2px 0}.pie{margin-top:24px;color:#555}</style>'
+    + '</head><body><h1>REGISTRO DE JORNADA LABORAL</h1>'
+    + '<div class="datos"><b>Razón social:</b> ' + esc(leg.razon_social || ctx.business.name || '')
+    + ' &nbsp; <b>CIF:</b> ' + esc(leg.cif || '') + '</div>'
+    + '<div class="datos"><b>Trabajador:</b> ' + esc(detWorker.name)
+    + ' &nbsp; <b>NIF:</b> ' + esc(detWorker.nif || '') + '</div>'
+    + '<div class="datos"><b>Periodo:</b> ' + esc(detEtiquetaCache || '') + '</div>'
+    + '<table><thead><tr><th>Fecha</th><th>Evento</th><th>Hora</th></tr></thead><tbody>' + filas
+    + '<tr class="tot"><td></td><td>TOTAL PERIODO</td><td>' + segAHMS(totalSegPeriodo) + '</td></tr>'
+    + '</tbody></table><p class="pie">Generado el '
+    + new Date().toLocaleString('es-ES', { timeZone: 'Atlantic/Canary' }) + ' · StaffPoint</p></body></html>');
+  win.document.close();
+  win.focus();
+  setTimeout(() => { try { win.print(); } catch (_) {} }, 300);
+}
+
+function exportarRegistroCSV() {
+  if (!detWorker || !detFsCache) return;
+  const leg = datosLegales();
+  const sep = ';';
+  const L = [];
+  L.push(['Razón social', leg.razon_social || ctx.business.name || ''].join(sep));
+  L.push(['CIF', leg.cif || ''].join(sep));
+  L.push(['Trabajador', detWorker.name].join(sep));
+  L.push(['NIF', detWorker.nif || ''].join(sep));
+  L.push(['Periodo', detEtiquetaCache || ''].join(sep));
+  L.push('');
+  L.push(['Fecha', 'Evento', 'Hora', 'Origen'].join(sep));
+  const porDia = agruparPorDia(detFsCache);
+  for (const dia of Object.keys(porDia).sort()) {
+    for (const f of porDia[dia]) L.push([dia, f.tipo, hora(f.momento), f.origen || ''].join(sep));
+    L.push(['', 'Total del día', segAHMS(totalSeg(porDia[dia])), ''].join(sep));
+  }
+  const blob = new Blob(['\ufeff' + L.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'registro_' + detWorker.name.replace(/\s+/g, '_') + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ==========================================================
+//  AJUSTES: datos legales (razón social + CIF)
+// ==========================================================
+export function pintarDatosLegales() {
+  const cont = $('datos-legales');
+  if (!cont) return;
+  const leg = datosLegales();
+  const rs = $('leg-razon'), cif = $('leg-cif');
+  if (rs) rs.value = leg.razon_social || '';
+  if (cif) cif.value = leg.cif || '';
+  const b = $('btn-guardar-legal');
+  if (b) b.onclick = async () => {
+    try {
+      await guardarDatosLegales({
+        razon_social: (rs.value || '').trim(),
+        cif: (cif.value || '').trim().toUpperCase(),
+      });
+      toast('Datos guardados');
+    } catch (e) { toast(e.message); }
+  };
 }
 
 // ==========================================================

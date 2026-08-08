@@ -10,7 +10,7 @@ const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
   'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const ETI = { dia: 'Día', semana: 'Semana', mes: 'Mes', anio: 'Año' };
 
-let modo = 'semana';
+let modo = 'dia';
 let ancla = new Date();
 let headerTimer = null;
 let canalRt = null;
@@ -91,7 +91,7 @@ async function pintarEstadoActual() {
   cont.dataset.desde = estado.desde || '';
   cont.dataset.tarde = tarde ? '1' : '';
   cont.dataset.max = String(minEstablecido(cfg, claveDia));
-  cont.dataset.hoymin = String(totalMin(hoy));
+  cont.dataset.hoyseg = String(totalSeg(hoy));
 
   cont.querySelector('.re-fecha').textContent =
     new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -119,9 +119,9 @@ function actualizarEstadoHeader() {
       : 'Estás trabajando';
     cont.className = 'reg-estado ' + (rojo ? 'rojo' : 'activo');
   } else {
-    const hoymin = Number(cont.dataset.hoymin) || 0;
-    timer.textContent = hoymin > 0 ? minAHoras(hoymin) : '00:00:00';
-    txt.textContent = hoymin > 0 ? 'No estás fichado · hoy llevas' : 'No has fichado hoy';
+    const hoyseg = Number(cont.dataset.hoyseg) || 0;
+    timer.textContent = hoyseg > 0 ? fmtDurHMS(hoyseg * 1000) : '00:00:00';
+    txt.textContent = hoyseg > 0 ? 'No estás fichado · hoy llevas' : 'No has fichado hoy';
     cont.className = 'reg-estado';
   }
 }
@@ -228,25 +228,25 @@ async function pintarLista() {
       panel.appendChild(fila);
     }
 
-    const min = totalMin(items);
-    totalPeriodo += min;
+    const seg = totalSeg(items);
+    totalPeriodo += seg;
     const tot = document.createElement('div');
     tot.className = 'reg-dia-total';
-    tot.innerHTML = 'Total del día: <b>' + minAHoras(min) + '</b>';
+    tot.innerHTML = 'Total del día: <b>' + fmtDurHMS(seg * 1000) + '</b>';
     panel.appendChild(tot);
     lista.appendChild(panel);
   }
 
   const resumen = document.createElement('div');
   resumen.className = 'reg-resumen';
-  resumen.innerHTML = 'Total del periodo: <b>' + minAHoras(totalPeriodo) + '</b>';
+  resumen.innerHTML = 'Total del periodo: <b>' + fmtDurHMS(totalPeriodo * 1000) + '</b>';
   lista.appendChild(resumen);
 }
 
 /* ---------- helpers ---------- */
 function hora(iso) {
   return new Date(iso).toLocaleTimeString('es-ES',
-    { hour: '2-digit', minute: '2-digit', timeZone: 'Atlantic/Canary' });
+    { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Atlantic/Canary' });
 }
 function minutosDelDia(iso) {
   const s = new Date(iso).toLocaleTimeString('es-ES',
@@ -271,6 +271,15 @@ function totalMin(fichajes) {
 function minAHoras(mins) {
   const h = Math.floor(mins / 60), m = mins % 60;
   return h + 'h ' + String(m).padStart(2, '0') + 'm';
+}
+function totalSeg(fichajes) {
+  let s = 0, e = null;
+  for (const f of fichajes) {
+    if (f.tipo === 'entrada') e = new Date(f.momento);
+    else if (f.tipo === 'salida' && e) { s += Math.round((new Date(f.momento) - e) / 1000); e = null; }
+  }
+  if (e) s += Math.round((Date.now() - e) / 1000);
+  return s;
 }
 function calcularRetraso(f, claveDia, cfg) {
   if (f.tipo !== 'entrada') return null;
