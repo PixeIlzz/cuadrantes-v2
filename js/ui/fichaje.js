@@ -684,6 +684,17 @@ export function pintarAjustesFichaje() {
     pintarTramos();
   }
 
+  // Umbral de recordatorio de salida no fichada
+  const recIn = $('fichaje-recordar-h');
+  if (recIn) {
+    recIn.value = (cfg.recordar_h != null ? cfg.recordar_h : 9);
+    recIn.addEventListener('change', () => {
+      const v = parseInt(recIn.value, 10);
+      cfg.recordar_h = (v >= 1 && v <= 24) ? v : 9;
+      recIn.value = cfg.recordar_h;
+    });
+  }
+
   // Guardar
   const guardar = $('btn-guardar-fichaje');
   if (guardar) {
