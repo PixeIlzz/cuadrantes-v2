@@ -86,6 +86,16 @@ function filaTrabajador(w) {
   const lbl = document.createElement('span');
   lbl.className = 'h-label'; lbl.textContent = 'turnos/sem';
 
+  // NIF (para el registro legal)
+  const nifIn = document.createElement('input');
+  nifIn.type = 'text'; nifIn.className = 'worker-nif'; nifIn.value = w.nif || '';
+  nifIn.maxLength = 12; nifIn.placeholder = 'NIF';
+  nifIn.addEventListener('change', async () => {
+    const v = (nifIn.value || '').trim().toUpperCase();
+    try { await actualizarTrabajador(w.id, { nif: v }); w.nif = v; nifIn.value = v; }
+    catch (err) { nifIn.value = w.nif || ''; toast(err.message); }
+  });
+
   // Botón vacaciones 🏖 con panel desplegable
   const vacBtn = document.createElement('button');
   vacBtn.type = 'button';
@@ -119,7 +129,7 @@ function filaTrabajador(w) {
   invBtn.title = 'Código de acceso para el empleado';
   invBtn.addEventListener('click', () => mostrarInvitacion(w, invPanel));
 
-  row.append(nameIn, hoursIn, lbl, vacBtn, invBtn, del);
+  row.append(nameIn, hoursIn, lbl, nifIn, vacBtn, invBtn, del);
 
   // Panel de vacaciones
   const panel = document.createElement('div');

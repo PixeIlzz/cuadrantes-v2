@@ -5,9 +5,9 @@ import { ctx } from '../auth.js';
 import {
   fichar, misFichajesHoy, miEstado, fichajesHoyEquipo, fichajesDe,
   horarioNegocio, guardarHorarioFichaje, corregirFichaje, borrarFichaje,
-  datosLegales, guardarDatosLegales,
+  datosLegales, guardarDatosLegales, estadoDeWorker,
 } from '../data/fichaje.js';
-import { listarEquipo, actualizarTrabajador } from '../data/equipo.js';
+import { listarEquipo } from '../data/equipo.js';
 import { etiquetaSemana, lunesDe, sumarDias, isoDe } from '../data/semanas.js';
 
 const $ = (id) => document.getElementById(id);
@@ -159,6 +159,7 @@ function totalTrabajado(fichajes) { return segAHMS(totalSeg(fichajes)); }
 let equipoCache = [];
 
 export async function abrirFichajeGestor() {
+  if (detEstadoTimer) { clearInterval(detEstadoTimer); detEstadoTimer = null; }
   const cont = $('fichaje-gestor');
   if (!cont) return;
   cont.innerHTML = '<span class="empty-note">Cargando…</span>';
@@ -183,30 +184,71 @@ async function pintarEquipoHoy(cont) {
   const lista = document.createElement('div');
   lista.className = 'fich-equipo';
 
+  const cfg = horarioNegocio();
+  const claveDia = DIAS[(new Date().getDay() + 6) % 7];
+  const maxMin = minEstablecidoDia(cfg, claveDia);
+
   for (const w of equipoCache) {
     const fs = porWorker[w.id] || [];
     const dentro = fs.length > 0 && fs[fs.length - 1].tipo === 'entrada';
+    const desde = dentro ? fs[fs.length - 1].momento : '';
+    const tarde = (dentro && desde) ? !!calcularRetraso({ tipo: 'entrada', momento: desde }, claveDia, cfg) : false;
+
     const card = document.createElement('button');
     card.type = 'button';
-    card.className = 'fich-emp' + (dentro ? ' dentro' : '');
+    card.className = 'fich-emp';
+    card.dataset.dentro = dentro ? '1' : '';
+    card.dataset.desde = desde || '';
+    card.dataset.tarde = tarde ? '1' : '';
+    card.dataset.max = String(maxMin);
+
     const total = fs.length ? totalTrabajado(fs) : '—';
     const estado = fs.length === 0 ? 'Sin fichar'
-      : (dentro ? 'Trabajando desde ' + hora(fs[fs.length - 1].momento) : 'Jornada terminada');
+      : (dentro ? 'Trabajando desde ' + hora(desde) : 'Jornada terminada');
     card.innerHTML = '<div class="fe-nombre"></div>'
       + '<div class="fe-estado">' + estado + '</div>'
-      + '<div class="fe-total">' + total + '</div>';
+      + '<div class="fe-timer"></div>'
+      + '<div class="fe-total">Hoy: ' + total + '</div>';
     card.querySelector('.fe-nombre').textContent = w.name;
     card.addEventListener('click', () => abrirDetalleEmpleado(w));
     lista.appendChild(card);
   }
   cont.appendChild(lista);
+
+  actualizarEquipoHoy();
+  if (equipoTimer) clearInterval(equipoTimer);
+  equipoTimer = setInterval(actualizarEquipoHoy, 1000);
+}
+
+/* Actualiza color y timer de sesión de cada tarjeta de "Hoy" */
+function actualizarEquipoHoy() {
+  const cont = $('fichaje-gestor');
+  if (!cont) return;
+  const cards = cont.querySelectorAll('.fich-emp');
+  if (!cards.length) { if (equipoTimer) { clearInterval(equipoTimer); equipoTimer = null; } return; }
+  for (const card of cards) {
+    const timer = card.querySelector('.fe-timer');
+    if (card.dataset.dentro === '1' && card.dataset.desde) {
+      const ms = Date.now() - new Date(card.dataset.desde).getTime();
+      const max = Number(card.dataset.max) || 0;
+      const rojo = card.dataset.tarde === '1' || (max > 0 && ms / 60000 > max);
+      if (timer) timer.textContent = segAHMS(Math.floor(ms / 1000));
+      card.classList.toggle('activo', !rojo);
+      card.classList.toggle('rojo', rojo);
+    } else {
+      if (timer) timer.textContent = '';
+      card.classList.remove('activo', 'rojo');
+    }
+  }
 }
 
 /* Detalle de un empleado con navegación día/semana/mes */
 let detWorker = null, detModo = 'dia', detAncla = null;
 let detFsCache = null, detEtiquetaCache = '';
+let detEstadoTimer = null, equipoTimer = null;
 
 async function abrirDetalleEmpleado(w) {
+  if (equipoTimer) { clearInterval(equipoTimer); equipoTimer = null; }
   detWorker = w; detModo = 'dia'; detAncla = new Date();
   await pintarDetalle();
 }
@@ -250,6 +292,14 @@ async function pintarDetalle() {
   cab.appendChild(nom);
   cont.appendChild(cab);
 
+  // Estado actual del empleado (arriba, como en la vista del empleado)
+  const box = document.createElement('div');
+  box.className = 'reg-estado'; box.id = 'det-estado';
+  box.innerHTML = '<div class="re-fecha"></div><div class="re-timer">00:00:00</div>'
+    + '<div class="re-estado-txt">Comprobando…</div><div class="re-sub"></div>';
+  cont.appendChild(box);
+  rellenarEstadoDetalle();
+
   // Selector de modo
   const modos = document.createElement('div');
   modos.className = 'fich-modos';
@@ -274,27 +324,9 @@ async function pintarDetalle() {
   nav.append(prev, et, next);
   cont.appendChild(nav);
 
-  // Barra de acciones: NIF del trabajador + exportar el registro
+  // Barra de acciones: exportar el registro
   const acc = document.createElement('div');
   acc.className = 'fich-det-acc';
-  const nifWrap = document.createElement('div');
-  nifWrap.className = 'fich-nif';
-  nifWrap.innerHTML = '<label>NIF</label><input type="text" id="det-nif" maxlength="12" placeholder="00000000A">';
-  nifWrap.querySelector('#det-nif').value = detWorker.nif || '';
-  const bNif = document.createElement('button');
-  bNif.type = 'button'; bNif.className = 'btn small'; bNif.textContent = 'Guardar NIF';
-  bNif.addEventListener('click', async () => {
-    const nif = (nifWrap.querySelector('#det-nif').value || '').trim().toUpperCase();
-    try {
-      await actualizarTrabajador(detWorker.id, { nif });
-      detWorker.nif = nif;
-      const w = equipoCache.find((x) => x.id === detWorker.id); if (w) w.nif = nif;
-      toast('NIF guardado');
-    } catch (e) { toast('No se pudo: ' + e.message); }
-  });
-  nifWrap.appendChild(bNif);
-  acc.appendChild(nifWrap);
-
   const exp = document.createElement('div');
   exp.className = 'fich-exp';
   const bPdf = document.createElement('button');
@@ -388,6 +420,15 @@ function calcularRetraso(f, claveDia, cfg) {
   return null;
 }
 
+function minEstablecidoDia(cfg, claveDia) {
+  const tramos = (cfg.horarios && cfg.horarios[claveDia]) || [];
+  let t = 0;
+  for (const x of tramos) {
+    const a = hhmmAMin(x.desde), b = hhmmAMin(x.hasta);
+    if (a != null && b != null && b > a) t += b - a;
+  }
+  return t;
+}
 function totalMin(fichajes) {
   let mins = 0, e = null;
   for (const f of fichajes) {
@@ -400,6 +441,48 @@ function totalMin(fichajes) {
 function minAHoras(mins) {
   const h = Math.floor(mins/60), m = mins%60;
   return h + 'h ' + String(m).padStart(2,'0') + 'm';
+}
+
+async function rellenarEstadoDetalle() {
+  let est;
+  try { est = await estadoDeWorker(detWorker.id); }
+  catch (_) { est = { dentro: false, desde: null }; }
+  const box = $('det-estado');
+  if (!box) return;
+  const cfg = horarioNegocio();
+  const claveDia = DIAS[(new Date().getDay() + 6) % 7];
+  const tarde = (est.dentro && est.desde)
+    ? !!calcularRetraso({ tipo: 'entrada', momento: est.desde }, claveDia, cfg) : false;
+  box.dataset.dentro = est.dentro ? '1' : '';
+  box.dataset.desde = est.desde || '';
+  box.dataset.tarde = tarde ? '1' : '';
+  box.dataset.max = String(minEstablecidoDia(cfg, claveDia));
+  box.querySelector('.re-fecha').textContent =
+    new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+  box.querySelector('.re-sub').textContent =
+    (est.dentro && est.desde) ? ('Entrada a las ' + hora(est.desde)) : '';
+  actualizarEstadoDetalle();
+  if (detEstadoTimer) clearInterval(detEstadoTimer);
+  detEstadoTimer = setInterval(actualizarEstadoDetalle, 1000);
+}
+function actualizarEstadoDetalle() {
+  const box = $('det-estado');
+  if (!box) return;
+  const txt = box.querySelector('.re-estado-txt'), timer = box.querySelector('.re-timer');
+  if (box.dataset.dentro === '1' && box.dataset.desde) {
+    const ms = Date.now() - new Date(box.dataset.desde).getTime();
+    const max = Number(box.dataset.max) || 0;
+    const rojo = box.dataset.tarde === '1' || (max > 0 && ms / 60000 > max);
+    timer.textContent = segAHMS(Math.floor(ms / 1000));
+    txt.textContent = rojo
+      ? (box.dataset.tarde === '1' ? 'Trabajando · fichó tarde' : 'Trabajando · exceso de horas')
+      : 'Trabajando ahora';
+    box.className = 'reg-estado ' + (rojo ? 'rojo' : 'activo');
+  } else {
+    timer.textContent = '—';
+    txt.textContent = 'No está fichado';
+    box.className = 'reg-estado';
+  }
 }
 
 // ==========================================================
