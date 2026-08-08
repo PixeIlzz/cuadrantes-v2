@@ -5,7 +5,7 @@ import {
   crearVacacion, actualizarVacacion, borrarVacacion,
 } from '../data/equipo.js';
 import { generarCodigo, codigoVivo } from '../data/invitaciones.js';
-import { confirmar } from './confirmar.js';
+import { confirmar, pedirTexto } from './confirmar.js';
 
 let equipo = [];      // caché en memoria de la última carga
 let cargado = false;
@@ -86,14 +86,19 @@ function filaTrabajador(w) {
   const lbl = document.createElement('span');
   lbl.className = 'h-label'; lbl.textContent = 'turnos/sem';
 
-  // NIF (para el registro legal)
-  const nifIn = document.createElement('input');
-  nifIn.type = 'text'; nifIn.className = 'worker-nif'; nifIn.value = w.nif || '';
-  nifIn.maxLength = 12; nifIn.placeholder = 'NIF';
-  nifIn.addEventListener('change', async () => {
-    const v = (nifIn.value || '').trim().toUpperCase();
-    try { await actualizarTrabajador(w.id, { nif: v }); w.nif = v; nifIn.value = v; }
-    catch (err) { nifIn.value = w.nif || ''; toast(err.message); }
+  // NIF (para el registro legal) — botón que abre un diálogo
+  const nifBtn = document.createElement('button');
+  nifBtn.type = 'button'; nifBtn.className = 'btn small';
+  nifBtn.title = 'NIF del trabajador';
+  const pintaNif = () => { nifBtn.textContent = w.nif ? ('NIF ' + w.nif) : '+ NIF'; };
+  pintaNif();
+  nifBtn.addEventListener('click', async () => {
+    const v = await pedirTexto('NIF de ' + w.name, w.nif || '', {
+      placeholder: '00000000A', maxLength: 12, transformar: (x) => x.toUpperCase(),
+    });
+    if (v === null) return;
+    try { await actualizarTrabajador(w.id, { nif: v }); w.nif = v; pintaNif(); toast('NIF guardado'); }
+    catch (err) { toast(err.message); }
   });
 
   // Botón vacaciones 🏖 con panel desplegable
@@ -129,7 +134,7 @@ function filaTrabajador(w) {
   invBtn.title = 'Código de acceso para el empleado';
   invBtn.addEventListener('click', () => mostrarInvitacion(w, invPanel));
 
-  row.append(nameIn, hoursIn, lbl, nifIn, vacBtn, invBtn, del);
+  row.append(nameIn, hoursIn, lbl, nifBtn, vacBtn, invBtn, del);
 
   // Panel de vacaciones
   const panel = document.createElement('div');

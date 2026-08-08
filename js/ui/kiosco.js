@@ -289,7 +289,7 @@ export async function mostrarKiosco(token) {
   if (contadorTimer) clearInterval(contadorTimer);
   contadorTimer = setInterval(actualizarContadores, 1000);
   if (refrescoTimer) clearInterval(refrescoTimer);
-  refrescoTimer = setInterval(() => pintarRejilla(token, true), 60000);
+  refrescoTimer = setInterval(() => pintarRejilla(token, true), 30000);
 }
 
 function arrancarReloj() {

@@ -6,6 +6,7 @@ import {
   fichar, misFichajesHoy, miEstado, fichajesHoyEquipo, fichajesDe,
   horarioNegocio, guardarHorarioFichaje, corregirFichaje, borrarFichaje,
   datosLegales, guardarDatosLegales, estadoDeWorker,
+  suscribirFichajes,
 } from '../data/fichaje.js';
 import { listarEquipo } from '../data/equipo.js';
 import { etiquetaSemana, lunesDe, sumarDias, isoDe } from '../data/semanas.js';
@@ -160,8 +161,10 @@ let equipoCache = [];
 
 export async function abrirFichajeGestor() {
   if (detEstadoTimer) { clearInterval(detEstadoTimer); detEstadoTimer = null; }
+  vistaActual = 'lista';
   const cont = $('fichaje-gestor');
   if (!cont) return;
+  if (!canalGestor && ctx.business) canalGestor = suscribirFichajes(ctx.business.id, onCambioGestor);
   cont.innerHTML = '<span class="empty-note">Cargando…</span>';
   try {
     equipoCache = await listarEquipo();
@@ -246,11 +249,24 @@ function actualizarEquipoHoy() {
 let detWorker = null, detModo = 'dia', detAncla = null;
 let detFsCache = null, detEtiquetaCache = '';
 let detEstadoTimer = null, equipoTimer = null;
+let canalGestor = null, vistaActual = 'lista', rtPend = null;
 
 async function abrirDetalleEmpleado(w) {
   if (equipoTimer) { clearInterval(equipoTimer); equipoTimer = null; }
+  vistaActual = 'detalle';
   detWorker = w; detModo = 'dia'; detAncla = new Date();
   await pintarDetalle();
+}
+
+/* Realtime: al llegar un fichaje, refresca lo que esté a la vista (con anti-rebote) */
+function onCambioGestor() {
+  clearTimeout(rtPend);
+  rtPend = setTimeout(() => {
+    const cont = $('fichaje-gestor');
+    if (!cont || cont.offsetParent === null) return;   // pestaña no visible
+    if (vistaActual === 'lista') pintarEquipoHoy(cont);
+    else rellenarEstadoDetalle();
+  }, 250);
 }
 
 async function pintarDetalle() {

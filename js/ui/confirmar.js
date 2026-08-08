@@ -41,6 +41,46 @@ export function confirmar(mensaje, opciones = {}) {
   });
 }
 
+/* Diálogo con un campo de texto. Resuelve con el texto (trim) o null si cancela. */
+export function pedirTexto(titulo, valorInicial = '', opciones = {}) {
+  const {
+    textoOk = 'Guardar', textoNo = 'Cancelar',
+    placeholder = '', maxLength = 40, transformar = null,
+  } = opciones;
+  return new Promise((resolve) => {
+    const bg = document.createElement('div');
+    bg.className = 'modal-bg';
+    const caja = document.createElement('div');
+    caja.className = 'modal';
+    const h = document.createElement('p');
+    h.className = 'modal-msg';
+    h.textContent = titulo;
+    const input = document.createElement('input');
+    input.type = 'text'; input.className = 'modal-input';
+    input.value = valorInicial || ''; input.placeholder = placeholder; input.maxLength = maxLength;
+    const fila = document.createElement('div');
+    fila.className = 'row';
+    const btnNo = document.createElement('button');
+    btnNo.type = 'button'; btnNo.className = 'btn'; btnNo.textContent = textoNo;
+    const btnOk = document.createElement('button');
+    btnOk.type = 'button'; btnOk.className = 'btn primary'; btnOk.textContent = textoOk;
+
+    const valor = () => { let v = (input.value || '').trim(); if (transformar) v = transformar(v); return v; };
+    function cerrar(v) { document.removeEventListener('keydown', pt); bg.remove(); resolve(v); }
+    function pt(e) { if (e.key === 'Escape') cerrar(null); if (e.key === 'Enter') cerrar(valor()); }
+    btnNo.addEventListener('click', () => cerrar(null));
+    btnOk.addEventListener('click', () => cerrar(valor()));
+    bg.addEventListener('click', (e) => { if (e.target === bg) cerrar(null); });
+    document.addEventListener('keydown', pt);
+
+    fila.append(btnNo, btnOk);
+    caja.append(h, input, fila);
+    bg.appendChild(caja);
+    document.body.appendChild(bg);
+    setTimeout(() => input.focus(), 50);
+  });
+}
+
 /* Selector de una opción en un modal propio.
    opciones: [{valor, etiqueta, nota}]  → resuelve con el valor elegido o null. */
 export function elegirOpcion(titulo, opciones) {
