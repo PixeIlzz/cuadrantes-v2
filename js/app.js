@@ -15,7 +15,7 @@ import { initPrivacidad } from './ui/privacidad.js';
 import { initNotificaciones, refrescarBadge, accionMarcarTodas, accionBorrarTodas, pintarPreferencias } from './ui/notificaciones.js';
 import { initPushUI } from './ui/push.js';
 import { ofrecerAvisos } from './ui/push-bienvenida.js';
-import { abrirFichajeEmpleado, abrirFichajeGestor, pintarAjustesFichaje } from './ui/fichaje.js';
+import { abrirFichajeEmpleado, abrirFichajeGestor, pintarAjustesFichaje, pintarDatosLegales } from './ui/fichaje.js';
 import { abrirMiRegistro } from './ui/mi-registro.js';
 import { initHoy, abrirHoy } from './ui/hoy.js';
 import { initTareas, abrirTareas, refrescarContadorTareas } from './ui/tareas.js';
@@ -58,7 +58,7 @@ function cambiarPestana(nombre) {
   if (nombre === 'equipo') abrirEquipo();
   if (nombre === 'cuadrante') abrirCuadrante();
   if (nombre === 'programar') abrirProgramadas();
-  if (nombre === 'ajustes') { abrirAjustes(); abrirAvisos(); if (ctx.esProbador) { pintarAjustesFichaje(); pintarKioscos(ctx); } }
+  if (nombre === 'ajustes') { abrirAjustes(); abrirAvisos(); if (ctx.esProbador) { pintarAjustesFichaje(); pintarKioscos(ctx); pintarDatosLegales(); } }
   if (nombre === 'emp-cuadrante') abrirEmpCuadrante();
   if (nombre === 'emp-turnos') abrirMisTurnos();
   if (nombre === 'emp-solicitudes') abrirMisSolicitudes();
