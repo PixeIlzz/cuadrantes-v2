@@ -1512,6 +1512,13 @@ html[data-tema="oscuro"] .fich-testeo-aviso{color:#ffd166}
   font-size:1.4rem;font-weight:800;
 }
 .kiosco-emp .ke-nombre{font-weight:700;text-align:center;line-height:1.15}
+.kiosco-emp .ke-timer{font-size:.85rem;font-weight:700;min-height:1rem;color:var(--ink-soft)}
+.kiosco-emp.activo{border-color:var(--coc);box-shadow:inset 0 0 0 2px var(--coc)}
+.kiosco-emp.activo .ke-avatar{background:color-mix(in srgb,var(--coc) 22%,transparent);color:var(--coc)}
+.kiosco-emp.activo .ke-timer{color:var(--coc)}
+.kiosco-emp.rojo{border-color:var(--bad);box-shadow:inset 0 0 0 2px var(--bad)}
+.kiosco-emp.rojo .ke-avatar{background:color-mix(in srgb,var(--bad) 22%,transparent);color:var(--bad)}
+.kiosco-emp.rojo .ke-timer{color:var(--bad)}
 .kiosco-emp.sin-pin{opacity:.55}
 .kiosco-salir{
   margin:1.4rem auto 0;background:none;border:none;color:var(--gris-txt2);
