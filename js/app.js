@@ -20,7 +20,7 @@ import { initHoy, abrirHoy } from './ui/hoy.js';
 import { initTareas, abrirTareas, refrescarContadorTareas } from './ui/tareas.js';
 import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos, abrirEmpHoy } from './ui/empleado.js';
 import { initAjustesEmpleado, abrirAjustesEmpleado } from './ui/ajustes-empleado.js';
-import { arrancarKiosco, mostrarEmparejamiento, revisarVinculacionPendiente, pintarPinEmpleado } from './ui/kiosco.js';
+import { arrancarKiosco, mostrarEmparejamiento, revisarVinculacionPendiente, pintarPinEmpleado, escanearYVincular } from './ui/kiosco.js';
 import { canjearCodigo, nombreDelCodigo } from './data/invitaciones.js';
 import {
 
@@ -181,6 +181,10 @@ function mostrarApp(session, role, biz) {
     refrescarContador();              // aviso de pendientes al entrar
     pintarTablon('tablon-gestor');
     pintarTablon('tablon-hoy');
+    if (ctx.esProbador) {
+      const bvk = $('btn-vincular-kiosko');
+      if (bvk) bvk.onclick = () => escanearYVincular(ctx);
+    }
     cambiarPestana('hoy');            // el panel de hoy es la primera pantalla
   } else {
     initEmpleado();
