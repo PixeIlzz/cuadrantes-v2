@@ -20,6 +20,7 @@ import { initHoy, abrirHoy } from './ui/hoy.js';
 import { initTareas, abrirTareas, refrescarContadorTareas } from './ui/tareas.js';
 import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos, abrirEmpHoy } from './ui/empleado.js';
 import { initAjustesEmpleado, abrirAjustesEmpleado } from './ui/ajustes-empleado.js';
+import { arrancarKiosco, mostrarEmparejamiento, revisarVinculacionPendiente, pintarPinEmpleado } from './ui/kiosco.js';
 import { canjearCodigo, nombreDelCodigo } from './data/invitaciones.js';
 import {
 
@@ -60,7 +61,7 @@ function cambiarPestana(nombre) {
   if (nombre === 'emp-cuadrante') abrirEmpCuadrante();
   if (nombre === 'emp-turnos') abrirMisTurnos();
   if (nombre === 'emp-solicitudes') abrirMisSolicitudes();
-  if (nombre === 'emp-ajustes') abrirAjustesEmpleado();
+  if (nombre === 'emp-ajustes') { abrirAjustesEmpleado(); if (ctx.esProbador) pintarPinEmpleado(ctx); }
   if (nombre === 'solicitudes') abrirSolicitudes('pending');
   if (nombre === 'fichaje') abrirFichajeGestor();
   if (nombre === 'emp-fichaje') abrirFichajeEmpleado();
@@ -195,6 +196,9 @@ function mostrarApp(session, role, biz) {
     pintarTablon('tablon-emp-hoy');
     cambiarPestana('emp-hoy');
   }
+
+  // Si el gestor ha llegado escaneando el QR de un kiosco, completar la vinculación.
+  revisarVinculacionPendiente(ctx);
 }
 
 async function cargarNegocio(session) {
@@ -408,6 +412,13 @@ $('form-registro').addEventListener('submit', async (e) => {
   }
 });
 
+/* ---------- Emparejar kiosko desde el login ---------- */
+const btnEmpKiosko = $('btn-emparejar-kiosko');
+if (btnEmpKiosko) btnEmpKiosko.addEventListener('click', () => {
+  location.hash = '#emparejar-kiosko';
+  mostrarEmparejamiento();
+});
+
 $('btn-salir').addEventListener('click', async () => {
   const ok = await confirmar('¿Seguro que quieres cerrar la sesión?', {
     textoOk: 'Cerrar sesión', peligro: true,
@@ -456,17 +467,23 @@ if (location.hash.includes('type=email_change')) {
   setTimeout(() => { try { toast('Email actualizado correctamente.'); } catch (_) {} }, 800);
 }
 
-try {
-  paso('Comprobando sesión…');
-  const session = await getSession();
-  if (hashRecovery && session) {
-    mostrarNuevaPassword();
-  } else if (session) {
-    await cargarNegocio(session);
-  } else {
+// Si esta carga es modo kiosco (tablet emparejada o pantalla de emparejar),
+// tomamos esa pantalla y no seguimos con el login ni la carga de negocio.
+if (arrancarKiosco()) {
+  // nada más: el módulo del kiosco ya ha pintado su pantalla.
+} else {
+  try {
+    paso('Comprobando sesión…');
+    const session = await getSession();
+    if (hashRecovery && session) {
+      mostrarNuevaPassword();
+    } else if (session) {
+      await cargarNegocio(session);
+    } else {
+      mostrarLogin();
+    }
+  } catch (err) {
+    fallo('Arranque: ' + (err.message || err));
     mostrarLogin();
   }
-} catch (err) {
-  fallo('Arranque: ' + (err.message || err));
-  mostrarLogin();
 }
