@@ -319,187 +319,205 @@
 
   <!-- ============ TAB AJUSTES ============ -->
   <section class="solo-gestor" id="tab-ajustes" hidden>
-    <div class="ajustes-grupo">Negocio</div>
-    <div class="panel">
-      <h2>Cuenta</h2>
-      <div class="setting-row"><span class="note" id="ajustes-cuenta"></span></div>
-      <div class="email-form">
+    <details class="ajustes-bloque">
+      <summary>Negocio y equipo</summary>
+      <div class="ajustes-bloque-body">
+        <div class="panel">
+        <h2>Cuenta</h2>
+        <div class="setting-row"><span class="note" id="ajustes-cuenta"></span></div>
+        <div class="email-form">
         <label>Cambiar mi email de acceso
-          <input type="email" id="gestor-email-nuevo" autocomplete="email" placeholder="nuevo@correo.com">
+        <input type="email" id="gestor-email-nuevo" autocomplete="email" placeholder="nuevo@correo.com">
         </label>
         <button class="btn" id="btn-cambiar-email" type="button">Cambiar email</button>
         <span class="note">Te enviaremos un correo de confirmación a la dirección nueva. El cambio no se aplica hasta que lo confirmes.</span>
-      </div>
-      <div class="pass-form">
+        </div>
+        <div class="pass-form">
         <label>Contraseña nueva
-          <input type="password" id="gestor-pass1" minlength="6" autocomplete="new-password">
+        <input type="password" id="gestor-pass1" minlength="6" autocomplete="new-password">
         </label>
         <label>Repítela
-          <input type="password" id="gestor-pass2" minlength="6" autocomplete="new-password">
+        <input type="password" id="gestor-pass2" minlength="6" autocomplete="new-password">
         </label>
         <button class="btn" id="btn-gestor-cambiar-pass" type="button">Cambiar contraseña</button>
-      </div>
-    </div>
+        </div>
+        </div>
 
-    <div class="panel solo-probador" id="panel-legal" hidden>
-      <h2>Datos para el registro legal 🧪</h2>
-      <p class="note">Se usan en el registro de jornada exportable (PDF/CSV) que entregas a inspección.</p>
-      <div id="datos-legales" class="legal-form">
+        <div class="panel solo-probador" id="panel-legal" hidden>
+        <h2>Datos para el registro legal 🧪</h2>
+        <p class="note">Se usan en el registro de jornada exportable (PDF/CSV) que entregas a inspección.</p>
+        <div id="datos-legales" class="legal-form">
         <label>Razón social<input type="text" id="leg-razon" placeholder="Melper 2001 S.L."></label>
         <label>CIF<input type="text" id="leg-cif" maxlength="12" placeholder="B00000000"></label>
         <button class="btn primary" id="btn-guardar-legal" type="button">Guardar</button>
-      </div>
-      <p class="note">El NIF de cada trabajador se pone desde Fichaje → al abrir su ficha.</p>
-    </div>
+        </div>
+        <p class="note">El NIF de cada trabajador se pone desde Fichaje → al abrir su ficha.</p>
+        </div>
 
-    <div class="ajustes-grupo">Cuadrante y publicación</div>
-    <div class="panel">
-      <h2>Puestos</h2>
-      <div class="add-form">
+        <div class="panel">
+        <h2>Solicitudes del equipo</h2>
+        <label class="pref-fila" style="cursor:pointer">
+        <span class="pref-label">Permitir que el equipo envíe solicitudes</span>
+        <input type="checkbox" class="pref-switch" id="sw-solicitudes" checked>
+        </label>
+        <p class="note">Al desactivarlo, desaparece la pestaña «Solicitudes» para ti y para el equipo. Las solicitudes ya enviadas no se borran: vuelven a aparecer si lo reactivas.</p>
+        </div>
+
+      </div>
+    </details>
+    <details class="ajustes-bloque">
+      <summary>Cuadrante y publicación</summary>
+      <div class="ajustes-bloque-body">
+        <div class="panel">
+        <h2>Puestos</h2>
+        <div class="add-form">
         <input type="text" id="new-role" placeholder="Nombre del puesto" maxlength="20">
         <button class="btn" id="btn-add-role" type="button">Añadir puesto</button>
-      </div>
-      <div class="worker-list" id="roles-list"></div>
-    </div>
+        </div>
+        <div class="worker-list" id="roles-list"></div>
+        </div>
 
-    <div class="panel">
-      <h2>Días y columnas</h2>
-      <div class="add-form">
+        <div class="panel">
+        <h2>Días y columnas</h2>
+        <div class="add-form">
         <input type="text" id="new-day" placeholder="Nombre de la columna" maxlength="20">
         <label class="check"><input type="checkbox" id="new-day-night"> columna de noche</label>
         <button class="btn" id="btn-add-day" type="button">Añadir columna</button>
-      </div>
-      <div class="worker-list" id="days-list"></div>
-    </div>
+        </div>
+        <div class="worker-list" id="days-list"></div>
+        </div>
 
-    <div class="panel">
-      <div class="setting-row">
+        <div class="panel">
+        <div class="setting-row">
         <button class="btn primary" id="btn-guardar-cfg" type="button">Guardar ajustes</button>
         <span class="note">Los cambios se aplican a las semanas nuevas y a los borradores. Las publicadas conservan la estructura con la que se hicieron.</span>
-      </div>
-    </div>
-    <div class="panel">
-      <h2>Publicación por defecto</h2>
-      <div class="setting-row">
+        </div>
+        </div>
+        <div class="panel">
+        <h2>Publicación por defecto</h2>
+        <div class="setting-row">
         <label for="pub-weekday">Publicar el</label>
         <select id="pub-weekday"></select>
         <label for="pub-time">a las</label>
         <input type="time" id="pub-time">
         <span class="note">Hora de Canarias. Se aplica al pulsar «Programar» en una semana; cada semana puede tener su propia fecha.</span>
-      </div>
-    </div>
+        </div>
+        </div>
 
-    <div class="panel">
-      <h2>Tablón de avisos</h2>
-      <p class="note">Lo que publiques aquí lo ve todo el equipo al abrir la app.</p>
-      <div class="aviso-form">
+        <div class="panel">
+        <h2>Tablón de avisos</h2>
+        <p class="note">Lo que publiques aquí lo ve todo el equipo al abrir la app.</p>
+        <div class="aviso-form">
         <textarea id="aviso-texto" rows="2" maxlength="400" placeholder="Ej.: El sábado tenemos una reserva de 40 personas a las 21:00."></textarea>
         <div class="aviso-opts">
-          <label class="check"><input type="checkbox" id="aviso-pin"> 📌 Destacar arriba</label>
-          <label class="check">Mostrar hasta <input type="date" id="aviso-expira"></label>
-          <button class="btn primary" id="btn-nuevo-aviso" type="button">Publicar aviso</button>
+        <label class="check"><input type="checkbox" id="aviso-pin"> 📌 Destacar arriba</label>
+        <label class="check">Mostrar hasta <input type="date" id="aviso-expira"></label>
+        <button class="btn primary" id="btn-nuevo-aviso" type="button">Publicar aviso</button>
         </div>
+        </div>
+        <div class="aviso-list" id="lista-avisos"></div>
+        </div>
+
       </div>
-      <div class="aviso-list" id="lista-avisos"></div>
-    </div>
+    </details>
+    <details class="ajustes-bloque solo-probador">
+      <summary>Fichaje</summary>
+      <div class="ajustes-bloque-body">
+        <div class="panel solo-probador" id="panel-fichaje-ajustes" hidden>
+        <h2>Fichaje · horario previsto 🧪</h2>
+        <p class="note">Define el horario de cada día. Si alguien ficha más tarde del inicio previsto, se marcará el retraso. Puedes añadir varios tramos por día (jornada partida).</p>
+        <div id="fichaje-horarios"></div>
+        <button class="btn primary" id="btn-guardar-fichaje" type="button">Guardar horario</button>
+        </div>
 
-    <div class="ajustes-grupo">Fichaje</div>
-    <div class="panel solo-probador" id="panel-fichaje-ajustes" hidden>
-      <h2>Fichaje · horario previsto 🧪</h2>
-      <p class="note">Define el horario de cada día. Si alguien ficha más tarde del inicio previsto, se marcará el retraso. Puedes añadir varios tramos por día (jornada partida).</p>
-      <div id="fichaje-horarios"></div>
-      <button class="btn primary" id="btn-guardar-fichaje" type="button">Guardar horario</button>
-    </div>
-
-    <div class="panel solo-probador" id="panel-kioscos" hidden>
-      <h2>Kioscos de fichaje 🧪</h2>
-      <p class="note">Para vincular una tablet: en la tablet, abre la app y pulsa <b>«Emparejar kiosko»</b> en la pantalla de inicio. Aquí pulsa <b>Escanear</b> y apunta al QR que muestra.</p>
-      <div class="setting-row">
+        <div class="panel solo-probador" id="panel-kioscos" hidden>
+        <h2>Kioscos de fichaje 🧪</h2>
+        <p class="note">Para vincular una tablet: en la tablet, abre la app y pulsa <b>«Emparejar kiosko»</b> en la pantalla de inicio. Aquí pulsa <b>Escanear</b> y apunta al QR que muestra.</p>
+        <div class="setting-row">
         <button class="btn primary" id="btn-vincular-kiosko" type="button">📷 Escanear QR de un kiosko</button>
+        </div>
+        <div id="kioscos-lista" class="kioscos-lista"></div>
+        </div>
+
       </div>
-      <div id="kioscos-lista" class="kioscos-lista"></div>
-    </div>
+    </details>
+    <details class="ajustes-bloque">
+      <summary>Notificaciones y aplicación</summary>
+      <div class="ajustes-bloque-body">
+        <div class="panel">
+        <h2>Notificaciones</h2>
+        <p class="note">Elige de qué quieres que te avisemos.</p>
+        <div id="pref-notif-gestor" class="pref-lista"></div>
+        <button class="btn primary push-btn" id="btn-push-gestor" type="button">Activar avisos en este dispositivo</button>
+        <p class="note">Los avisos llegan aunque tengas la app cerrada. En iPhone, primero añade la app a la pantalla de inicio.</p>
+        </div>
 
-    <div class="ajustes-grupo">Equipo</div>
-    <div class="panel">
-      <h2>Solicitudes del equipo</h2>
-      <label class="pref-fila" style="cursor:pointer">
-        <span class="pref-label">Permitir que el equipo envíe solicitudes</span>
-        <input type="checkbox" class="pref-switch" id="sw-solicitudes" checked>
-      </label>
-      <p class="note">Al desactivarlo, desaparece la pestaña «Solicitudes» para ti y para el equipo. Las solicitudes ya enviadas no se borran: vuelven a aparecer si lo reactivas.</p>
-    </div>
+        <div class="panel">
+        <h2>Aspecto</h2>
+        <div class="tema-opciones" id="tema-gestor"></div>
+        <p class="note">«Automático» sigue el ajuste de tu móvil o PC.</p>
+        </div>
 
-    <div class="ajustes-grupo">Notificaciones</div>
-    <div class="panel">
-      <h2>Notificaciones</h2>
-      <p class="note">Elige de qué quieres que te avisemos.</p>
-      <div id="pref-notif-gestor" class="pref-lista"></div>
-      <button class="btn primary push-btn" id="btn-push-gestor" type="button">Activar avisos en este dispositivo</button>
-      <p class="note">Los avisos llegan aunque tengas la app cerrada. En iPhone, primero añade la app a la pantalla de inicio.</p>
-    </div>
-
-    <div class="ajustes-grupo">Aplicación</div>
-    <div class="panel">
-      <h2>Aspecto</h2>
-      <div class="tema-opciones" id="tema-gestor"></div>
-      <p class="note">«Automático» sigue el ajuste de tu móvil o PC.</p>
-    </div>
-
-    <div class="panel">
-      <h2>Instalar la aplicación</h2>
-      <div class="setting-row">
+        <div class="panel">
+        <h2>Instalar la aplicación</h2>
+        <div class="setting-row">
         <button class="btn primary" id="btn-instalar" type="button" hidden>Instalar en este dispositivo</button>
         <span class="note">Instalada funciona como una app normal: icono propio, pantalla completa y arranque más rápido.</span>
         <span class="note ayuda-ios" hidden>En iPhone: toca el botón <b>Compartir</b> de Safari y elige <b>Añadir a pantalla de inicio</b>.</span>
+        </div>
+        </div>
       </div>
-    </div>
-    <div class="ajustes-grupo">Datos y privacidad</div>
-    <div class="panel">
-      <h2>Privacidad y protección de datos</h2>
-      <p class="note">StaffPoint guarda nombres, turnos, vacaciones y solicitudes de tu equipo: son datos personales y la ley te obliga a informarles.</p>
-      <div class="setting-row">
+    </details>
+    <details class="ajustes-bloque">
+      <summary>Datos y privacidad</summary>
+      <div class="ajustes-bloque-body">
+        <div class="panel">
+        <h2>Privacidad y protección de datos</h2>
+        <p class="note">StaffPoint guarda nombres, turnos, vacaciones y solicitudes de tu equipo: son datos personales y la ley te obliga a informarles.</p>
+        <div class="setting-row">
         <button class="btn" id="btn-ver-privacidad" type="button">Ver el aviso de privacidad</button>
         <button class="btn" id="btn-copiar-aviso" type="button">Copiar texto para el equipo</button>
-      </div>
-    </div>
+        </div>
+        </div>
 
-    <div class="panel">
-      <h2>Copia de seguridad</h2>
-      <p class="note">Descarga todo lo de este negocio en un archivo: ajustes, equipo, vacaciones, semanas con sus turnos, avisos y tareas. Guárdalo en un sitio seguro; contiene nombres de personas.</p>
-      <div class="setting-row">
+        <div class="panel">
+        <h2>Copia de seguridad</h2>
+        <p class="note">Descarga todo lo de este negocio en un archivo: ajustes, equipo, vacaciones, semanas con sus turnos, avisos y tareas. Guárdalo en un sitio seguro; contiene nombres de personas.</p>
+        <div class="setting-row">
         <button class="btn primary" id="btn-exportar-v2" type="button">Descargar copia de seguridad</button>
-      </div>
-      <hr class="mig-sep">
-      <p class="note">Restaurar una copia añade su contenido a este negocio. No borra nada de lo que ya tengas.</p>
-      <div class="mig-opciones">
+        </div>
+        <hr class="mig-sep">
+        <p class="note">Restaurar una copia añade su contenido a este negocio. No borra nada de lo que ya tengas.</p>
+        <div class="mig-opciones">
         <label class="check"><input type="checkbox" id="backup-config" checked> Restaurar también los ajustes</label>
-      </div>
-      <div class="setting-row">
+        </div>
+        <div class="setting-row">
         <button class="btn" id="btn-elegir-backup" type="button">Elegir copia…</button>
         <input type="file" id="file-backup" accept=".json,application/json" hidden>
-      </div>
-      <div id="backup-resumen" class="mig-resumen"></div>
-      <button class="btn primary" id="btn-restaurar" type="button" hidden>Restaurar esta copia</button>
-    </div>
+        </div>
+        <div id="backup-resumen" class="mig-resumen"></div>
+        <button class="btn primary" id="btn-restaurar" type="button" hidden>Restaurar esta copia</button>
+        </div>
 
-    <div class="panel">
-      <h2>Importar datos de la versión anterior</h2>
-      <p class="note">Selecciona los archivos de la v1. Puedes elegir varios a la vez:
+        <div class="panel">
+        <h2>Importar datos de la versión anterior</h2>
+        <p class="note">Selecciona los archivos de la v1. Puedes elegir varios a la vez:
         <b>cuadrante-datos.json</b> (copia de seguridad: equipo, vacaciones, ajustes y semana en curso),
         <b>programadas.json</b> y <b>datos.json</b> (del repositorio de la v1, con las semanas programadas y la publicada).</p>
-      <div class="mig-opciones">
+        <div class="mig-opciones">
         <label class="check"><input type="checkbox" id="v1-config" checked> Importar también días y puestos</label>
         <label class="check"><input type="checkbox" id="v1-semanas" checked> Importar las semanas</label>
-      </div>
-      <div class="setting-row">
+        </div>
+        <div class="setting-row">
         <button class="btn" id="btn-elegir-v1" type="button">Elegir archivos…</button>
         <input type="file" id="file-v1" accept=".json,application/json" multiple hidden>
-      </div>
-      <div id="v1-resumen" class="mig-resumen"></div>
-      <button class="btn primary" id="btn-importar-v1" type="button" hidden>Importar ahora</button>
-    </div>
+        </div>
+        <div id="v1-resumen" class="mig-resumen"></div>
+        <button class="btn primary" id="btn-importar-v1" type="button" hidden>Importar ahora</button>
+        </div>
 
+      </div>
+    </details>
   </section>
   <!-- ============ EMPLEADO · CUADRANTE ============ -->
   <section class="solo-empleado" id="tab-emp-fichaje" hidden>

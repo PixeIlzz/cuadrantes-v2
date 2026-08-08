@@ -1694,3 +1694,29 @@ html[data-tema="oscuro"] .fich-testeo-aviso{color:#ffd166}
 .fich-emp.activo .fe-timer,.fich-emp.activo .fe-estado{color:var(--coc)}
 .fich-emp.rojo{border-color:var(--bad);box-shadow:inset 0 0 0 2px var(--bad)}
 .fich-emp.rojo .fe-timer,.fich-emp.rojo .fe-estado{color:var(--bad)}
+
+/* ---- Diálogo con input (pedirTexto) ---- */
+.modal-input{
+  width:100%;padding:.7rem;border:1px solid var(--line);border-radius:10px;
+  background:var(--paper);color:var(--ink);font-size:1rem;margin:.4rem 0 .2rem;
+}
+
+/* ---- Ajustes en bloques desplegables ---- */
+.ajustes-bloque{
+  border:1px solid var(--line);border-radius:14px;background:var(--card);
+  margin-bottom:.8rem;overflow:hidden;
+}
+.ajustes-bloque>summary{
+  list-style:none;cursor:pointer;padding:1rem 1.1rem;font-weight:700;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.ajustes-bloque>summary::-webkit-details-marker{display:none}
+.ajustes-bloque>summary::after{content:'⌄';font-size:1.2rem;color:var(--ink-soft);transition:transform .2s}
+.ajustes-bloque[open]>summary::after{transform:rotate(180deg)}
+.ajustes-bloque[open]>summary{border-bottom:1px solid var(--line)}
+.ajustes-bloque-body{padding:.9rem 1.1rem 1.1rem}
+/* Dentro del bloque, los paneles pierden su caja (ya la pone el bloque) */
+.ajustes-bloque-body .panel{
+  border:none;background:none;padding:0;margin:0 0 1.3rem;box-shadow:none;
+}
+.ajustes-bloque-body .panel:last-child{margin-bottom:0}
