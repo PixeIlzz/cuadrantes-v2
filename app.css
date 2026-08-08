@@ -1484,7 +1484,7 @@ html[data-tema="oscuro"] .fich-testeo-aviso{color:#ffd166}
 /* ---- Pantalla de fichaje (pantalla completa) ---- */
 .kiosco-pantalla{
   position:fixed;inset:0;z-index:50;background:var(--paper);color:var(--ink);
-  display:flex;flex-direction:column;padding:1rem 1rem 1.4rem;overflow-y:auto;
+  display:flex;flex-direction:column;padding:1rem 1rem 1.4rem;overflow:hidden;
 }
 .kiosco-cab{
   display:flex;align-items:center;justify-content:space-between;
@@ -1494,9 +1494,11 @@ html[data-tema="oscuro"] .fich-testeo-aviso{color:#ffd166}
 .kiosco-reloj{font-size:2.2rem;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.02em}
 .kiosco-instruccion{text-align:center;color:var(--ink-soft);margin-bottom:1rem}
 .kiosco-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
-  gap:.8rem;flex:1;align-content:start;
+  display:grid;grid-template-columns:repeat(2,1fr);gap:.8rem;
+  flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  align-content:start;padding:.2rem;
 }
+@media(min-width:560px){.kiosco-grid{grid-template-columns:repeat(3,1fr)}}
 .kiosco-emp{
   display:flex;flex-direction:column;align-items:center;gap:.6rem;
   padding:1.1rem .6rem;background:var(--card);border:1px solid var(--line);
