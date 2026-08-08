@@ -1594,3 +1594,16 @@ html[data-tema="oscuro"] .fich-testeo-aviso{color:#ffd166}
 }
 .kscan-txt{position:relative;z-index:2;color:#fff;margin-top:1.2rem;font-weight:600;text-align:center;padding:0 1rem}
 #kscan-cerrar{position:relative;z-index:2;margin-top:1.4rem}
+
+/* ---- Lista de kioscos (ajustes gestor) ---- */
+.kioscos-lista{margin-top:1rem;display:flex;flex-direction:column;gap:.5rem}
+.kiosco-fila{
+  display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap;
+  padding:.7rem .8rem;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+}
+.kiosco-fila-nombre{font-weight:600}
+.kiosco-fila-acc{display:flex;gap:.4rem;flex-wrap:wrap}
+.kiosco-fila-input{
+  flex:1;min-width:140px;padding:.5rem;border:1px solid var(--line);border-radius:8px;
+  background:var(--card);color:var(--ink);font-size:1rem;
+}
