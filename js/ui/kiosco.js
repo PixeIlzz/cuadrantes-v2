@@ -6,7 +6,7 @@ import jsQR from 'https://esm.sh/jsqr@1.4.0';
 import { toast } from './toast.js';
 import { confirmar } from './confirmar.js';
 import {
-  reclamarToken, vincularKiosco, equipoKiosco, ficharKiosco,
+  reclamarToken, vincularKiosco, equipoKiosco, estadoKiosco, ficharKiosco,
   negociosGestor, ponerMiPin, tengoPin,
   listarKioscos, renombrarKiosco, eliminarKiosco,
 } from '../data/kiosco.js';
@@ -16,6 +16,43 @@ const CLAVE_TOKEN = 'staffpoint-kiosco-token';
 
 let pollTimer = null;
 let relojTimer = null;
+let contadorTimer = null;
+let refrescoTimer = null;
+let horariosHoy = [];      // tramos [{desde,hasta}] del día de hoy
+let maxMinHoy = 0;         // minutos previstos hoy (0 = sin horario)
+
+const DIAS = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom'];
+function claveHoy() { return DIAS[(new Date().getDay() + 6) % 7]; }
+function hhmmAMin(s) { const m = /^(\d{1,2}):(\d{2})$/.exec(s || ''); return m ? (+m[1]) * 60 + (+m[2]) : null; }
+function minDelDia(d) { return d.getHours() * 60 + d.getMinutes(); }
+
+/* Minutos previstos hoy (suma de tramos) y si una entrada llegó tarde. */
+function calcularHorarioHoy(horarios) {
+  horariosHoy = (horarios && horarios[claveHoy()]) || [];
+  maxMinHoy = 0;
+  for (const t of horariosHoy) {
+    const a = hhmmAMin(t.desde), b = hhmmAMin(t.hasta);
+    if (a != null && b != null && b > a) maxMinHoy += b - a;
+  }
+}
+function llegoTarde(desdeIso) {
+  if (!horariosHoy.length || !desdeIso) return false;
+  const minFich = minDelDia(new Date(desdeIso));
+  let mejor = null;
+  for (const t of horariosHoy) {
+    const ini = hhmmAMin(t.desde);
+    if (ini == null) continue;
+    if (minFich >= ini - 30 && minFich <= ini + 240) {
+      if (mejor === null || Math.abs(minFich - ini) < Math.abs(minFich - mejor)) mejor = ini;
+    }
+  }
+  return mejor !== null && (minFich - mejor) > 5;
+}
+function fmtDur(ms) {
+  const tot = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(tot / 3600), m = Math.floor((tot % 3600) / 60);
+  return h > 0 ? (h + 'h ' + String(m).padStart(2, '0') + 'm') : (m + ' min');
+}
 
 /* ---------- utilidades ---------- */
 function hex(bytes) {
@@ -246,6 +283,12 @@ export async function mostrarKiosco(token) {
   const salir = $('kiosco-salir');
   if (salir) salir.onclick = () => desvincular(false);
   await pintarRejilla(token);
+
+  // Contador en vivo (cada segundo) y refresco de estado (cada 60 s).
+  if (contadorTimer) clearInterval(contadorTimer);
+  contadorTimer = setInterval(actualizarContadores, 1000);
+  if (refrescoTimer) clearInterval(refrescoTimer);
+  refrescoTimer = setInterval(() => pintarRejilla(token, true), 60000);
 }
 
 function arrancarReloj() {
@@ -260,14 +303,15 @@ function arrancarReloj() {
   relojTimer = setInterval(tick, 1000);
 }
 
-async function pintarRejilla(token) {
+async function pintarRejilla(token, silencioso) {
   const grid = $('kiosco-grid');
   if (!grid) return;
-  grid.innerHTML = '<div class="empty-note">Cargando equipo…</div>';
-  let equipo;
+  if (!silencioso) grid.innerHTML = '<div class="empty-note">Cargando equipo…</div>';
+
+  let estado;
   try {
-    equipo = await equipoKiosco(token);
-  } catch (err) {
+    estado = await estadoKiosco(token);
+  } catch (_) {
     grid.innerHTML = '';
     const msg = document.createElement('div');
     msg.className = 'kiosco-error';
@@ -280,6 +324,9 @@ async function pintarRejilla(token) {
     return;
   }
 
+  calcularHorarioHoy(estado.horarios);
+  const equipo = estado.workers || [];
+
   grid.innerHTML = '';
   if (equipo.length === 0) {
     grid.innerHTML = '<div class="empty-note">No hay trabajadores activos.</div>';
@@ -289,11 +336,37 @@ async function pintarRejilla(token) {
     const card = document.createElement('button');
     card.type = 'button';
     card.className = 'kiosco-emp' + (w.tiene_pin ? '' : ' sin-pin');
+    card.dataset.dentro = w.dentro ? '1' : '';
+    card.dataset.desde = w.desde || '';
+    card.dataset.tarde = (w.dentro && llegoTarde(w.desde)) ? '1' : '';
     card.innerHTML = '<span class="ke-avatar">' + iniciales(w.name) + '</span>'
-      + '<span class="ke-nombre"></span>';
+      + '<span class="ke-nombre"></span>'
+      + '<span class="ke-timer"></span>';
     card.querySelector('.ke-nombre').textContent = w.name;
     card.onclick = () => abrirPin(token, w);
     grid.appendChild(card);
+  }
+  actualizarContadores();
+}
+
+/* Actualiza el tiempo trabajado y el color de cada tarjeta (cada segundo). */
+function actualizarContadores() {
+  const grid = $('kiosco-grid');
+  if (!grid) return;
+  for (const card of grid.querySelectorAll('.kiosco-emp')) {
+    const timer = card.querySelector('.ke-timer');
+    if (!timer) continue;
+    if (card.dataset.dentro === '1' && card.dataset.desde) {
+      const ms = Date.now() - new Date(card.dataset.desde).getTime();
+      const exceso = maxMinHoy > 0 && (ms / 60000) > maxMinHoy;
+      const rojo = card.dataset.tarde === '1' || exceso;
+      timer.textContent = fmtDur(ms) + (card.dataset.tarde === '1' ? ' · tarde' : (exceso ? ' · exceso' : ''));
+      card.classList.toggle('activo', !rojo);
+      card.classList.toggle('rojo', rojo);
+    } else {
+      timer.textContent = '';
+      card.classList.remove('activo', 'rojo');
+    }
   }
 }
 
@@ -373,6 +446,7 @@ async function enviarFichaje(token, worker, pin, err, ov) {
     const r = await ficharKiosco(token, worker.worker_id, pin);   // { ok, tipo, momento }
     ov.hidden = true;
     mostrarConfirmacion(worker, r.tipo, r.momento);
+    pintarRejilla(token, true);   // refresca el estado del que acaba de fichar
   } catch (e) {
     const code = (e.message || 'ERROR').trim();
     err.textContent = MENSAJES[code] || ('No se pudo fichar · ' + code);
@@ -403,6 +477,8 @@ async function desvincular(silencioso) {
     });
     if (!ok) return;
   }
+  if (contadorTimer) { clearInterval(contadorTimer); contadorTimer = null; }
+  if (refrescoTimer) { clearInterval(refrescoTimer); refrescoTimer = null; }
   localStorage.removeItem(CLAVE_TOKEN);
   location.hash = '';
   location.reload();
