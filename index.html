@@ -427,11 +427,29 @@
         <h2>Fichaje · horario previsto 🧪</h2>
         <p class="note">Define el horario de cada día. Si alguien ficha más tarde del inicio previsto, se marcará el retraso. Puedes añadir varios tramos por día (jornada partida).</p>
         <div id="fichaje-horarios"></div>
-        <div class="setting-row" style="margin:.6rem 0">
-          <label class="h-label">Avisar de salida no fichada tras
-            <input type="number" id="fichaje-recordar-h" min="1" max="24" step="1" style="width:60px"> h</label>
+        <h3 class="fich-sub">Puntualidad y avisos</h3>
+        <div class="fich-cfg">
+          <label>Margen de cortesía al fichar la entrada
+            <span class="fich-cfg-in">
+              <input type="number" id="fichaje-margen" min="0" max="120" step="1"> min
+            </span>
+          </label>
+          <label>Avisar si no ficha la <b>entrada</b> pasado
+            <span class="fich-cfg-in">
+              <input type="number" id="fichaje-av-ent" min="0" step="1">
+              <select id="fichaje-av-ent-u"><option value="s">seg</option><option value="m">min</option><option value="h">horas</option></select>
+            </span>
+            <small>desde la hora de inicio del turno. 0 = desactivado.</small>
+          </label>
+          <label>Avisar si no ficha la <b>salida</b> pasado
+            <span class="fich-cfg-in">
+              <input type="number" id="fichaje-av-sal" min="0" step="1">
+              <select id="fichaje-av-sal-u"><option value="s">seg</option><option value="m">min</option><option value="h">horas</option></select>
+            </span>
+            <small>desde que fichó la entrada. 0 = desactivado.</small>
+          </label>
         </div>
-        <button class="btn primary" id="btn-guardar-fichaje" type="button">Guardar horario</button>
+        <button class="btn primary" id="btn-guardar-fichaje" type="button">Guardar ajustes de fichaje</button>
         </div>
 
         <div class="panel solo-probador" id="panel-kioscos" hidden>
