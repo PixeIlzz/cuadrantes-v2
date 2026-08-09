@@ -19,6 +19,7 @@ let relojTimer = null;
 let contadorTimer = null;
 let refrescoTimer = null;
 let horariosHoy = [];      // tramos [{desde,hasta}] del día de hoy
+let margenMin = 5;         // margen de cortesía (min), configurable
 let maxMinHoy = 0;         // minutos previstos hoy (0 = sin horario)
 
 const DIAS = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom'];
@@ -27,7 +28,8 @@ function hhmmAMin(s) { const m = /^(\d{1,2}):(\d{2})$/.exec(s || ''); return m ?
 function minDelDia(d) { return d.getHours() * 60 + d.getMinutes(); }
 
 /* Minutos previstos hoy (suma de tramos) y si una entrada llegó tarde. */
-function calcularHorarioHoy(horarios) {
+function calcularHorarioHoy(horarios, margenSeg) {
+  margenMin = Math.round((Number(margenSeg) || 300) / 60);
   horariosHoy = (horarios && horarios[claveHoy()]) || [];
   maxMinHoy = 0;
   for (const t of horariosHoy) {
@@ -46,7 +48,7 @@ function llegoTarde(desdeIso) {
       if (mejor === null || Math.abs(minFich - ini) < Math.abs(minFich - mejor)) mejor = ini;
     }
   }
-  return mejor !== null && (minFich - mejor) > 5;
+  return mejor !== null && (minFich - mejor) > margenMin;
 }
 function fmtDur(ms) {
   const tot = Math.max(0, Math.floor(ms / 1000));
@@ -325,7 +327,7 @@ async function pintarRejilla(token, silencioso) {
     return;
   }
 
-  calcularHorarioHoy(estado.horarios);
+  calcularHorarioHoy(estado.horarios, estado.margen_seg);
   const equipo = estado.workers || [];
 
   grid.innerHTML = '';

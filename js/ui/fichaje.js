@@ -6,7 +6,7 @@ import {
   fichar, misFichajesHoy, miEstado, fichajesHoyEquipo, fichajesDe,
   horarioNegocio, guardarHorarioFichaje, corregirFichaje, borrarFichaje,
   datosLegales, guardarDatosLegales, estadoDeWorker,
-  suscribirFichajes,
+  suscribirFichajes, jornadaHoy,
 } from '../data/fichaje.js';
 import { listarEquipo } from '../data/equipo.js';
 import { etiquetaSemana, lunesDe, sumarDias, isoDe } from '../data/semanas.js';
@@ -175,7 +175,9 @@ export async function abrirFichajeGestor() {
 }
 
 async function pintarEquipoHoy(cont) {
-  const porWorker = await fichajesHoyEquipo();
+  let estado;
+  try { estado = await jornadaHoy(); }
+  catch (e) { cont.innerHTML = '<span class="empty-note">' + e.message + '</span>'; return; }
   cont.innerHTML = '';
 
   const h = document.createElement('h2');
@@ -191,11 +193,12 @@ async function pintarEquipoHoy(cont) {
   const claveDia = DIAS[(new Date().getDay() + 6) % 7];
   const maxMin = minEstablecidoDia(cfg, claveDia);
 
-  for (const w of equipoCache) {
-    const fs = porWorker[w.id] || [];
-    const dentro = fs.length > 0 && fs[fs.length - 1].tipo === 'entrada';
-    const desde = dentro ? fs[fs.length - 1].momento : '';
-    const tarde = (dentro && desde) ? !!calcularRetraso({ tipo: 'entrada', momento: desde }, claveDia, cfg) : false;
+  for (const e of estado) {
+    const dentro = !!e.dentro;
+    const desde = e.desde || '';
+    const tarde = (dentro && desde)
+      ? !!calcularRetraso({ tipo: 'entrada', momento: desde }, claveDia, cfg) : false;
+    const segHoy = Number(e.seg_hoy) || 0;
 
     const card = document.createElement('button');
     card.type = 'button';
@@ -205,14 +208,14 @@ async function pintarEquipoHoy(cont) {
     card.dataset.tarde = tarde ? '1' : '';
     card.dataset.max = String(maxMin);
 
-    const total = fs.length ? totalTrabajado(fs) : '—';
-    const estado = fs.length === 0 ? 'Sin fichar'
+    const txt = !dentro && segHoy === 0 ? 'Sin fichar'
       : (dentro ? 'Trabajando desde ' + hora(desde) : 'Jornada terminada');
     card.innerHTML = '<div class="fe-nombre"></div>'
-      + '<div class="fe-estado">' + estado + '</div>'
+      + '<div class="fe-estado">' + txt + '</div>'
       + '<div class="fe-timer"></div>'
-      + '<div class="fe-total">Hoy: ' + total + '</div>';
-    card.querySelector('.fe-nombre').textContent = w.name;
+      + '<div class="fe-total">Hoy: ' + (segHoy > 0 ? segAHMS(segHoy) : '—') + '</div>';
+    card.querySelector('.fe-nombre').textContent = e.name;
+    const w = equipoCache.find((x) => x.id === e.worker_id) || { id: e.worker_id, name: e.name };
     card.addEventListener('click', () => abrirDetalleEmpleado(w));
     lista.appendChild(card);
   }
@@ -458,7 +461,9 @@ function calcularRetraso(f, claveDia, cfg) {
   }
   if (mejor === null) return null;
   const diff = minFich - mejor;
-  if (diff > 5) return '+' + diff + ' min tarde';   // más de 5 min de margen
+  // Margen de cortesía configurable en Ajustes (por defecto 5 min)
+  const margen = Math.round((Number(cfg.margen_seg) || 300) / 60);
+  if (diff > margen) return '+' + diff + ' min tarde';
   return null;
 }
 
@@ -684,16 +689,32 @@ export function pintarAjustesFichaje() {
     pintarTramos();
   }
 
-  // Umbral de recordatorio de salida no fichada
-  const recIn = $('fichaje-recordar-h');
-  if (recIn) {
-    recIn.value = (cfg.recordar_h != null ? cfg.recordar_h : 9);
-    recIn.addEventListener('change', () => {
-      const v = parseInt(recIn.value, 10);
-      cfg.recordar_h = (v >= 1 && v <= 24) ? v : 9;
-      recIn.value = cfg.recordar_h;
-    });
-  }
+  // --- Margen de cortesía y avisos (se guardan en segundos) ---
+  const marIn = $('fichaje-margen');
+  if (marIn) marIn.value = Math.round((Number(cfg.margen_seg) || 300) / 60);
+
+  // Reparte unos segundos en la unidad más legible (h > m > s)
+  const aUnidad = (seg) => {
+    const n = Number(seg) || 0;
+    if (n === 0) return { v: 0, u: 'm' };
+    if (n % 3600 === 0) return { v: n / 3600, u: 'h' };
+    if (n % 60 === 0) return { v: n / 60, u: 'm' };
+    return { v: n, u: 's' };
+  };
+  const aSeg = (v, u) => {
+    const n = Math.max(0, parseInt(v, 10) || 0);
+    return u === 'h' ? n * 3600 : (u === 'm' ? n * 60 : n);
+  };
+
+  const segSalida = (cfg.recordar_salida_seg != null)
+    ? cfg.recordar_salida_seg
+    : ((cfg.recordar_h != null ? cfg.recordar_h : 9) * 3600);
+  const ent = aUnidad(cfg.recordar_entrada_seg || 0);
+  const sal = aUnidad(segSalida);
+  if ($('fichaje-av-ent'))   $('fichaje-av-ent').value = ent.v;
+  if ($('fichaje-av-ent-u')) $('fichaje-av-ent-u').value = ent.u;
+  if ($('fichaje-av-sal'))   $('fichaje-av-sal').value = sal.v;
+  if ($('fichaje-av-sal-u')) $('fichaje-av-sal-u').value = sal.u;
 
   // Guardar
   const guardar = $('btn-guardar-fichaje');
@@ -708,8 +729,17 @@ export function pintarAjustesFichaje() {
             if (cfg.horarios[d].length === 0) delete cfg.horarios[d];
           }
         }
+        // Margen y avisos, normalizados a segundos
+        const mar = parseInt(($('fichaje-margen') || {}).value, 10);
+        cfg.margen_seg = (mar >= 0 && mar <= 120) ? mar * 60 : 300;
+        cfg.recordar_entrada_seg = aSeg(($('fichaje-av-ent') || {}).value,
+                                        ($('fichaje-av-ent-u') || {}).value);
+        cfg.recordar_salida_seg  = aSeg(($('fichaje-av-sal') || {}).value,
+                                        ($('fichaje-av-sal-u') || {}).value);
+        delete cfg.recordar_h;   // migrado al nuevo campo en segundos
+
         await guardarHorarioFichaje(cfg);
-        toast('Horario de fichaje guardado');
+        toast('Ajustes de fichaje guardados');
       } catch (err) { toast(err.message); }
       finally { guardar.disabled = false; }
     };

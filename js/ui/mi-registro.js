@@ -296,5 +296,6 @@ function calcularRetraso(f, claveDia, cfg) {
   }
   if (mejor === null) return null;
   const diff = minFich - mejor;
-  return diff > 5 ? ('+' + diff + ' min tarde') : null;
+  const margen = Math.round((Number(cfg.margen_seg) || 300) / 60);
+  return diff > margen ? ('+' + diff + ' min tarde') : null;
 }
