@@ -95,6 +95,23 @@ function pintarDias() {
     et.className = 'h-label';
     et.textContent = d.night ? 'noche' : 'día';
 
+    // Horario aproximado del turno (alimenta el fichaje: retrasos, saldo, avisos)
+    const horBtn = document.createElement('button');
+    horBtn.type = 'button'; horBtn.className = 'btn small';
+    horBtn.title = 'Horario aproximado de este turno';
+    const pintaHor = () => {
+      horBtn.textContent = (d.desde && d.hasta) ? ('🕒 ' + d.desde + '–' + d.hasta) : '🕒 Horario';
+      horBtn.classList.toggle('primary', !(d.desde && d.hasta));
+    };
+    pintaHor();
+    horBtn.addEventListener('click', async () => {
+      const r = await pedirHorario('Horario de «' + d.label + '»', d.desde || '', d.hasta || '');
+      if (r === null) return;
+      if (!r.desde || !r.hasta) { delete d.desde; delete d.hasta; }
+      else { d.desde = r.desde; d.hasta = r.hasta; }
+      pintaHor();
+    });
+
     const arriba = document.createElement('button');
     arriba.type = 'button'; arriba.className = 'btn small'; arriba.textContent = '↑';
     arriba.addEventListener('click', () => {
@@ -125,8 +142,41 @@ function pintarDias() {
       pintarDias();
     });
 
-    row.append(nombre, et, arriba, abajo, del);
+    const acc = document.createElement('div');
+    acc.className = 'worker-acc';
+    acc.append(et, horBtn, arriba, abajo, del);
+    row.append(nombre, acc);
     box.appendChild(row);
+  });
+}
+
+/* Diálogo con dos campos de hora. Devuelve {desde,hasta} o null si cancela. */
+function pedirHorario(titulo, desde, hasta) {
+  return new Promise((resolve) => {
+    const bg = document.createElement('div');
+    bg.className = 'modal-bg';
+    bg.innerHTML =
+      '<div class="modal">'
+      + '<p class="modal-msg">' + titulo + '</p>'
+      + '<div class="hor-campos">'
+      +   '<label>Entrada<input type="time" id="hor-desde"></label>'
+      +   '<label>Salida<input type="time" id="hor-hasta"></label>'
+      + '</div>'
+      + '<p class="note">Déjalos vacíos para quitar el horario de este turno.</p>'
+      + '<div class="row">'
+      +   '<button type="button" class="btn" id="hor-no">Cancelar</button>'
+      +   '<button type="button" class="btn primary" id="hor-ok">Guardar</button>'
+      + '</div></div>';
+    document.body.appendChild(bg);
+    bg.querySelector('#hor-desde').value = desde || '';
+    bg.querySelector('#hor-hasta').value = hasta || '';
+    const cerrar = (v) => { bg.remove(); resolve(v); };
+    bg.querySelector('#hor-no').addEventListener('click', () => cerrar(null));
+    bg.querySelector('#hor-ok').addEventListener('click', () => cerrar({
+      desde: bg.querySelector('#hor-desde').value || '',
+      hasta: bg.querySelector('#hor-hasta').value || '',
+    }));
+    bg.addEventListener('click', (e) => { if (e.target === bg) cerrar(null); });
   });
 }
 

@@ -1,7 +1,7 @@
 // Vista "Mi registro" del empleado: sus fichajes por día / semana / mes / año.
 // Reutiliza el mismo estilo visual que "mis turnos". v1
 import { ctx } from '../auth.js';
-import { fichajesDe, horarioNegocio, miEstado, misFichajesHoy, suscribirFichajes, cerrarCanal } from '../data/fichaje.js';
+import { fichajesDe, horarioNegocio, miEstado, misFichajesHoy, suscribirFichajes, cerrarCanal, turnoPrevisto } from '../data/fichaje.js';
 import { isoDe, lunesDe, sumarDias, etiquetaSemana } from '../data/semanas.js';
 
 const $ = (id) => document.getElementById(id);
@@ -83,14 +83,16 @@ async function pintarEstadoActual() {
   catch (_) { return; }
 
   const cfg = horarioNegocio();
-  const claveDia = DIAS[(new Date().getDay() + 6) % 7];
+  const hoyIso = new Date().toLocaleDateString('en-CA', { timeZone: 'Atlantic/Canary' });
+  let tramosHoy = [];
+  try { tramosHoy = await turnoPrevisto(ctx.workerId, hoyIso); } catch (_) {}
   const tarde = (estado.dentro && estado.desde)
-    ? !!calcularRetraso({ tipo: 'entrada', momento: estado.desde }, claveDia, cfg) : false;
+    ? !!calcularRetraso({ tipo: 'entrada', momento: estado.desde }, tramosHoy, cfg) : false;
 
   cont.dataset.dentro = estado.dentro ? '1' : '';
   cont.dataset.desde = estado.desde || '';
   cont.dataset.tarde = tarde ? '1' : '';
-  cont.dataset.max = String(minEstablecido(cfg, claveDia));
+  cont.dataset.max = String(minDeTramos(tramosHoy));
   cont.dataset.hoyseg = String(totalSeg(hoy));
 
   cont.querySelector('.re-fecha').textContent =
@@ -126,8 +128,8 @@ function actualizarEstadoHeader() {
   }
 }
 
-function minEstablecido(cfg, claveDia) {
-  const tramos = (cfg.horarios && cfg.horarios[claveDia]) || [];
+function minDeTramos(tramos) {
+  tramos = tramos || [];
   let t = 0;
   for (const x of tramos) {
     const a = hhmmAMin(x.desde), b = hhmmAMin(x.hasta);
@@ -202,6 +204,12 @@ async function pintarLista() {
   const cfg = horarioNegocio();
   let totalPeriodo = 0;
 
+  // Turno previsto de cada día (del cuadrante publicado)
+  const tramosPorDia = {};
+  await Promise.all(dias.map(async (d) => {
+    tramosPorDia[d] = await turnoPrevisto(ctx.workerId, d);
+  }));
+
   for (const clave of dias) {
     const items = porDia[clave];
     const fecha = new Date(clave + 'T12:00:00');
@@ -216,7 +224,7 @@ async function pintarLista() {
     panel.appendChild(tit);
 
     for (const f of items) {
-      const tarde = calcularRetraso(f, claveDia, cfg);
+      const tarde = calcularRetraso(f, tramosPorDia[clave] || [], cfg);
       const fila = document.createElement('div');
       fila.className = 'reg-fila ' + f.tipo;
       fila.innerHTML =
@@ -283,7 +291,8 @@ function totalSeg(fichajes) {
 }
 function calcularRetraso(f, claveDia, cfg) {
   if (f.tipo !== 'entrada') return null;
-  const tramos = (cfg.horarios && cfg.horarios[claveDia]) || [];
+  const tramos = Array.isArray(claveDia) ? claveDia
+    : ((cfg.horarios && cfg.horarios[claveDia]) || []);
   if (!tramos.length) return null;
   const minFich = minutosDelDia(f.momento);
   let mejor = null;

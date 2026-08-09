@@ -108,6 +108,13 @@ async function pintarSemana() {
     nm.textContent = d.label;
     col.appendChild(nm);
 
+    if (d.desde && d.hasta) {
+      const hor = document.createElement('div');
+      hor.className = 'day-horario';
+      hor.textContent = d.desde + ' – ' + d.hasta;
+      col.appendChild(hor);
+    }
+
     if (dayHasAll(d.id)) {
       const block = document.createElement('div');
       block.className = 'all-day';
@@ -311,6 +318,7 @@ export async function pintarProximos() {
       const rol = ROLES.find((r) => r.id === a.position_id);
       (porFecha[iso] ||= []).push({
         col: dia ? dia.label : '',
+        horario: (dia && dia.desde && dia.hasta) ? (dia.desde + ' – ' + dia.hasta) : '',
         puesto: a.is_all ? 'TODOS' : (rol ? rol.label : ''),
         todos: a.is_all,
       });
@@ -349,8 +357,10 @@ export async function pintarProximos() {
         for (const t of porFecha[iso]) {
           const l = document.createElement('div');
           l.className = 'prox-linea' + (t.todos ? ' todos' : '');
-          l.innerHTML = '<span class="prox-col"></span><span class="prox-puesto"></span>';
+          l.innerHTML = '<span class="prox-col"></span><span class="prox-hor"></span>'
+            + '<span class="prox-puesto"></span>';
           l.querySelector('.prox-col').textContent = t.col;
+          l.querySelector('.prox-hor').textContent = t.horario || '';
           l.querySelector('.prox-puesto').textContent = t.puesto;
           info.appendChild(l);
         }

@@ -305,6 +305,14 @@ function renderGrid() {
     name.textContent = d.label + (selVacDay ? ' 🏖' : '');
     col.appendChild(name);
 
+    // Horario aproximado del turno (se configura en Ajustes → Días y columnas)
+    if (d.desde && d.hasta) {
+      const hor = document.createElement('div');
+      hor.className = 'day-horario';
+      hor.textContent = d.desde + ' – ' + d.hasta;
+      col.appendChild(hor);
+    }
+
     const makeNote = () => {
       const nd = document.createElement('div');
       nd.className = 'day-note';

@@ -6,7 +6,7 @@ import {
   fichar, misFichajesHoy, miEstado, fichajesHoyEquipo, fichajesDe,
   horarioNegocio, guardarHorarioFichaje, corregirFichaje, borrarFichaje,
   datosLegales, guardarDatosLegales, estadoDeWorker,
-  suscribirFichajes, jornadaHoy,
+  suscribirFichajes, jornadaHoy, turnoPrevisto,
 } from '../data/fichaje.js';
 import { listarEquipo } from '../data/equipo.js';
 import { etiquetaSemana, lunesDe, sumarDias, isoDe } from '../data/semanas.js';
@@ -190,14 +190,14 @@ async function pintarEquipoHoy(cont) {
   lista.className = 'fich-equipo';
 
   const cfg = horarioNegocio();
-  const claveDia = DIAS[(new Date().getDay() + 6) % 7];
-  const maxMin = minEstablecidoDia(cfg, claveDia);
 
   for (const e of estado) {
     const dentro = !!e.dentro;
     const desde = e.desde || '';
+    const tramos = e.tramos || [];                 // SU turno de hoy
+    const maxMin = minEstablecidoDia(cfg, tramos);
     const tarde = (dentro && desde)
-      ? !!calcularRetraso({ tipo: 'entrada', momento: desde }, claveDia, cfg) : false;
+      ? !!calcularRetraso({ tipo: 'entrada', momento: desde }, tramos, cfg) : false;
     const segHoy = Number(e.seg_hoy) || 0;
 
     const card = document.createElement('button');
@@ -373,7 +373,15 @@ async function pintarDetalle() {
   let totalPeriodo = 0;
   let estMin = 0, diasConHorario = 0, diasPuntuales = 0, retrasos = 0;
   const cfg = horarioNegocio();
-  for (const dia of Object.keys(porDia).sort()) {
+
+  // Turno previsto de ESE trabajador en cada día (del cuadrante publicado)
+  const dias = Object.keys(porDia).sort();
+  const tramosPorDia = {};
+  await Promise.all(dias.map(async (d) => {
+    tramosPorDia[d] = await turnoPrevisto(detWorker.id, d);
+  }));
+
+  for (const dia of dias) {
     const bloque = document.createElement('div');
     bloque.className = 'fich-dia';
     const fecha = new Date(dia + 'T12:00:00');
@@ -384,7 +392,7 @@ async function pintarDetalle() {
     bloque.appendChild(th);
 
     for (const f of porDia[dia]) {
-      const retraso = calcularRetraso(f, claveDia, cfg);
+      const retraso = calcularRetraso(f, tramosPorDia[dia] || [], cfg);
       const fila = document.createElement('div');
       fila.className = 'fich-fila ' + f.tipo + (f.estimado ? ' estimado' : '');
       fila.innerHTML = '<span class="ff-tipo">' + (f.tipo==='entrada'?'▶ Entrada':'⏹ Salida') + '</span>'
@@ -397,13 +405,14 @@ async function pintarDetalle() {
     const t = totalTrabajado(porDia[dia]);
     totalPeriodo += totalSeg(porDia[dia]);
 
-    // Estadísticas de puntualidad/saldo (solo días con horario previsto)
-    const estDia = minEstablecidoDia(cfg, claveDia);
+    // Estadísticas de puntualidad/saldo (según SU turno previsto ese día)
+    const tramosDia = tramosPorDia[dia] || [];
+    const estDia = minEstablecidoDia(cfg, tramosDia);
     if (estDia > 0) {
       estMin += estDia;
       diasConHorario += 1;
       const primeraEntrada = porDia[dia].find((x) => x.tipo === 'entrada');
-      if (primeraEntrada && calcularRetraso(primeraEntrada, claveDia, cfg)) retrasos += 1;
+      if (primeraEntrada && calcularRetraso(primeraEntrada, tramosDia, cfg)) retrasos += 1;
       else diasPuntuales += 1;
     }
 
@@ -446,7 +455,8 @@ function moverAncla(dir) {
 /* Retraso: si la entrada es más tarde que el inicio previsto de ese día */
 function calcularRetraso(f, claveDia, cfg) {
   if (f.tipo !== 'entrada') return null;
-  const tramos = (cfg.horarios && cfg.horarios[claveDia]) || [];
+  const tramos = Array.isArray(claveDia) ? claveDia
+    : ((cfg.horarios && cfg.horarios[claveDia]) || []);
   if (tramos.length === 0) return null;
   const minFich = minutosDelDia(f.momento);
   // Buscamos el tramo cuyo inicio esté más cerca por debajo del fichaje
@@ -468,7 +478,8 @@ function calcularRetraso(f, claveDia, cfg) {
 }
 
 function minEstablecidoDia(cfg, claveDia) {
-  const tramos = (cfg.horarios && cfg.horarios[claveDia]) || [];
+  const tramos = Array.isArray(claveDia) ? claveDia
+    : ((cfg.horarios && cfg.horarios[claveDia]) || []);
   let t = 0;
   for (const x of tramos) {
     const a = hhmmAMin(x.desde), b = hhmmAMin(x.hasta);

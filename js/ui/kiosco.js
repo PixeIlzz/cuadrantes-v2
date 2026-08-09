@@ -18,9 +18,7 @@ let pollTimer = null;
 let relojTimer = null;
 let contadorTimer = null;
 let refrescoTimer = null;
-let horariosHoy = [];      // tramos [{desde,hasta}] del día de hoy
 let margenMin = 5;         // margen de cortesía (min), configurable
-let maxMinHoy = 0;         // minutos previstos hoy (0 = sin horario)
 
 const DIAS = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom'];
 function claveHoy() { return DIAS[(new Date().getDay() + 6) % 7]; }
@@ -30,18 +28,22 @@ function minDelDia(d) { return d.getHours() * 60 + d.getMinutes(); }
 /* Minutos previstos hoy (suma de tramos) y si una entrada llegó tarde. */
 function calcularHorarioHoy(horarios, margenSeg) {
   margenMin = Math.round((Number(margenSeg) || 300) / 60);
-  horariosHoy = (horarios && horarios[claveHoy()]) || [];
-  maxMinHoy = 0;
-  for (const t of horariosHoy) {
-    const a = hhmmAMin(t.desde), b = hhmmAMin(t.hasta);
-    if (a != null && b != null && b > a) maxMinHoy += b - a;
-  }
 }
-function llegoTarde(desdeIso) {
-  if (!horariosHoy.length || !desdeIso) return false;
+/* Minutos previstos y tramos de UN trabajador (su turno de hoy) */
+function minDeTramos(tramos) {
+  let t = 0;
+  for (const x of (tramos || [])) {
+    const a = hhmmAMin(x.desde), b = hhmmAMin(x.hasta);
+    if (a != null && b != null && b > a) t += b - a;
+  }
+  return t;
+}
+function llegoTarde(desdeIso, tramos) {
+  const lista = tramos || [];
+  if (!lista.length || !desdeIso) return false;
   const minFich = minDelDia(new Date(desdeIso));
   let mejor = null;
-  for (const t of horariosHoy) {
+  for (const t of lista) {
     const ini = hhmmAMin(t.desde);
     if (ini == null) continue;
     if (minFich >= ini - 30 && minFich <= ini + 240) {
@@ -341,7 +343,8 @@ async function pintarRejilla(token, silencioso) {
     card.className = 'kiosco-emp' + (w.tiene_pin ? '' : ' sin-pin');
     card.dataset.dentro = w.dentro ? '1' : '';
     card.dataset.desde = w.desde || '';
-    card.dataset.tarde = (w.dentro && llegoTarde(w.desde)) ? '1' : '';
+    card.dataset.tarde = (w.dentro && llegoTarde(w.desde, w.tramos)) ? '1' : '';
+    card.dataset.max = String(minDeTramos(w.tramos));
     card.innerHTML = '<span class="ke-avatar">' + iniciales(w.name) + '</span>'
       + '<span class="ke-nombre"></span>'
       + '<span class="ke-timer"></span>';
@@ -361,7 +364,8 @@ function actualizarContadores() {
     if (!timer) continue;
     if (card.dataset.dentro === '1' && card.dataset.desde) {
       const ms = Date.now() - new Date(card.dataset.desde).getTime();
-      const exceso = maxMinHoy > 0 && (ms / 60000) > maxMinHoy;
+      const max = Number(card.dataset.max) || 0;
+      const exceso = max > 0 && (ms / 60000) > max;
       const rojo = card.dataset.tarde === '1' || exceso;
       timer.textContent = fmtDur(ms) + (card.dataset.tarde === '1' ? ' · tarde' : (exceso ? ' · exceso' : ''));
       card.classList.toggle('activo', !rojo);
