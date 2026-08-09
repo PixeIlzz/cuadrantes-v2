@@ -1757,3 +1757,25 @@ html[data-tema="oscuro"] .fich-testeo-aviso{color:#ffd166}
   padding:.5rem;border:1px solid var(--line);border-radius:8px;
   background:var(--paper);color:var(--ink);font-size:.95rem;
 }
+
+/* ---- Horario del turno en el cuadrante ---- */
+.day-horario{
+  font-size:.72rem;font-weight:700;color:var(--accent);
+  text-align:center;padding:1px 0 3px;font-variant-numeric:tabular-nums;
+  letter-spacing:.02em;
+}
+.day-col.night .day-horario{color:var(--sobre-oscuro);opacity:.85}
+
+/* Horario en "próximos turnos" del empleado */
+.prox-hor{
+  font-size:.75rem;font-weight:700;color:var(--accent);
+  font-variant-numeric:tabular-nums;margin:0 .3rem;
+}
+
+/* Diálogo de horario (dos campos de hora) */
+.hor-campos{display:flex;gap:.7rem;margin:.6rem 0}
+.hor-campos label{display:flex;flex-direction:column;gap:.25rem;flex:1;font-size:.82rem;color:var(--ink-soft)}
+.hor-campos input{
+  padding:.55rem;border:1px solid var(--line);border-radius:8px;
+  background:var(--paper);color:var(--ink);font-size:1rem;
+}
