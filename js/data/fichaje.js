@@ -110,6 +110,16 @@ export function horarioNegocio() {
   return (ctx.business.config && ctx.business.config.fichaje) || { horarios: {}, cierre_auto: '' };
 }
 
+/* Tramos previstos de un trabajador un día concreto (del cuadrante,
+   con respaldo al horario general del negocio). */
+export async function turnoPrevisto(workerId, diaIso) {
+  const { data, error } = await sb.rpc('turno_previsto', {
+    p_business_id: ctx.business.id, p_worker_id: workerId, p_dia: diaIso,
+  });
+  if (error) return [];
+  return data || [];
+}
+
 export async function estadoDeWorker(workerId) {
   const { data, error } = await sb.from('time_entries')
     .select('tipo, momento')
