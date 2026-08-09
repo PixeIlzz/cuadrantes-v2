@@ -24,15 +24,24 @@ export function cerrarCanal(canal) {
 
 /* Fichajes de un trabajador en un rango de fechas (ISO). */
 export async function fichajesDe(workerId, desdeIso, hastaIso) {
+  // Pedimos un día extra por cada lado: el corte por UTC podría dejarse
+  // fuera fichajes de madrugada. Luego filtramos por la fecha real.
+  const mas = (iso, dias) => {
+    const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + dias);
+    return d.toISOString().slice(0, 10);
+  };
   const { data, error } = await sb
     .from('time_entries')
     .select('id, tipo, momento, estimado, origen, nota')
     .eq('worker_id', workerId)
-    .gte('momento', desdeIso + 'T00:00:00')
-    .lte('momento', hastaIso + 'T23:59:59')
+    .gte('momento', mas(desdeIso, -1) + 'T00:00:00')
+    .lte('momento', mas(hastaIso, 1) + 'T23:59:59')
     .order('momento', { ascending: true });
   if (error) throw new Error('Fichajes: ' + error.message);
-  return data || [];
+  return (data || []).filter((f) => {
+    const d = diaDe(f.momento);
+    return d >= desdeIso && d <= hastaIso;
+  });
 }
 
 /* Mis fichajes de hoy (empleado). */
@@ -43,13 +52,18 @@ export async function misFichajesHoy() {
 
 /* ¿Estoy fichado ahora mismo? (último de hoy es entrada) */
 export async function miEstado() {
-  const hoy = await misFichajesHoy();
-  if (hoy.length === 0) return { dentro: false, desde: null };
-  const ultimo = hoy[hoy.length - 1];
-  return { dentro: ultimo.tipo === 'entrada', desde: ultimo.tipo === 'entrada' ? ultimo.momento : null };
+  // Último fichaje sin filtrar por día: soporta turnos que cruzan medianoche.
+  return estadoDeWorker(ctx.workerId);
 }
 
 /* Fichajes de hoy de TODO el equipo (gestor). Devuelve por worker_id. */
+/* Estado de hoy del equipo, calculado en el servidor (zona del negocio). */
+export async function jornadaHoy() {
+  const { data, error } = await sb.rpc('jornada_hoy', { p_business_id: ctx.business.id });
+  if (error) throw new Error('Jornada: ' + error.message);
+  return data || [];
+}
+
 export async function fichajesHoyEquipo() {
   const hoy = hoyIso();
   const { data, error } = await sb
@@ -127,8 +141,9 @@ export async function guardarHorarioFichaje(fichajeConfig) {
   ctx.business.config = cfg;
 }
 
-function hoyIso() {
-  const d = new Date();
-  const p = (n) => String(n).padStart(2, '0');
-  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+export const TZ = 'Atlantic/Canary';
+/* Fecha yyyy-mm-dd de un instante, en la zona del negocio (no del dispositivo). */
+export function diaDe(iso) {
+  return new Date(iso).toLocaleDateString('en-CA', { timeZone: TZ });
 }
+function hoyIso() { return diaDe(new Date()); }
