@@ -62,7 +62,10 @@ function pintarPuestos() {
       pintarPuestos();
     });
 
-    row.append(nombre, min, lbl, del);
+    const acc = document.createElement('div');
+    acc.className = 'worker-acc';
+    acc.append(min, lbl, del);
+    row.append(nombre, acc);
     box.appendChild(row);
   });
 }

@@ -345,6 +345,8 @@ async function pintarRejilla(token, silencioso) {
     card.dataset.desde = w.desde || '';
     card.dataset.tarde = (w.dentro && llegoTarde(w.desde, w.tramos)) ? '1' : '';
     card.dataset.max = String(minDeTramos(w.tramos));
+    card.dataset.seghoy = String(Number(w.seg_hoy) || 0);
+    card.dataset.seghoy = String(Number(w.seg_hoy) || 0);
     card.innerHTML = '<span class="ke-avatar">' + iniciales(w.name) + '</span>'
       + '<span class="ke-nombre"></span>'
       + '<span class="ke-timer"></span>';
@@ -371,8 +373,10 @@ function actualizarContadores() {
       card.classList.toggle('activo', !rojo);
       card.classList.toggle('rojo', rojo);
     } else {
-      timer.textContent = '';
+      const seg = Number(card.dataset.seghoy) || 0;
+      timer.textContent = seg > 0 ? fmtDur(seg * 1000) : '00:00:00';
       card.classList.remove('activo', 'rojo');
+      card.classList.toggle('hecho', seg > 0);
     }
   }
 }

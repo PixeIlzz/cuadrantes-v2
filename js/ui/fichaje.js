@@ -214,6 +214,7 @@ async function pintarEquipoHoy(cont) {
       + '<div class="fe-estado">' + txt + '</div>'
       + '<div class="fe-timer"></div>'
       + '<div class="fe-total">Hoy: ' + (segHoy > 0 ? segAHMS(segHoy) : '—') + '</div>';
+    card.dataset.seghoy = String(segHoy);
     card.querySelector('.fe-nombre').textContent = e.name;
     const w = equipoCache.find((x) => x.id === e.worker_id) || { id: e.worker_id, name: e.name };
     card.addEventListener('click', () => abrirDetalleEmpleado(w));
@@ -242,8 +243,10 @@ function actualizarEquipoHoy() {
       card.classList.toggle('activo', !rojo);
       card.classList.toggle('rojo', rojo);
     } else {
-      if (timer) timer.textContent = '';
+      const seg = Number(card.dataset.seghoy) || 0;
+      if (timer) timer.textContent = seg > 0 ? segAHMS(seg) : '';
       card.classList.remove('activo', 'rojo');
+      card.classList.toggle('hecho', seg > 0);
     }
   }
 }

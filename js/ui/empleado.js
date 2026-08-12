@@ -256,6 +256,8 @@ async function tarjetaHoyTurnos(hoy, enVacaciones) {
       const el = document.createElement('div');
       el.className = 'turno-row' + (a.is_all ? ' todos' : '');
       el.innerHTML = '<span class="turno-dia">' + esc(col.label) + '</span>'
+        + ((col.desde && col.hasta)
+            ? '<span class="turno-hor">' + esc(col.desde + ' – ' + col.hasta) + '</span>' : '')
         + '<span class="turno-puesto">'
         + (a.is_all ? 'TODOS' : esc(r ? r.label : '')) + '</span>';
       p.appendChild(el);
@@ -635,6 +637,7 @@ export async function abrirMisTurnos() {
           orden: DAYS.findIndex((x) => x.id === a.day_id),
           fecha: iBase >= 0 ? sumarDias(s.start_date, iBase) : null,
           dia: d.label,
+          horario: (d.desde && d.hasta) ? (d.desde + ' – ' + d.hasta) : '',
           puesto: a.is_all ? 'TODOS' : (r ? r.label : ''),
           todos: a.is_all,
         });
@@ -661,6 +664,7 @@ export async function abrirMisTurnos() {
           li.innerHTML =
             '<span class="turno-dia">' + esc(m.dia) + '</span>' +
             (m.fecha ? '<span class="turno-fecha">' + fmtCorto(m.fecha) + '</span>' : '') +
+            (m.horario ? '<span class="turno-hor">' + esc(m.horario) + '</span>' : '') +
             '<span class="turno-puesto">' + esc(m.puesto) + '</span>';
           ul.appendChild(li);
         }
