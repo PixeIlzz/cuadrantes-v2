@@ -574,93 +574,113 @@
 
   <!-- ============ EMPLEADO · AJUSTES ============ -->
   <section id="tab-emp-ajustes" class="solo-empleado" hidden>
-    <div class="panel">
-      <h2>Mi cuenta</h2>
-      <div class="ajuste-lista">
+    <details class="ajustes-bloque">
+      <summary>Mi cuenta</summary>
+      <div class="ajustes-bloque-body">
+        <div class="panel">
+        <h2>Mi cuenta</h2>
+        <div class="ajuste-lista">
         <div class="ajuste-fila">
-          <span class="ajuste-et">Nombre</span>
-          <span class="ajuste-val" id="emp-aj-nombre"></span>
+        <span class="ajuste-et">Nombre</span>
+        <span class="ajuste-val" id="emp-aj-nombre"></span>
         </div>
         <div class="ajuste-fila">
-          <span class="ajuste-et">Email</span>
-          <span class="ajuste-val" id="emp-aj-email"></span>
+        <span class="ajuste-et">Email</span>
+        <span class="ajuste-val" id="emp-aj-email"></span>
         </div>
         <div class="ajuste-fila">
-          <span class="ajuste-et">Negocio</span>
-          <span class="ajuste-val" id="emp-aj-negocio"></span>
+        <span class="ajuste-et">Negocio</span>
+        <span class="ajuste-val" id="emp-aj-negocio"></span>
         </div>
         <div class="ajuste-fila">
-          <span class="ajuste-et">Turnos por semana</span>
-          <span class="ajuste-val" id="emp-aj-turnos"></span>
+        <span class="ajuste-et">Turnos por semana</span>
+        <span class="ajuste-val" id="emp-aj-turnos"></span>
         </div>
-      </div>
-      <p class="note">Si algún dato no es correcto, avisa a tu responsable: solo él puede cambiarlo.</p>
-    </div>
+        </div>
+        <p class="note">Si algún dato no es correcto, avisa a tu responsable: solo él puede cambiarlo.</p>
+        </div>
 
-    <div class="panel solo-probador" id="panel-pin-empleado" hidden>
-      <h2>Mi PIN de fichaje 🧪</h2>
-      <p class="note" id="pin-empleado-estado">…</p>
-      <div id="pin-empleado" class="pin-form">
-        <input type="password" id="pin-empleado-input" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="4 a 6 dígitos">
-        <button class="btn primary" id="pin-empleado-guardar" type="button">Guardar PIN</button>
-      </div>
-      <p class="note">Con este PIN fichas en la tablet del local. No lo compartas con nadie.</p>
-    </div>
-
-    <div class="panel">
-      <h2>Notificaciones</h2>
-      <p class="note">Elige de qué quieres que te avisemos.</p>
-      <div id="pref-notif-empleado" class="pref-lista"></div>
-      <button class="btn primary push-btn" id="btn-push-empleado" type="button">Activar avisos en este dispositivo</button>
-      <p class="note">Los avisos llegan aunque tengas la app cerrada. En iPhone, primero añade la app a la pantalla de inicio.</p>
-    </div>
-
-    <div class="panel">
-      <h2>Cambiar mi email</h2>
-      <div class="email-form">
+        <div class="panel">
+        <h2>Cambiar mi email</h2>
+        <div class="email-form">
         <label>Email nuevo
-          <input type="email" id="emp-email-nuevo" autocomplete="email" placeholder="nuevo@correo.com">
+        <input type="email" id="emp-email-nuevo" autocomplete="email" placeholder="nuevo@correo.com">
         </label>
         <button class="btn" id="btn-emp-cambiar-email" type="button">Cambiar email</button>
         <span class="note">Recibirás un correo de confirmación en la dirección nueva.</span>
-      </div>
-    </div>
+        </div>
+        </div>
 
-    <div class="panel">
-      <h2>Contraseña</h2>
-      <div class="pass-form">
+        <div class="panel">
+        <h2>Contraseña</h2>
+        <div class="pass-form">
         <label>Contraseña nueva
-          <input type="password" id="emp-pass1" minlength="6" autocomplete="new-password">
+        <input type="password" id="emp-pass1" minlength="6" autocomplete="new-password">
         </label>
         <label>Repítela
-          <input type="password" id="emp-pass2" minlength="6" autocomplete="new-password">
+        <input type="password" id="emp-pass2" minlength="6" autocomplete="new-password">
         </label>
         <button class="btn primary" id="btn-cambiar-pass" type="button">Cambiar contraseña</button>
+        </div>
+        </div>
+
       </div>
-    </div>
+    </details>
+    <details class="ajustes-bloque solo-probador">
+      <summary>Fichaje</summary>
+      <div class="ajustes-bloque-body">
+        <div class="panel solo-probador" id="panel-pin-empleado" hidden>
+        <h2>Mi PIN de fichaje 🧪</h2>
+        <p class="note" id="pin-empleado-estado">…</p>
+        <div id="pin-empleado" class="pin-form">
+        <input type="password" id="pin-empleado-input" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="4 a 6 dígitos">
+        <button class="btn primary" id="pin-empleado-guardar" type="button">Guardar PIN</button>
+        </div>
+        <p class="note">Con este PIN fichas en la tablet del local. No lo compartas con nadie.</p>
+        </div>
 
-    <div class="panel">
-      <h2>Privacidad</h2>
-      <p class="note">Aquí puedes ver qué datos tuyos guarda la aplicación, quién los ve y cuáles son tus derechos.</p>
-      <div class="setting-row">
-        <button class="btn" id="btn-privacidad-emp" type="button">Ver el aviso de privacidad</button>
       </div>
-    </div>
+    </details>
+    <details class="ajustes-bloque">
+      <summary>Notificaciones y aplicación</summary>
+      <div class="ajustes-bloque-body">
+        <div class="panel">
+        <h2>Notificaciones</h2>
+        <p class="note">Elige de qué quieres que te avisemos.</p>
+        <div id="pref-notif-empleado" class="pref-lista"></div>
+        <button class="btn primary push-btn" id="btn-push-empleado" type="button">Activar avisos en este dispositivo</button>
+        <p class="note">Los avisos llegan aunque tengas la app cerrada. En iPhone, primero añade la app a la pantalla de inicio.</p>
+        </div>
 
-    <div class="panel">
-      <h2>Aspecto</h2>
-      <div class="tema-opciones" id="tema-empleado"></div>
-      <p class="note">«Automático» sigue el ajuste de tu móvil.</p>
-    </div>
+        <div class="panel">
+        <h2>Aspecto</h2>
+        <div class="tema-opciones" id="tema-empleado"></div>
+        <p class="note">«Automático» sigue el ajuste de tu móvil.</p>
+        </div>
 
-    <div class="panel">
-      <h2>Instalar la aplicación</h2>
-      <div class="setting-row">
+        <div class="panel">
+        <h2>Instalar la aplicación</h2>
+        <div class="setting-row">
         <button class="btn primary" id="btn-instalar-emp" type="button" hidden>Instalar en este dispositivo</button>
         <span class="note">Instalada funciona como una app normal: icono propio y pantalla completa.</span>
         <span class="note ayuda-ios" hidden>En iPhone: toca <b>Compartir</b> en Safari y elige <b>Añadir a pantalla de inicio</b>.</span>
+        </div>
+        </div>
       </div>
-    </div>
+    </details>
+    <details class="ajustes-bloque">
+      <summary>Privacidad</summary>
+      <div class="ajustes-bloque-body">
+        <div class="panel">
+        <h2>Privacidad</h2>
+        <p class="note">Aquí puedes ver qué datos tuyos guarda la aplicación, quién los ve y cuáles son tus derechos.</p>
+        <div class="setting-row">
+        <button class="btn" id="btn-privacidad-emp" type="button">Ver el aviso de privacidad</button>
+        </div>
+        </div>
+
+      </div>
+    </details>
   </section>
 
   <!-- ============ EMPLEADO · SOLICITUDES ============ -->

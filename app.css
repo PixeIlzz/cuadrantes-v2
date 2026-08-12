@@ -134,18 +134,18 @@ button{font:inherit;cursor:pointer}
 .add-form input[type=number]{flex:1;min-width:90px;max-width:120px}
 .worker-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .worker-row{
-  display:flex;flex-direction:column;gap:8px;
-  border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+  border:1px solid var(--line);border-radius:var(--radius);padding:8px 10px;
 }
 .worker-row>input[type=text]{
-  width:100%;border:none;font:inherit;font-weight:600;background:transparent;
-  padding:2px 0;font-size:1.02rem;
+  flex:1 1 150px;min-width:110px;border:none;font:inherit;font-weight:600;
+  background:transparent;padding:2px 0;
 }
-.worker-acc{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
-.worker-row input[type=number]{width:64px;border:1px solid var(--line);border-radius:6px;padding:5px;font:inherit;text-align:center}
-.worker-row .h-label{font-size:.75rem;color:var(--ink-soft)}
+.worker-acc{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-left:auto}
+.worker-row input[type=number]{width:60px;border:1px solid var(--line);border-radius:6px;padding:5px;font:inherit;text-align:center}
+.worker-row .h-label{font-size:.75rem;color:var(--ink-soft);white-space:nowrap}
 .worker-acc .btn.small{white-space:nowrap}
-.worker-acc .del{margin-left:auto;background:none;border:none;color:var(--bad);font-size:1.05rem;font-weight:700;padding:4px 8px}
+.worker-row .del{background:none;border:none;color:var(--bad);font-size:1.05rem;font-weight:700;padding:4px 8px}
 .del{background:none;border:none;color:var(--bad);font-weight:700;padding:4px 8px;cursor:pointer}
 .setting-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .setting-row .note{font-size:.78rem;color:var(--ink-soft);flex-basis:100%}
@@ -1779,3 +1779,81 @@ html[data-tema="oscuro"] .fich-testeo-aviso{color:#ffd166}
   padding:.55rem;border:1px solid var(--line);border-radius:8px;
   background:var(--paper);color:var(--ink);font-size:1rem;
 }
+
+/* ============================================================
+   Ajustes: más densidad en pantallas anchas
+   ============================================================ */
+@media (min-width:900px){
+  .ajustes-bloque-body{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:1.2rem 2rem;align-items:start;
+  }
+  .ajustes-bloque-body .panel{margin:0}
+  /* Los editores con listas largas ocupan las dos columnas */
+  .ajustes-bloque-body #panel-fichaje-ajustes,
+  .ajustes-bloque-body .panel:has(#days-list),
+  .ajustes-bloque-body .panel:has(#roles-list),
+  .ajustes-bloque-body .panel:has(#worker-list){grid-column:1 / -1}
+}
+/* Filas de configuración: que no se estiren a lo ancho en PC */
+.ajustes-bloque-body .worker-row{max-width:640px}
+.ajustes-bloque-body .setting-row{max-width:640px}
+.fich-dia{max-width:640px}
+
+/* ---- Horario del turno en listas del empleado ---- */
+.turno-hor{
+  font-size:.78rem;font-weight:700;color:var(--accent);
+  font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+.reg-dia-hor{
+  display:block;font-size:.75rem;font-weight:600;color:var(--accent);
+  font-variant-numeric:tabular-nums;margin-top:.15rem;text-transform:none;
+}
+
+/* ---- Mi registro: botón de historial y jornada terminada ---- */
+.reg-ver-btn{width:100%;margin-bottom:1rem;padding:.8rem}
+.reg-volver{margin-bottom:.8rem}
+.reg-estado.hecho{border-color:var(--line)}
+.reg-estado.hecho .re-timer{color:var(--ink)}
+
+/* Tarjeta del kiosco con la jornada ya terminada */
+.kiosco-emp.hecho .ke-timer{color:var(--ink-soft)}
+
+/* ============================================================
+   Ajustes: layout más compacto y ordenado en pantallas grandes
+   ============================================================ */
+.ajustes-bloque{max-width:760px}
+.ajustes-bloque-body .panel{margin-bottom:1.6rem}
+.ajustes-bloque-body .panel>h2{
+  font-size:.95rem;margin-bottom:.2rem;
+  padding-bottom:.35rem;border-bottom:1px solid var(--line);
+}
+.ajustes-bloque-body .panel>.note{margin-bottom:.7rem}
+/* Filas de puestos/días/equipo: nombre + controles en la misma línea si cabe */
+.worker-row{padding:8px 10px;gap:6px}
+@media(min-width:620px){
+  .worker-row{flex-direction:row;align-items:center;flex-wrap:wrap}
+  .worker-row>input[type=text]{flex:1 1 180px;width:auto}
+  .worker-acc{flex:0 0 auto;margin-left:auto}
+}
+.worker-acc .h-label{margin-right:.2rem}
+#roles-list,#days-list{display:flex;flex-direction:column;gap:.5rem;margin-bottom:.8rem}
+/* Horario previsto (respaldo): tramos más compactos */
+.fich-dia{padding:.7rem .8rem}
+
+/* Horario del turno en las listas de turnos del empleado */
+.turno-hor{
+  font-size:.78rem;font-weight:700;color:var(--accent);
+  font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+.turno-row.todos .turno-hor{color:var(--sobre-oscuro);opacity:.9}
+
+/* Jornada terminada: tiempo acumulado del día, en tono neutro */
+.kiosco-emp.hecho .ke-timer,
+.fich-emp.hecho .fe-timer{color:var(--ink-soft)}
+.reg-estado.hecho{border-color:var(--line)}
+.reg-estado.hecho .re-timer{color:var(--ink-soft)}
+
+/* Mi registro: botón principal y volver */
+.reg-ver-btn{width:100%;margin:.2rem 0 1rem;padding:.9rem;font-size:1rem}
+.reg-volver{margin-bottom:.8rem}
