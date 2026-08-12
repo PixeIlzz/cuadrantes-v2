@@ -11,6 +11,7 @@ export const TIPOS_EMPLEADO = [
   { id: 'request_resolved', label: 'Respuesta a mis solicitudes' },
   { id: 'week_published',   label: 'Nuevo cuadrante publicado' },
   { id: 'announcement',     label: 'Avisos destacados del negocio' },
+  { id: 'fichaje_recordatorio', label: 'Recordatorios de fichaje' },
 ];
 
 export async function listarNotificaciones(limite = 30) {
