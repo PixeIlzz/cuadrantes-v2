@@ -1819,136 +1819,191 @@ html[data-tema="oscuro"] .fich-testeo-aviso{color:#ffd166}
 /* Tarjeta del kiosco con la jornada ya terminada */
 .kiosco-emp.hecho .ke-timer{color:var(--ink-soft)}
 
-/* ============================================================
-   Ajustes: layout más compacto y ordenado en pantallas grandes
-   ============================================================ */
-.ajustes-bloque{max-width:760px}
-.ajustes-bloque-body .panel{margin-bottom:1.6rem}
-.ajustes-bloque-body .panel>h2{
-  font-size:.95rem;margin-bottom:.2rem;
-  padding-bottom:.35rem;border-bottom:1px solid var(--line);
-}
-.ajustes-bloque-body .panel>.note{margin-bottom:.7rem}
-/* Filas de puestos/días/equipo: nombre + controles en la misma línea si cabe */
-.worker-row{padding:8px 10px;gap:6px}
-@media(min-width:620px){
-  .worker-row{flex-direction:row;align-items:center;flex-wrap:wrap}
-  .worker-row>input[type=text]{flex:1 1 180px;width:auto}
-  .worker-acc{flex:0 0 auto;margin-left:auto}
-}
-.worker-acc .h-label{margin-right:.2rem}
-#roles-list,#days-list{display:flex;flex-direction:column;gap:.5rem;margin-bottom:.8rem}
-/* Horario previsto (respaldo): tramos más compactos */
-.fich-dia{padding:.7rem .8rem}
-
-/* Horario del turno en las listas de turnos del empleado */
-.turno-hor{
-  font-size:.78rem;font-weight:700;color:var(--accent);
-  font-variant-numeric:tabular-nums;white-space:nowrap;
-}
-.turno-row.todos .turno-hor{color:var(--sobre-oscuro);opacity:.9}
-
-/* Jornada terminada: tiempo acumulado del día, en tono neutro */
-.kiosco-emp.hecho .ke-timer,
-.fich-emp.hecho .fe-timer{color:var(--ink-soft)}
-.reg-estado.hecho{border-color:var(--line)}
-.reg-estado.hecho .re-timer{color:var(--ink-soft)}
-
-/* Mi registro: botón principal y volver */
-.reg-ver-btn{width:100%;margin:.2rem 0 1rem;padding:.9rem;font-size:1rem}
-.reg-volver{margin-bottom:.8rem}
 
 /* ============================================================
-   PASADA VISUAL — ritmo, padding y centrado homogéneos
-   Se aplica al final para prevalecer sobre reglas anteriores.
+   CAPA FINAL — layout, padding y componentes desplegables.
+   Bloque único y autoritativo: evita reglas solapadas.
    ============================================================ */
 
-/* Contenedor: más aire en pantallas grandes, ajustado en móvil */
+/* ---------- Contenedor ---------- */
 main{padding:16px;max-width:1100px;margin:0 auto}
 @media(min-width:900px){ main{padding:24px 28px} }
 @media(max-width:520px){ main{padding:12px} }
 
-/* Paneles: mismo padding y separación en toda la app */
-.panel{padding:16px 18px;margin-bottom:16px}
-@media(max-width:520px){ .panel{padding:14px} }
-.panel>h2{
-  font-size:1.02rem;line-height:1.25;margin:0 0 .35rem;
+/* Secciones centradas con ancho legible */
+#tab-ajustes,#tab-emp-ajustes{max-width:820px;margin:0 auto}
+#emp-fichaje,#fichaje-gestor{max-width:860px;margin:0 auto}
+
+/* ---------- Paneles ---------- */
+.panel{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px 18px;margin-bottom:16px;
 }
-.panel>h2+.note{margin-top:-.1rem}
+@media(max-width:520px){ .panel{padding:14px} }
+.panel>h2{font-size:1.02rem;line-height:1.25;margin:0 0 .4rem}
 .panel>.note{margin-bottom:.85rem;line-height:1.45}
 .panel>*:last-child{margin-bottom:0}
 
-/* Secciones de pestaña: centradas y con ancho legible */
-#tab-ajustes,#tab-emp-ajustes{max-width:780px;margin:0 auto}
-#emp-fichaje,#fichaje-gestor{max-width:820px;margin:0 auto}
-
-/* Formularios: altura de control uniforme */
+/* ---------- Controles ---------- */
 .panel input[type=text],.panel input[type=email],.panel input[type=number],
 .panel input[type=time],.panel input[type=date],.panel input[type=password],
-.panel select{
-  min-height:42px;border-radius:9px;
-}
-.setting-row{gap:10px;margin-bottom:.6rem}
-.setting-row:last-child{margin-bottom:0}
-
-/* Botones: misma altura y toque cómodo en móvil */
+.panel select{min-height:42px;border-radius:9px}
 .btn{min-height:42px;border-radius:10px}
 .btn.small{min-height:34px}
+.setting-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:.7rem}
+.setting-row:last-child{margin-bottom:0}
 
-/* Bloques desplegables de ajustes */
-.ajustes-bloque{max-width:100%;margin-bottom:12px}
-.ajustes-bloque>summary{padding:1rem 1.15rem}
-.ajustes-bloque-body{padding:1.1rem 1.15rem 1.2rem}
-.ajustes-bloque-body .panel{margin-bottom:1.7rem;padding:0}
-.ajustes-bloque-body .panel:last-child{margin-bottom:0}
-
-/* Fichaje: tarjetas del equipo con ritmo uniforme */
-.fich-emp{padding:1rem .8rem;border-radius:14px;min-height:118px}
-.fich-lista{gap:.7rem}
-
-/* Mi registro: acordeones por semana / mes */
-.reg-grupo{
+/* ---------- AJUSTES: bloques desplegables ---------- */
+.ajustes-bloque{
+  display:block;
   border:1px solid var(--line);border-radius:14px;background:var(--card);
-  margin-bottom:.7rem;overflow:hidden;
+  margin:0 0 12px;overflow:hidden;
+}
+.ajustes-bloque>summary{
+  list-style:none;cursor:pointer;padding:1rem 1.15rem;font-weight:700;font-size:1rem;
+  display:flex;align-items:center;justify-content:space-between;gap:.6rem;
+}
+.ajustes-bloque>summary::-webkit-details-marker{display:none}
+.ajustes-bloque>summary::marker{content:''}
+.ajustes-bloque>summary::after{
+  content:'⌄';font-size:1.2rem;color:var(--ink-soft);transition:transform .2s;flex:0 0 auto;
+}
+.ajustes-bloque[open]>summary::after{transform:rotate(180deg)}
+.ajustes-bloque[open]>summary{border-bottom:1px solid var(--line)}
+.ajustes-bloque-body{padding:1.15rem}
+/* Dentro del bloque los paneles no llevan caja propia */
+.ajustes-bloque-body .panel{
+  background:none;border:none;box-shadow:none;
+  padding:0;margin:0 0 1.8rem;
+}
+.ajustes-bloque-body .panel:last-child{margin-bottom:0}
+.ajustes-bloque-body .panel>h2{
+  font-size:.93rem;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);
+  margin-bottom:.5rem;padding-bottom:.4rem;border-bottom:1px solid var(--line);
+}
+.ajustes-bloque-body .worker-row,
+.ajustes-bloque-body .setting-row,
+.ajustes-bloque-body .email-form,
+.ajustes-bloque-body .pass-form,
+.ajustes-bloque-body .legal-form{max-width:100%}
+
+/* Filas de puestos / días / equipo */
+.worker-row{
+  display:flex;flex-direction:column;gap:8px;
+  border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;
+}
+.worker-row>input[type=text]{
+  width:100%;border:none;font:inherit;font-weight:600;background:transparent;font-size:1rem;
+}
+.worker-acc{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.worker-acc .del{margin-left:auto}
+@media(min-width:620px){
+  .worker-row{flex-direction:row;align-items:center;flex-wrap:wrap}
+  .worker-row>input[type=text]{flex:1 1 170px;width:auto}
+  .worker-acc{flex:0 0 auto;margin-left:auto}
+}
+#roles-list,#days-list{display:flex;flex-direction:column;gap:.5rem;margin-bottom:.8rem}
+
+/* ---------- FICHAJE gestor: tarjetas del equipo ---------- */
+.fich-lista{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.7rem;
+}
+.fich-emp{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3rem;
+  padding:1rem .8rem;border-radius:14px;min-height:120px;text-align:center;
+  background:var(--card);border:1px solid var(--line);cursor:pointer;
+}
+.fich-emp .fe-nombre{font-weight:700}
+.fich-emp .fe-estado{font-size:.75rem;color:var(--ink-soft);line-height:1.25}
+.fich-emp .fe-timer{font-weight:800;font-variant-numeric:tabular-nums;font-size:1.1rem;min-height:1.2rem}
+.fich-emp .fe-total{font-size:.75rem;color:var(--ink-soft)}
+.fich-emp.activo{border-color:var(--coc);box-shadow:inset 0 0 0 2px var(--coc)}
+.fich-emp.activo .fe-timer,.fich-emp.activo .fe-estado{color:var(--coc)}
+.fich-emp.rojo{border-color:var(--bad);box-shadow:inset 0 0 0 2px var(--bad)}
+.fich-emp.rojo .fe-timer,.fich-emp.rojo .fe-estado{color:var(--bad)}
+.fich-emp.hecho .fe-timer{color:var(--ink-soft)}
+
+/* Detalle del empleado (gestor) */
+.fich-det-cab{display:flex;align-items:center;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap}
+.fich-det-acc{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:flex-end;margin:.8rem 0 1rem}
+.fich-stats{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:.6rem;margin-top:1.1rem;
+}
+
+/* ---------- Estado actual (empleado y gestor) ---------- */
+.reg-estado{
+  padding:1.5rem 1.1rem;border-radius:16px;text-align:center;margin-bottom:1.1rem;
+  background:var(--card);border:1px solid var(--line);
+}
+.reg-estado .re-fecha{color:var(--ink-soft);text-transform:capitalize;font-size:.9rem;margin-bottom:.35rem}
+.reg-estado .re-timer{font-size:2.6rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.reg-estado .re-estado-txt{font-weight:700;margin-top:.35rem}
+.reg-estado .re-sub{color:var(--ink-soft);font-size:.85rem;margin-top:.25rem;min-height:1rem}
+.reg-estado.activo{border-color:var(--coc);background:color-mix(in srgb,var(--coc) 12%,var(--card))}
+.reg-estado.activo .re-timer,.reg-estado.activo .re-estado-txt{color:var(--coc)}
+.reg-estado.rojo{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--card))}
+.reg-estado.rojo .re-timer,.reg-estado.rojo .re-estado-txt{color:var(--bad)}
+.reg-estado.hecho .re-timer{color:var(--ink-soft)}
+@media(max-width:520px){ .reg-estado .re-timer{font-size:2.2rem} }
+
+/* ---------- MI REGISTRO: navegación y acordeones ---------- */
+.reg-ver-btn{width:100%;margin:0 0 1.1rem;padding:.95rem;font-size:1rem}
+.reg-volver{margin-bottom:.9rem}
+.reg-barra{display:flex;flex-direction:column;gap:.75rem;margin-bottom:1.1rem}
+.reg-modos{display:flex;gap:.4rem}
+.reg-modo{
+  flex:1;padding:.6rem .5rem;border:1px solid var(--line);border-radius:10px;
+  background:var(--card);color:var(--ink-soft);font-weight:600;cursor:pointer;font-size:.9rem;
+}
+.reg-modo.activo{background:var(--accent);color:var(--sobre-oscuro);border-color:var(--accent)}
+.reg-nav{display:flex;align-items:center;justify-content:space-between;gap:.6rem}
+.reg-flecha{
+  width:42px;height:42px;border-radius:10px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);font-size:1.3rem;line-height:1;cursor:pointer;
+}
+.reg-etiqueta{flex:1;text-align:center;font-weight:700;text-transform:capitalize}
+
+.reg-grupo{
+  display:block;border:1px solid var(--line);border-radius:14px;background:var(--card);
+  margin:0 0 .7rem;overflow:hidden;
 }
 .reg-grupo>summary{
   list-style:none;cursor:pointer;padding:.95rem 1.05rem;
   display:flex;align-items:center;justify-content:space-between;gap:.8rem;
 }
 .reg-grupo>summary::-webkit-details-marker{display:none}
+.reg-grupo>summary::marker{content:''}
 .reg-grupo>summary::after{
   content:'⌄';color:var(--ink-soft);font-size:1.1rem;transition:transform .2s;flex:0 0 auto;
 }
 .reg-grupo[open]>summary::after{transform:rotate(180deg)}
 .reg-grupo[open]>summary{border-bottom:1px solid var(--line)}
 .rg-tit{font-weight:700;text-transform:capitalize;flex:1;min-width:0}
-.rg-datos{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;justify-content:flex-end}
+.rg-datos{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;justify-content:flex-end}
 .rg-datos b{font-variant-numeric:tabular-nums;font-size:1rem}
 .rg-dias{font-size:.75rem;color:var(--ink-soft)}
 .rg-ret{
   font-size:.72rem;font-weight:700;color:var(--bad);
   background:color-mix(in srgb,var(--bad) 14%,transparent);
-  padding:.15rem .45rem;border-radius:999px;
+  padding:.15rem .45rem;border-radius:999px;white-space:nowrap;
 }
-.reg-grupo-body{padding:.5rem 1.05rem 1rem}
-.reg-dia{
-  border:none;border-top:1px solid var(--line);border-radius:0;
-  padding:.85rem 0 .7rem;margin:0;background:none;
-}
+.reg-grupo-body{padding:.4rem 1.05rem 1rem}
+.reg-dia{border:none;border-top:1px solid var(--line);border-radius:0;padding:.85rem 0 .7rem;margin:0;background:none}
 .reg-grupo-body .reg-dia:first-child{border-top:none;padding-top:.4rem}
 .reg-dia-tit{
   display:flex;align-items:baseline;justify-content:space-between;gap:.6rem;flex-wrap:wrap;
-  border-bottom:none;padding-bottom:.3rem;
+  font-weight:700;text-transform:capitalize;border-bottom:none;padding-bottom:.35rem;
 }
 .reg-dia-hor{font-size:.75rem;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
-.reg-resumen{margin-top:.9rem;padding:1rem}
+.reg-fila{display:flex;align-items:center;gap:.6rem;padding:.35rem 0;font-size:.92rem}
+.reg-dia-total{margin-top:.5rem;padding-top:.45rem;border-top:1px solid var(--line);color:var(--ink-soft);font-size:.88rem}
+.reg-dia-total b{color:var(--ink)}
+.reg-resumen{
+  padding:1rem;background:var(--accent-soft);border-radius:12px;
+  font-weight:600;text-align:center;margin-top:.9rem;
+}
 .reg-ret-tot{color:var(--bad);font-weight:700}
 
-/* Estado actual: misma caja en empleado y gestor */
-.reg-estado{padding:1.4rem 1.1rem;margin-bottom:1.1rem}
-.reg-estado .re-timer{font-size:2.6rem}
-@media(max-width:520px){ .reg-estado .re-timer{font-size:2.2rem} }
-
-/* Tablet y PC: rejilla del kiosco con más columnas */
+/* ---------- Kiosco en tablet / PC ---------- */
 @media(min-width:900px){ .kiosco-grid{grid-template-columns:repeat(4,1fr)} }
 @media(min-width:1200px){ .kiosco-grid{grid-template-columns:repeat(5,1fr)} }
