@@ -2007,3 +2007,92 @@ main{padding:16px;max-width:1100px;margin:0 auto}
 /* ---------- Kiosco en tablet / PC ---------- */
 @media(min-width:900px){ .kiosco-grid{grid-template-columns:repeat(4,1fr)} }
 @media(min-width:1200px){ .kiosco-grid{grid-template-columns:repeat(5,1fr)} }
+
+/* ============================================================
+   ÁRBOL DE REGISTRO: Año > Mes > Semana > Día
+   ============================================================ */
+.arb-titulo{
+  font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--ink-soft);margin:1.4rem 0 .7rem;
+}
+.arb-nodo{
+  display:block;border:1px solid var(--line);border-radius:12px;
+  background:var(--card);margin-bottom:.5rem;overflow:hidden;
+}
+.arb-sum{
+  list-style:none;cursor:pointer;display:flex;align-items:center;gap:.6rem;
+  padding:.8rem .9rem;user-select:none;
+}
+.arb-sum::-webkit-details-marker{display:none}
+.arb-sum::marker{content:''}
+.arb-sum::before{
+  content:'\203A';color:var(--ink-soft);font-size:1.15rem;line-height:1;
+  transition:transform .18s;flex:0 0 auto;width:12px;text-align:center;
+}
+.arb-nodo[open]>.arb-sum::before{transform:rotate(90deg)}
+.arb-nodo[open]>.arb-sum{border-bottom:1px solid var(--line)}
+.arb-tit{font-weight:700;flex:1;min-width:0;text-transform:capitalize;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.arb-datos{display:flex;align-items:center;gap:.5rem;flex:0 0 auto}
+.arb-datos b{font-variant-numeric:tabular-nums;font-size:.95rem}
+.arb-sub{font-size:.72rem;color:var(--ink-soft);white-space:nowrap}
+.arb-body{padding:.5rem .6rem .6rem}
+
+/* Jerarquía por nivel: tamaño y color descendente */
+.arb-nivel-anio>.arb-sum .arb-tit{font-size:1.15rem}
+.arb-nivel-anio>.arb-sum{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.arb-nivel-mes>.arb-sum .arb-tit{font-size:1rem}
+.arb-nivel-semana>.arb-sum .arb-tit{font-size:.92rem;font-weight:600}
+.arb-nivel-dia>.arb-sum .arb-tit{font-size:.88rem;font-weight:600;color:var(--ink-soft)}
+.arb-nivel-mes,.arb-nivel-semana,.arb-nivel-dia{border-radius:10px}
+.arb-nivel-dia{background:var(--paper)}
+
+/* Botones de exportar (solo gestor) */
+.arb-acc{display:flex;gap:.3rem;flex:0 0 auto}
+.arb-btn{
+  font-size:.68rem;font-weight:700;letter-spacing:.03em;
+  padding:.3rem .5rem;border-radius:7px;cursor:pointer;
+  border:1px solid var(--line);background:var(--paper);color:var(--ink-soft);
+}
+.arb-btn:hover{background:var(--accent);color:var(--sobre-oscuro);border-color:var(--accent)}
+
+/* Fichajes de un día */
+.arb-fichajes{display:flex;flex-direction:column;gap:.15rem}
+.arb-fila{
+  display:flex;align-items:center;gap:.6rem;padding:.4rem .5rem;
+  border-radius:8px;font-size:.88rem;
+}
+.arb-fila:nth-child(odd){background:color-mix(in srgb,var(--ink) 3%,transparent)}
+.af-tipo{font-weight:600;min-width:92px;flex:0 0 auto}
+.arb-fila.entrada .af-tipo{color:var(--coc)}
+.arb-fila.salida .af-tipo{color:var(--accent)}
+.af-hora{flex:1;font-variant-numeric:tabular-nums}
+.af-marca{font-size:.72rem;color:var(--ink-soft);font-style:italic}
+
+@media(max-width:520px){
+  .arb-sum{padding:.7rem .75rem;gap:.45rem;flex-wrap:wrap}
+  .arb-tit{flex:1 1 100%;order:1}
+  .arb-datos{order:2}
+  .arb-acc{order:3;margin-left:auto}
+  .af-tipo{min-width:80px}
+}
+
+/* Saldo y retraso en las cabeceras del árbol */
+.arb-saldo{
+  font-size:.72rem;font-weight:700;padding:.15rem .45rem;border-radius:999px;
+  white-space:nowrap;font-variant-numeric:tabular-nums;
+}
+.arb-saldo.ok{color:var(--coc);background:color-mix(in srgb,var(--coc) 15%,transparent)}
+.arb-saldo.bad{color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,transparent)}
+.arb-ret{
+  font-size:.72rem;font-weight:700;color:var(--bad);white-space:nowrap;
+  background:color-mix(in srgb,var(--bad) 12%,transparent);
+  padding:.15rem .45rem;border-radius:999px;
+}
+.af-tarde{
+  font-size:.72rem;font-weight:700;color:var(--bad);white-space:nowrap;flex:0 0 auto;
+}
+@media(max-width:520px){
+  .arb-datos{flex-wrap:wrap;gap:.35rem}
+  .arb-sub{display:none}
+}
