@@ -81,6 +81,18 @@ function esc(t) {
   return String(t == null ? '' : t)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+/* Nombre para la documentación legal: el completo si lo hay, si no el del cuadrante */
+function nombreLegal(worker) {
+  return (worker && (worker.full_name || worker.name)) || '';
+}
+/* Marca de un fichaje para la columna de observaciones */
+function marcaDe(f) {
+  if (f.estimado) return 'Estimado';
+  if (f.origen === 'gestor') return 'Corregido';
+  if (f.origen === 'kiosco') return 'Kiosco';
+  if (f.origen === 'auto') return 'Automático';
+  return '';
+}
 /* Lunes de la semana a la que pertenece una fecha ISO */
 function lunesIso(iso) {
   const d = new Date(iso + 'T12:00:00');
@@ -145,47 +157,134 @@ function fichajesDeNodo(nodo, tipo) {
 }
 
 /* ================= exportar ================= */
+/* Hoja de estilo del documento imprimible.
+   Paleta heredada de la app (tinta #182135, acento #2456c8), pero sobria:
+   poca mancha de tinta y todo legible aunque se imprima en blanco y negro. */
+const CSS_PDF = `
+@page{size:A4;margin:15mm 14mm}
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,Helvetica,sans-serif;
+     color:#182135;font-size:11px;line-height:1.45;margin:0;padding:0;
+     -webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cab{border-bottom:2.5px solid #2456c8;padding-bottom:9px;margin-bottom:14px;
+     display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.cab h1{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;margin:0}
+.cab .sub{font-size:10px;color:#5a6478;margin-top:2px}
+.cab .marca{font-size:10px;color:#5a6478;text-align:right;white-space:nowrap}
+.ident{width:100%;border-collapse:collapse;margin-bottom:12px;table-layout:fixed}
+.ident td{vertical-align:top;padding:0;width:50%}
+.ident td:first-child{padding-right:10px}
+.bloque{border:1px solid #dde2ea;border-radius:6px;padding:8px 10px;height:100%}
+.bloque h2{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#5a6478;
+           margin:0 0 5px;padding-bottom:4px;border-bottom:1px solid #dde2ea;font-weight:700}
+.campo{display:flex;gap:6px;margin-bottom:2px}
+.campo .et{color:#5a6478;flex:0 0 78px}
+.campo .va{font-weight:600}
+.periodo{background:#f2f4f7;border-radius:6px;padding:7px 10px;margin-bottom:12px;font-size:11px}
+.periodo .et{color:#5a6478;text-transform:uppercase;font-size:9px;letter-spacing:.08em}
+.periodo .va{font-weight:700;margin-left:6px}
+table.reg{width:100%;border-collapse:collapse}
+table.reg th{background:#182135;color:#fff;font-size:9px;text-transform:uppercase;
+             letter-spacing:.06em;padding:6px 8px;text-align:left;font-weight:700}
+table.reg td{padding:5px 8px;border-bottom:1px solid #e6eaf1;vertical-align:top}
+table.reg .fecha{border-right:1px solid #dde2ea;white-space:nowrap;width:24%}
+table.reg .fecha .dow{color:#5a6478;font-size:9px;text-transform:capitalize;display:block}
+table.reg .fecha .num{font-weight:700}
+table.reg .hora{font-variant-numeric:tabular-nums;white-space:nowrap;width:16%}
+table.reg .obs{color:#5a6478;font-size:9px;width:20%}
+table.reg .ev{width:18%}
+table.reg .ev b{font-weight:600}
+table.reg tr.dia-tot td{background:#f7f9fc;font-weight:700;border-bottom:1px solid #dde2ea}
+table.reg tbody.dia{page-break-inside:avoid}
+table.reg tr.total td{background:#182135;color:#fff;font-weight:700;font-size:12px;
+                      padding:8px;border:none}
+.firmas{margin-top:26px;width:100%;border-collapse:collapse;page-break-inside:avoid}
+.firmas td{width:50%;padding-top:34px;font-size:10px;color:#5a6478;vertical-align:bottom}
+.firmas td span{display:block;border-top:1px solid #182135;padding-top:4px;margin-right:20px}
+.pie{margin-top:18px;padding-top:8px;border-top:1px solid #dde2ea;
+     font-size:9px;color:#5a6478;display:flex;justify-content:space-between;gap:10px}
+`;
+
+function campo(etiqueta, valor) {
+  return '<div class="campo"><span class="et">' + esc(etiqueta) + '</span>'
+    + '<span class="va">' + esc(valor || '—') + '</span></div>';
+}
+
 function exportarPDF(worker, titulo, fichajes) {
   const leg = datosLegales();
   const porDia = {};
   for (const f of fichajes) (porDia[f.dia || diaDe(f.momento)] ||= []).push(f);
 
-  let filas = '', total = 0;
+  let cuerpo = '', total = 0;
   for (const iso of Object.keys(porDia).sort()) {
     const items = porDia[iso];
-    const fecha = new Date(iso + 'T12:00:00').toLocaleDateString('es-ES',
-      { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
-    let primera = true;
-    for (const f of items) {
-      filas += '<tr><td>' + (primera ? esc(fecha) : '') + '</td><td>'
-        + (f.tipo === 'entrada' ? 'Entrada' : 'Salida') + '</td><td>' + hora(f.momento)
-        + (f.estimado ? ' (est.)' : '') + (f.origen === 'gestor' ? ' (corr.)' : '') + '</td></tr>';
-      primera = false;
-    }
+    const d = new Date(iso + 'T12:00:00');
+    const dow = d.toLocaleDateString('es-ES', { weekday: 'long' });
+    const num = d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    // Un <tbody> por día: la fecha ocupa todas sus filas y el día no se parte entre páginas
+    let filas = '';
+    items.forEach((f, i) => {
+      const fechaCel = i === 0
+        ? '<td class="fecha" rowspan="' + (items.length + 1) + '">'
+          + '<span class="dow">' + esc(dow) + '</span>'
+          + '<span class="num">' + esc(num) + '</span></td>'
+        : '';
+      filas += '<tr>' + fechaCel
+        + '<td class="ev"><b>' + (f.tipo === 'entrada' ? 'Entrada' : 'Salida') + '</b></td>'
+        + '<td class="hora">' + hora(f.momento) + '</td>'
+        + '<td class="obs">' + esc(marcaDe(f)) + '</td></tr>';
+    });
     const s = segDe(items); total += s;
-    filas += '<tr class="tot"><td></td><td>Total del día</td><td>' + hms(s) + '</td></tr>';
+    filas += '<tr class="dia-tot"><td class="ev">Total del día</td>'
+      + '<td class="hora">' + hms(s) + '</td><td class="obs"></td></tr>';
+    cuerpo += '<tbody class="dia">' + filas + '</tbody>';
   }
 
   const win = window.open('', '_blank');
   if (!win) { toast('Permite las ventanas emergentes para exportar'); return; }
+  const generado = new Date().toLocaleString('es-ES', { timeZone: 'Atlantic/Canary' });
+
   win.document.write(
-    '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Registro de jornada</title>'
-    + '<style>body{font-family:Arial,Helvetica,sans-serif;color:#111;padding:24px;font-size:12px}'
-    + 'h1{font-size:16px;margin:0 0 6px}table{width:100%;border-collapse:collapse;margin-top:10px}'
-    + 'th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}th{background:#f2f2f2}'
-    + 'tr.tot td{font-weight:bold;background:#fafafa}.datos{margin:2px 0}'
-    + '.pie{margin-top:24px;color:#555}</style></head><body>'
-    + '<h1>REGISTRO DE JORNADA LABORAL</h1>'
-    + '<div class="datos"><b>Razón social:</b> ' + esc(leg.razon_social || ctx.business.name || '')
-    + ' &nbsp; <b>CIF:</b> ' + esc(leg.cif || '') + '</div>'
-    + '<div class="datos"><b>Trabajador:</b> ' + esc(worker.name)
-    + ' &nbsp; <b>NIF:</b> ' + esc(worker.nif || '') + '</div>'
-    + '<div class="datos"><b>Periodo:</b> ' + esc(titulo) + '</div>'
-    + '<table><thead><tr><th>Fecha</th><th>Evento</th><th>Hora</th></tr></thead><tbody>' + filas
-    + '<tr class="tot"><td></td><td>TOTAL PERIODO</td><td>' + hms(total) + '</td></tr>'
-    + '</tbody></table><p class="pie">Generado el '
-    + new Date().toLocaleString('es-ES', { timeZone: 'Atlantic/Canary' })
-    + ' · StaffPoint</p></body></html>');
+    '<!doctype html><html lang="es"><head><meta charset="utf-8">'
+    + '<title>Registro de jornada · ' + esc(nombreLegal(worker)) + '</title>'
+    + '<style>' + CSS_PDF + '</style></head><body>'
+
+    + '<div class="cab"><div>'
+    + '<h1>Registro de jornada laboral</h1>'
+    + '<div class="sub">Artículo 34.9 del Estatuto de los Trabajadores</div>'
+    + '</div><div class="marca">StaffPoint</div></div>'
+
+    + '<table class="ident"><tr>'
+    + '<td><div class="bloque"><h2>Empresa</h2>'
+    + campo('Razón social', leg.razon_social || ctx.business.name)
+    + campo('CIF', leg.cif)
+    + '</div></td>'
+    + '<td><div class="bloque"><h2>Trabajador</h2>'
+    + campo('Nombre', nombreLegal(worker))
+    + campo('NIF', worker.nif)
+    + campo('Nº S.S.', worker.nss)
+    + '</div></td>'
+    + '</tr></table>'
+
+    + '<div class="periodo"><span class="et">Periodo</span>'
+    + '<span class="va">' + esc(titulo) + '</span></div>'
+
+    + '<table class="reg"><thead><tr>'
+    + '<th>Fecha</th><th>Evento</th><th>Hora</th><th>Observaciones</th>'
+    + '</tr></thead>' + cuerpo
+    + '<tbody><tr class="total"><td colspan="2">TOTAL DEL PERIODO</td>'
+    + '<td colspan="2">' + hms(total) + '</td></tr></tbody></table>'
+
+    + '<table class="firmas"><tr>'
+    + '<td><span>Firma de la empresa</span></td>'
+    + '<td><span>Firma del trabajador</span></td>'
+    + '</tr></table>'
+
+    + '<div class="pie"><span>Generado el ' + esc(generado) + '</span>'
+    + '<span>Conservación obligatoria: 4 años</span></div>'
+
+    + '</body></html>');
   win.document.close();
   win.focus();
   setTimeout(() => { try { win.print(); } catch (_) {} }, 300);
@@ -197,8 +296,9 @@ function exportarCSV(worker, titulo, fichajes) {
   const L = [];
   L.push(['Razón social', leg.razon_social || ctx.business.name || ''].join(sep));
   L.push(['CIF', leg.cif || ''].join(sep));
-  L.push(['Trabajador', worker.name].join(sep));
+  L.push(['Trabajador', nombreLegal(worker)].join(sep));
   L.push(['NIF', worker.nif || ''].join(sep));
+  L.push(['Nº Seguridad Social', worker.nss || ''].join(sep));
   L.push(['Periodo', titulo].join(sep));
   L.push('');
   L.push(['Fecha', 'Evento', 'Hora', 'Origen'].join(sep));
@@ -220,7 +320,7 @@ function exportarCSV(worker, titulo, fichajes) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'registro_' + worker.name.replace(/\s+/g, '_') + '_'
+  a.download = 'registro_' + nombreLegal(worker).replace(/\s+/g, '_') + '_'
     + titulo.replace(/[^\w]+/g, '_') + '.csv';
   a.click();
   URL.revokeObjectURL(url);

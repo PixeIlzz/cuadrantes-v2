@@ -7,7 +7,7 @@ export async function listarEquipo() {
 
   const { data: workers, error: e1 } = await sb
     .from('workers')
-    .select('id, name, weekly_shifts, sort_order, nif')
+    .select('id, name, weekly_shifts, sort_order, nif, full_name, nss')
     .eq('business_id', biz)
     .eq('active', true)
     .order('sort_order', { ascending: true })

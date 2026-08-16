@@ -81,6 +81,87 @@ export function pedirTexto(titulo, valorInicial = '', opciones = {}) {
   });
 }
 
+/* Diálogo con varios campos de texto.
+   campos: [{clave, etiqueta, valor, placeholder, maxLength, transformar, nota}]
+   Resuelve con un objeto {clave: valor} o null si cancela. */
+export function pedirDatos(titulo, campos, opciones = {}) {
+  const { textoOk = 'Guardar', textoNo = 'Cancelar', nota = '' } = opciones;
+  return new Promise((resolve) => {
+    const bg = document.createElement('div');
+    bg.className = 'modal-bg';
+    const caja = document.createElement('div');
+    caja.className = 'modal modal-form';
+
+    const h = document.createElement('p');
+    h.className = 'modal-msg';
+    h.textContent = titulo;
+    caja.appendChild(h);
+
+    const inputs = {};
+    for (const c of campos) {
+      const lab = document.createElement('label');
+      lab.className = 'modal-campo';
+      const et = document.createElement('span');
+      et.className = 'modal-et';
+      et.textContent = c.etiqueta;
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.className = 'modal-input';
+      inp.value = c.valor || '';
+      inp.placeholder = c.placeholder || '';
+      inp.maxLength = c.maxLength || 40;
+      inputs[c.clave] = { inp, transformar: c.transformar || null };
+      lab.append(et, inp);
+      if (c.nota) {
+        const n = document.createElement('span');
+        n.className = 'modal-nota';
+        n.textContent = c.nota;
+        lab.appendChild(n);
+      }
+      caja.appendChild(lab);
+    }
+
+    if (nota) {
+      const n = document.createElement('p');
+      n.className = 'modal-nota';
+      n.textContent = nota;
+      caja.appendChild(n);
+    }
+
+    const fila = document.createElement('div');
+    fila.className = 'row';
+    const btnNo = document.createElement('button');
+    btnNo.type = 'button'; btnNo.className = 'btn'; btnNo.textContent = textoNo;
+    const btnOk = document.createElement('button');
+    btnOk.type = 'button'; btnOk.className = 'btn primary'; btnOk.textContent = textoOk;
+
+    const valores = () => {
+      const r = {};
+      for (const k of Object.keys(inputs)) {
+        let v = (inputs[k].inp.value || '').trim();
+        if (inputs[k].transformar) v = inputs[k].transformar(v);
+        r[k] = v;
+      }
+      return r;
+    };
+    function cerrar(v) { document.removeEventListener('keydown', pt); bg.remove(); resolve(v); }
+    function pt(e) {
+      if (e.key === 'Escape') cerrar(null);
+      if (e.key === 'Enter') cerrar(valores());
+    }
+    btnNo.addEventListener('click', () => cerrar(null));
+    btnOk.addEventListener('click', () => cerrar(valores()));
+    bg.addEventListener('click', (e) => { if (e.target === bg) cerrar(null); });
+    document.addEventListener('keydown', pt);
+
+    fila.append(btnNo, btnOk);
+    caja.appendChild(fila);
+    bg.appendChild(caja);
+    document.body.appendChild(bg);
+    const primero = campos[0] && inputs[campos[0].clave];
+    if (primero) setTimeout(() => primero.inp.focus(), 50);
+  });
+}
+
 /* Selector de una opción en un modal propio.
    opciones: [{valor, etiqueta, nota}]  → resuelve con el valor elegido o null. */
 export function elegirOpcion(titulo, opciones) {

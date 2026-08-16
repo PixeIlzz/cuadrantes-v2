@@ -56,6 +56,8 @@ js/data/*.js        Acceso a datos — una función por operación
 js/ui/*.js          Interfaz por módulo
 
 edge/enviar-push/   Edge Function de push (VAPID)
+sql/                Migraciones numeradas. Ver aviso abajo: las 1–32 NO
+                    están aquí, solo viven en Supabase.
 ```
 
 ### Regla de separación (estricta)
@@ -80,7 +82,7 @@ edge/enviar-push/   Edge Function de push (VAPID)
 | Tabla | Contenido |
 |---|---|
 | `businesses` | Negocio. `config` (jsonb): `roles` (puestos), `days` (columnas del cuadrante: `id`, `label`, `night`, y opcionalmente `desde`/`hasta`), `fichaje` (margen, avisos, tz), `legal` (razón social, CIF) |
-| `workers` | Trabajadores. `profile_id` puede ser null (gente que ficha sin app). `nif`, `pin_hash`, `active`, `sort_order` |
+| `workers` | Trabajadores. `profile_id` puede ser null (gente que ficha sin app). `pin_hash`, `active`, `sort_order`. **Dos nombres:** `name` es el corto del cuadrante ("Fran") y `full_name` el legal del contrato, que es el que sale en el PDF y el CSV. Más `nif` y `nss` (nº Seguridad Social) |
 | `weeks` + `assignments` | Cuadrante. Las semanas publicadas congelan `config_snapshot`. Asignaciones = día × puesto → trabajador, con `is_all` para turnos de toda la plantilla |
 | `vacations` | Periodos de vacaciones por trabajador |
 | `time_entries` | Fichajes: `tipo` (entrada/salida), `momento` (lo pone el servidor), `origen` (empleado/auto/gestor/kiosco), `estimado`, `ip`, `kiosco_id` |
@@ -89,6 +91,18 @@ edge/enviar-push/   Edge Function de push (VAPID)
 | `notifications` + `notification_prefs` | Avisos. Insertar una notificación dispara el push por trigger |
 
 Migraciones SQL numeradas secuencialmente.
+
+> **Aviso: el esquema no está versionado.** Las migraciones 1–32 solo existen dentro
+> de Supabase; en `sql/` está únicamente la 33 en adelante. No hay a qué volver si se
+> rompe una función, y ningún error de SQL se puede diagnosticar sin abrir el panel.
+> Volcar las 32 anteriores a `sql/` es tarea pendiente.
+
+**`id` sin cualificar en funciones `RETURNS TABLE`.** Si la función declara una
+columna de salida `id`, cualquier `id` sin alias dentro del cuerpo es ambiguo y la
+función aborta entera (error 42702), incluso en la primera sentencia y antes de
+comprobar permisos. Pasó en `fichajes_por_jornada` (migración 33): parecía un problema
+de rol porque otras pantallas seguían funcionando. **Cualificar siempre con alias de
+tabla dentro de estas funciones.**
 
 ---
 
@@ -127,8 +141,11 @@ notificaciones push configurables.
 - **Registro en árbol.** Año → Mes → Semana → Día, desplegable. Cada nivel muestra
   horas totales, saldo (vs. previsto) y retraso acumulado. Gestor: botones PDF y CSV
   en cada nivel. Empleado: solo visual.
-- **Exportación legal.** PDF imprimible y CSV con razón social, CIF, nombre, NIF,
-  entradas/salidas y totales.
+- **Exportación legal.** PDF imprimible y CSV con razón social, CIF, nombre legal,
+  NIF, nº de Seguridad Social, entradas/salidas y totales. El PDF lleva bloques de
+  empresa y trabajador, tabla agrupada por día (un `<tbody>` por día para que no se
+  parta entre páginas) y espacio de firmas. La hoja de estilo está en `CSS_PDF`,
+  dentro de `ui/registro-arbol.js`.
 - **Avisos push.** Recordatorio de entrada no fichada (solo a quien tiene turno ese
   día y no está de vacaciones) y de salida no fichada. Umbrales configurables en
   horas/minutos/segundos. Cron cada 5 min.
@@ -182,9 +199,9 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 
 | Elemento | Versión |
 |---|---|
-| App (`js/version.js` → `APP_VERSION`) | v68 |
-| Service worker (`sw.js` → `VERSION`) | v68 |
-| Migración SQL | 32 |
+| App (`js/version.js` → `APP_VERSION`) | v69 |
+| Service worker (`sw.js` → `VERSION`) | v69 |
+| Migración SQL | 34 |
 
 Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en real.
 
@@ -196,19 +213,33 @@ Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en rea
 
 ## 8. Pendiente
 
-1. **Sacar el fichaje de beta** — quitar el flag de probador y activarlo para toda la
-   plantilla, una vez validado en uso real.
+1. **Validar la exportación legal con datos reales** — el árbol del registro estuvo
+   roto hasta la migración 33, así que el PDF y el CSV **nunca se han ejecutado con
+   datos de verdad**. Es el documento que hay que entregar a inspección: comprobar
+   razón social, CIF, NIF, entradas/salidas y totales antes de nada.
 2. **Correcciones de fichaje por el empleado** — que pueda proponer una corrección
    (reusando el módulo de solicitudes) y que el gestor la apruebe, quedando en la
-   auditoría.
-3. **Limpieza** — eliminar el respaldo de "horario general del negocio" cuando todas
+   auditoría. **Va antes de sacar el fichaje de beta**: en cuanto lo use toda la
+   plantilla habrá olvidos, y sin este flujo el único cauce es corregirlos a mano como
+   `origen: gestor`, sin registro de quién lo pidió ni por qué.
+3. **Sacar el fichaje de beta** — quitar el flag de probador y activarlo para toda la
+   plantilla, una vez hechos los dos puntos anteriores.
+4. **Volcar las migraciones 1–32 a `sql/`** — hoy el esquema no tiene copia
+   versionada (ver aviso en el apartado 4).
+5. **Rendimiento del árbol del registro** — [registro-arbol.js](js/ui/registro-arbol.js)
+   pide 2 años de fichajes y lanza una RPC `turno_previsto` **por cada día con
+   fichajes** (`Promise.all`); además `dia_laboral()` se ejecuta por fila y vuelve a
+   llamar a `turno_previsto`. Con un año de datos son cientos de peticiones por
+   pantalla. Solución limpia: una RPC que devuelva días, previsto y totales ya
+   calculados en el servidor.
+6. **Limpieza** — eliminar el respaldo de "horario general del negocio" cuando todas
    las semanas publicadas lleven horas por columna.
-4. **Comandero** (futuro, arquitectura ya diseñada) — comandas desde el móvil del
+7. **Comandero** (futuro, arquitectura ya diseñada) — comandas desde el móvil del
    camarero, pantallas de cocina por estación (parrilla, cocina) y vista de caja no
    fiscal. Se mantiene como **herramienta interna**, emitiendo los tickets por el TPV
    existente, para no entrar en las obligaciones de VeriFactu (enero 2027 sociedades,
    julio 2027 autónomos).
-5. **Comercial** — piloto gratuito con un negocio vecino antes de invertir en la
+8. **Comercial** — piloto gratuito con un negocio vecino antes de invertir en la
    migración multicliente.
 
 ---

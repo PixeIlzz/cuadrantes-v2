@@ -5,7 +5,7 @@ import {
   crearVacacion, actualizarVacacion, borrarVacacion,
 } from '../data/equipo.js';
 import { generarCodigo, codigoVivo } from '../data/invitaciones.js';
-import { confirmar, pedirTexto } from './confirmar.js';
+import { confirmar, pedirDatos } from './confirmar.js';
 
 let equipo = [];      // caché en memoria de la última carga
 let cargado = false;
@@ -66,6 +66,7 @@ function filaTrabajador(w) {
   // Nombre editable en línea
   const nameIn = document.createElement('input');
   nameIn.type = 'text'; nameIn.value = w.name; nameIn.maxLength = 30;
+  nameIn.title = 'Nombre corto: el que se ve en el cuadrante. El nombre legal va en Datos personales.';
   nameIn.addEventListener('change', async () => {
     const v = nameIn.value.trim();
     if (!v) { nameIn.value = w.name; return; }
@@ -86,19 +87,44 @@ function filaTrabajador(w) {
   const lbl = document.createElement('span');
   lbl.className = 'h-label'; lbl.textContent = 'turnos/sem';
 
-  // NIF (para el registro legal) — botón que abre un diálogo
-  const nifBtn = document.createElement('button');
-  nifBtn.type = 'button'; nifBtn.className = 'btn small';
-  nifBtn.title = 'NIF del trabajador';
-  const pintaNif = () => { nifBtn.textContent = w.nif ? ('NIF ' + w.nif) : '+ NIF'; };
-  pintaNif();
-  nifBtn.addEventListener('click', async () => {
-    const v = await pedirTexto('NIF de ' + w.name, w.nif || '', {
-      placeholder: '00000000A', maxLength: 12, transformar: (x) => x.toUpperCase(),
-    });
-    if (v === null) return;
-    try { await actualizarTrabajador(w.id, { nif: v }); w.nif = v; pintaNif(); toast('NIF guardado'); }
-    catch (err) { toast(err.message); }
+  // Datos personales (para el registro legal) — botón que abre un diálogo
+  const datosBtn = document.createElement('button');
+  datosBtn.type = 'button'; datosBtn.className = 'btn small';
+  const pintaDatos = () => {
+    const completo = !!(w.full_name && w.nif);
+    datosBtn.textContent = completo ? 'Datos personales ✓' : 'Datos personales';
+    datosBtn.classList.toggle('ok', completo);
+    datosBtn.title = completo
+      ? (w.full_name + ' · ' + w.nif)
+      : 'Nombre completo y NIF: salen en el PDF y el CSV del registro de jornada';
+  };
+  pintaDatos();
+  datosBtn.addEventListener('click', async () => {
+    const r = await pedirDatos('Datos personales de ' + w.name, [
+      {
+        clave: 'full_name', etiqueta: 'Nombre y apellidos', valor: w.full_name || '',
+        placeholder: 'María López García', maxLength: 80,
+        nota: 'Como figura en el contrato. Es el nombre que sale en el PDF y el CSV.',
+      },
+      {
+        clave: 'nif', etiqueta: 'NIF o NIE', valor: w.nif || '',
+        placeholder: '00000000A', maxLength: 12, transformar: (x) => x.toUpperCase(),
+      },
+      {
+        clave: 'nss', etiqueta: 'Nº Seguridad Social', valor: w.nss || '',
+        placeholder: '281234567840', maxLength: 15,
+        nota: 'Opcional. Número de afiliación del trabajador.',
+      },
+    ], { nota: 'El nombre del cuadrante (' + w.name + ') no cambia: sigue siendo el corto.' });
+    if (r === null) return;
+    try {
+      await actualizarTrabajador(w.id, {
+        full_name: r.full_name || null, nif: r.nif || null, nss: r.nss || null,
+      });
+      w.full_name = r.full_name; w.nif = r.nif; w.nss = r.nss;
+      pintaDatos();
+      toast('Datos guardados');
+    } catch (err) { toast(err.message); }
   });
 
   // Botón vacaciones 🏖 con panel desplegable
@@ -136,7 +162,7 @@ function filaTrabajador(w) {
 
   const acciones = document.createElement('div');
   acciones.className = 'worker-acc';
-  acciones.append(hoursIn, lbl, nifBtn, vacBtn, invBtn, del);
+  acciones.append(hoursIn, lbl, datosBtn, vacBtn, invBtn, del);
   row.append(nameIn, acciones);
 
   // Panel de vacaciones
