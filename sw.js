@@ -1,7 +1,11 @@
 /* Service worker de Cuadrantes.
    Sube VERSION en cada despliegue: al cambiar, el navegador detecta el
-   service worker nuevo, descarga los archivos y avisa al usuario. */
-const VERSION = 'v50';
+   service worker nuevo, descarga los archivos y avisa al usuario.
+
+   IMPORTANTE: este número y APP_VERSION en js/version.js son el mismo
+   número y se suben juntos. Si divergen, Ajustes avisa de que el
+   navegador está sirviendo código viejo. */
+const VERSION = 'v68';
 const CACHE = 'cuadrantes-' + VERSION;
 
 const ARCHIVOS = [
@@ -17,6 +21,8 @@ const ARCHIVOS = [
   './js/auth.js',
   './js/supabase.js',
   './js/pwa.js',
+  './js/version.js',
+  './js/ui/version.js',
   './js/ui/toast.js',
   './js/ui/tema.js',
   './js/ui/confirmar.js',
@@ -71,9 +77,14 @@ self.addEventListener('activate', (e) => {
   })());
 });
 
-/* La app pide activar la versión nueva sin esperar a cerrar pestañas */
+/* Mensajes de la app:
+   ACTIVAR_YA → activar la versión nueva sin esperar a cerrar pestañas
+   VERSION    → responder qué versión está sirviendo (lo pinta Ajustes) */
 self.addEventListener('message', (e) => {
   if (e.data === 'ACTIVAR_YA') self.skipWaiting();
+  if (e.data === 'VERSION' && e.ports && e.ports[0]) {
+    e.ports[0].postMessage({ version: VERSION });
+  }
 });
 
 /* Estrategia: la red manda; la caché es la red de seguridad.

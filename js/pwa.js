@@ -92,3 +92,23 @@ function prepararInstalacion() {
     document.querySelectorAll('.ayuda-ios').forEach((e) => { e.hidden = false; });
   }
 }
+
+/* ---------- Versión del service worker ---------- */
+/* Pregunta al service worker que controla esta pestaña qué versión es.
+   Sirve para detectar que el navegador sigue sirviendo código cacheado.
+   Devuelve null si no hay service worker activo o si no contesta. */
+export function versionSW(esperaMs = 1500) {
+  return new Promise((resolve) => {
+    const sw = navigator.serviceWorker && navigator.serviceWorker.controller;
+    if (!sw) { resolve(null); return; }
+
+    const canal = new MessageChannel();
+    const reloj = setTimeout(() => resolve(null), esperaMs);
+    canal.port1.onmessage = (e) => {
+      clearTimeout(reloj);
+      resolve((e.data && e.data.version) || null);
+    };
+    try { sw.postMessage('VERSION', [canal.port2]); }
+    catch (_) { clearTimeout(reloj); resolve(null); }
+  });
+}

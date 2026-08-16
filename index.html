@@ -118,6 +118,7 @@
 <div id="vista-app" hidden>
 <header>
   <h1 id="negocio-nombre"></h1>
+  <span class="app-version ver-chip" title="Versión de la aplicación"></span>
   <span id="sync-status"></span>
   <nav class="tabs">
     <button class="tab-btn active solo-gestor" data-tab="hoy">Hoy</button>
@@ -538,6 +539,10 @@
 
       </div>
     </details>
+    <p class="version-pie">
+      StaffPoint <span class="app-version"></span> · service worker <span class="sw-version"></span>
+      <span class="version-desfase" hidden>⚠ Hay una versión más nueva: cierra la app y vuelve a abrirla.</span>
+    </p>
   </section>
   <!-- ============ EMPLEADO · CUADRANTE ============ -->
   <section class="solo-empleado" id="tab-emp-fichaje" hidden>
@@ -679,6 +684,10 @@
 
       </div>
     </details>
+    <p class="version-pie">
+      StaffPoint <span class="app-version"></span> · service worker <span class="sw-version"></span>
+      <span class="version-desfase" hidden>⚠ Hay una versión más nueva: cierra la app y vuelve a abrirla.</span>
+    </p>
   </section>
 
   <!-- ============ EMPLEADO · SOLICITUDES ============ -->

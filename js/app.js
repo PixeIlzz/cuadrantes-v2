@@ -3,6 +3,7 @@ import { ctx, signIn, signUp, signOut, getSession, pedirRecuperacion, cambiarPas
 import { sb } from './supabase.js';
 import { toast } from './ui/toast.js';
 import { initPWA } from './pwa.js';
+import { pintarVersion } from './ui/version.js';
 import { initTema } from './ui/tema.js';
 import { confirmar } from './ui/confirmar.js';
 import { initEquipo, abrirEquipo } from './ui/equipo.js';
@@ -130,6 +131,7 @@ function mostrarApp(session, role, biz) {
   $('negocio-nombre').textContent = biz.name;
   $('ajustes-cuenta').textContent =
     session.user.email + ' · ' + (role === 'manager' ? 'Gestor' : 'Empleado');
+  pintarVersion();   // cabecera y pie de Ajustes; no bloquea el arranque
 
   const esGestor = (role === 'manager');
   document.querySelectorAll('.solo-gestor').forEach((e) => { e.hidden = !esGestor; });
