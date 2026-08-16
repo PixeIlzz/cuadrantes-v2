@@ -9,6 +9,7 @@ import {
   suscribirFichajes, jornadaHoy, turnoPrevisto,
 } from '../data/fichaje.js';
 import { listarEquipo } from '../data/equipo.js';
+import { pintarArbolRegistro } from './registro-arbol.js';
 import { etiquetaSemana, lunesDe, sumarDias, isoDe } from '../data/semanas.js';
 
 const $ = (id) => document.getElementById(id);
@@ -252,15 +253,14 @@ function actualizarEquipoHoy() {
 }
 
 /* Detalle de un empleado con navegación día/semana/mes */
-let detWorker = null, detModo = 'dia', detAncla = null;
-let detFsCache = null, detEtiquetaCache = '';
+let detWorker = null;
 let detEstadoTimer = null, equipoTimer = null;
 let canalGestor = null, vistaActual = 'lista', rtPend = null;
 
 async function abrirDetalleEmpleado(w) {
   if (equipoTimer) { clearInterval(equipoTimer); equipoTimer = null; }
   vistaActual = 'detalle';
-  detWorker = w; detModo = 'dia'; detAncla = new Date();
+  detWorker = w;
   await pintarDetalle();
 }
 
@@ -277,182 +277,39 @@ function onCambioGestor() {
 
 async function pintarDetalle() {
   const cont = $('fichaje-gestor');
-  cont.innerHTML = '<span class="empty-note">Cargando…</span>';
-
-  // Rango según el modo
-  let desde, hasta, etiqueta;
-  if (detModo === 'dia') {
-    desde = hasta = isoDe(detAncla);
-    etiqueta = detAncla.toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' });
-  } else if (detModo === 'semana') {
-    const lun = lunesDe(detAncla);
-    desde = lun; hasta = sumarDias(lun, 6);
-    etiqueta = etiquetaSemana(lun);
-  } else { // mes
-    const y = detAncla.getFullYear(), m = detAncla.getMonth();
-    desde = isoDe(new Date(y, m, 1));
-    hasta = isoDe(new Date(y, m + 1, 0));
-    etiqueta = detAncla.toLocaleDateString('es-ES', { month:'long', year:'numeric' });
-  }
-
-  let fs;
-  try { fs = await fichajesDe(detWorker.id, desde, hasta); }
-  catch (err) { cont.innerHTML = '<span class="empty-note">' + err.message + '</span>'; return; }
-  detFsCache = fs; detEtiquetaCache = etiqueta;
-
   cont.innerHTML = '';
 
-  // Cabecera con volver
+  // Cabecera: volver + nombre
   const cab = document.createElement('div');
   cab.className = 'fich-det-cab';
   const volver = document.createElement('button');
-  volver.type = 'button'; volver.className = 'btn small'; volver.textContent = '← Volver';
+  volver.type = 'button'; volver.className = 'btn small';
+  volver.textContent = '\u2039 Volver';
   volver.addEventListener('click', () => abrirFichajeGestor());
-  cab.appendChild(volver);
   const nom = document.createElement('h2');
-  nom.className = 'fich-det-nombre'; nom.textContent = detWorker.name;
-  cab.appendChild(nom);
+  nom.className = 'fich-det-nombre';
+  nom.textContent = detWorker.name;
+  cab.append(volver, nom);
   cont.appendChild(cab);
 
-  // Estado actual del empleado (arriba, como en la vista del empleado)
+  // Estado actual del empleado
   const box = document.createElement('div');
   box.className = 'reg-estado'; box.id = 'det-estado';
   box.innerHTML = '<div class="re-fecha"></div><div class="re-timer">00:00:00</div>'
-    + '<div class="re-estado-txt">Comprobando…</div><div class="re-sub"></div>';
+    + '<div class="re-estado-txt">Comprobando\u2026</div><div class="re-sub"></div>';
   cont.appendChild(box);
   rellenarEstadoDetalle();
 
-  // Selector de modo
-  const modos = document.createElement('div');
-  modos.className = 'fich-modos';
-  for (const [id, lbl] of [['dia','Día'],['semana','Semana'],['mes','Mes']]) {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'fich-modo' + (detModo === id ? ' activo' : '');
-    b.textContent = lbl;
-    b.addEventListener('click', () => { detModo = id; detAncla = new Date(detAncla); pintarDetalle(); });
-    modos.appendChild(b);
-  }
-  cont.appendChild(modos);
+  // Árbol del registro: Año > Mes > Semana > Día, con export en cada nivel
+  const tit = document.createElement('h3');
+  tit.className = 'arb-titulo';
+  tit.textContent = 'Registro de jornada';
+  cont.appendChild(tit);
 
-  // Navegación anterior/siguiente
-  const nav = document.createElement('div');
-  nav.className = 'fich-nav';
-  const prev = document.createElement('button'); prev.type='button'; prev.className='btn small'; prev.textContent='‹';
-  const et = document.createElement('span'); et.className='fich-nav-et'; et.textContent = etiqueta;
-  const next = document.createElement('button'); next.type='button'; next.className='btn small'; next.textContent='›';
-  prev.addEventListener('click', () => { moverAncla(-1); });
-  next.addEventListener('click', () => { moverAncla(1); });
-  nav.append(prev, et, next);
-  cont.appendChild(nav);
-
-  // Barra de acciones: exportar el registro
-  const acc = document.createElement('div');
-  acc.className = 'fich-det-acc';
-  const exp = document.createElement('div');
-  exp.className = 'fich-exp';
-  const bPdf = document.createElement('button');
-  bPdf.type = 'button'; bPdf.className = 'btn small primary'; bPdf.textContent = 'Exportar PDF';
-  bPdf.addEventListener('click', exportarRegistroPDF);
-  const bCsv = document.createElement('button');
-  bCsv.type = 'button'; bCsv.className = 'btn small'; bCsv.textContent = 'CSV';
-  bCsv.addEventListener('click', exportarRegistroCSV);
-  exp.append(bPdf, bCsv);
-  acc.appendChild(exp);
-  cont.appendChild(acc);
-
-  // Agrupar por día
-  const porDia = {};
-  for (const f of fs) {
-    const dia = new Date(f.momento).toLocaleDateString('es-CA', { timeZone:'Atlantic/Canary' });
-    (porDia[dia] ||= []).push(f);
-  }
-
-  if (Object.keys(porDia).length === 0) {
-    cont.appendChild(nota('No hay fichajes en este periodo.'));
-    return;
-  }
-
-  let totalPeriodo = 0;
-  let estMin = 0, diasConHorario = 0, diasPuntuales = 0, retrasos = 0;
-  const cfg = horarioNegocio();
-
-  // Turno previsto de ESE trabajador en cada día (del cuadrante publicado)
-  const dias = Object.keys(porDia).sort();
-  const tramosPorDia = {};
-  await Promise.all(dias.map(async (d) => {
-    tramosPorDia[d] = await turnoPrevisto(detWorker.id, d);
-  }));
-
-  for (const dia of dias) {
-    const bloque = document.createElement('div');
-    bloque.className = 'fich-dia';
-    const fecha = new Date(dia + 'T12:00:00');
-    const claveDia = DIAS[(fecha.getDay() + 6) % 7];
-    const th = document.createElement('div');
-    th.className = 'fich-dia-tit';
-    th.textContent = fecha.toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'short' });
-    bloque.appendChild(th);
-
-    for (const f of porDia[dia]) {
-      const retraso = calcularRetraso(f, tramosPorDia[dia] || [], cfg);
-      const fila = document.createElement('div');
-      fila.className = 'fich-fila ' + f.tipo + (f.estimado ? ' estimado' : '');
-      fila.innerHTML = '<span class="ff-tipo">' + (f.tipo==='entrada'?'▶ Entrada':'⏹ Salida') + '</span>'
-        + '<span class="ff-hora">' + hora(f.momento)
-        + (f.estimado ? ' <em>(estimado)</em>' : '')
-        + (f.origen==='gestor' ? ' <em class="ff-corr">(corregido)</em>' : '') + '</span>'
-        + (retraso ? '<span class="ff-retraso">' + retraso + '</span>' : '');
-      bloque.appendChild(fila);
-    }
-    const t = totalTrabajado(porDia[dia]);
-    totalPeriodo += totalSeg(porDia[dia]);
-
-    // Estadísticas de puntualidad/saldo (según SU turno previsto ese día)
-    const tramosDia = tramosPorDia[dia] || [];
-    const estDia = minEstablecidoDia(cfg, tramosDia);
-    if (estDia > 0) {
-      estMin += estDia;
-      diasConHorario += 1;
-      const primeraEntrada = porDia[dia].find((x) => x.tipo === 'entrada');
-      if (primeraEntrada && calcularRetraso(primeraEntrada, tramosDia, cfg)) retrasos += 1;
-      else diasPuntuales += 1;
-    }
-
-    const tt = document.createElement('div');
-    tt.className = 'fich-dia-total';
-    tt.innerHTML = 'Total del día: <b>' + t + '</b>';
-    bloque.appendChild(tt);
-    cont.appendChild(bloque);
-  }
-
-  // Resumen de puntualidad y saldo del periodo
-  const estSeg = estMin * 60;
-  const saldoSeg = totalPeriodo - estSeg;
-  const signo = saldoSeg >= 0 ? '+' : '−';
-  const punt = diasConHorario > 0 ? Math.round((diasPuntuales / diasConHorario) * 100) : null;
-
-  const resumen = document.createElement('div');
-  resumen.className = 'fich-stats';
-  const stat = (lbl, val, cls) =>
-    '<div class="fs-item ' + (cls || '') + '"><div class="fs-val">' + val + '</div>'
-    + '<div class="fs-lbl">' + lbl + '</div></div>';
-  resumen.innerHTML =
-    stat('Realizado', segAHMS(totalPeriodo)) +
-    (estMin > 0 ? stat('Establecido', segAHMS(estSeg)) : '') +
-    (estMin > 0 ? stat('Saldo', signo + segAHMS(Math.abs(saldoSeg)), saldoSeg >= 0 ? 'ok' : 'bad') : '') +
-    (punt !== null ? stat('Puntualidad', punt + '%', punt >= 90 ? 'ok' : (punt >= 70 ? '' : 'bad')) : '') +
-    (diasConHorario > 0 ? stat('Retrasos', String(retrasos), retrasos ? 'bad' : 'ok') : '');
-  cont.appendChild(resumen);
-}
-
-function moverAncla(dir) {
-  const d = new Date(detAncla);
-  if (detModo === 'dia') d.setDate(d.getDate() + dir);
-  else if (detModo === 'semana') d.setDate(d.getDate() + dir * 7);
-  else d.setMonth(d.getMonth() + dir);
-  detAncla = d;
-  pintarDetalle();
+  const caja = document.createElement('div');
+  caja.id = 'det-arbol';
+  cont.appendChild(caja);
+  await pintarArbolRegistro(caja, detWorker.id, { worker: detWorker, exportar: true });
 }
 
 /* Retraso: si la entrada es más tarde que el inicio previsto de ese día */
@@ -549,82 +406,8 @@ function actualizarEstadoDetalle() {
 // ==========================================================
 //  EXPORTAR registro (PDF imprimible + CSV)
 // ==========================================================
-function agruparPorDia(fs) {
-  const porDia = {};
-  for (const f of fs) {
-    const d = new Date(f.momento).toLocaleDateString('es-CA', { timeZone: 'Atlantic/Canary' });
-    (porDia[d] ||= []).push(f);
-  }
-  return porDia;
-}
 function esc(t) {
   return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function exportarRegistroPDF() {
-  if (!detWorker || !detFsCache) return;
-  const leg = datosLegales();
-  const porDia = agruparPorDia(detFsCache);
-  let filas = '', totalSegPeriodo = 0;
-  for (const dia of Object.keys(porDia).sort()) {
-    const fecha = new Date(dia + 'T12:00:00').toLocaleDateString('es-ES',
-      { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
-    const items = porDia[dia];
-    let primera = true;
-    for (const f of items) {
-      filas += '<tr><td>' + (primera ? esc(fecha) : '') + '</td><td>'
-        + (f.tipo === 'entrada' ? 'Entrada' : 'Salida') + '</td><td>' + hora(f.momento)
-        + (f.estimado ? ' (est.)' : '') + (f.origen === 'gestor' ? ' (corr.)' : '') + '</td></tr>';
-      primera = false;
-    }
-    const seg = totalSeg(items); totalSegPeriodo += seg;
-    filas += '<tr class="tot"><td></td><td>Total del día</td><td>' + segAHMS(seg) + '</td></tr>';
-  }
-  const win = window.open('', '_blank');
-  if (!win) { toast('Permite las ventanas emergentes para exportar'); return; }
-  win.document.write(
-    '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Registro de jornada</title>'
-    + '<style>body{font-family:Arial,Helvetica,sans-serif;color:#111;padding:24px;font-size:12px}'
-    + 'h1{font-size:16px;margin:0 0 6px}table{width:100%;border-collapse:collapse;margin-top:10px}'
-    + 'th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}th{background:#f2f2f2}'
-    + 'tr.tot td{font-weight:bold;background:#fafafa}.datos{margin:2px 0}.pie{margin-top:24px;color:#555}</style>'
-    + '</head><body><h1>REGISTRO DE JORNADA LABORAL</h1>'
-    + '<div class="datos"><b>Razón social:</b> ' + esc(leg.razon_social || ctx.business.name || '')
-    + ' &nbsp; <b>CIF:</b> ' + esc(leg.cif || '') + '</div>'
-    + '<div class="datos"><b>Trabajador:</b> ' + esc(detWorker.name)
-    + ' &nbsp; <b>NIF:</b> ' + esc(detWorker.nif || '') + '</div>'
-    + '<div class="datos"><b>Periodo:</b> ' + esc(detEtiquetaCache || '') + '</div>'
-    + '<table><thead><tr><th>Fecha</th><th>Evento</th><th>Hora</th></tr></thead><tbody>' + filas
-    + '<tr class="tot"><td></td><td>TOTAL PERIODO</td><td>' + segAHMS(totalSegPeriodo) + '</td></tr>'
-    + '</tbody></table><p class="pie">Generado el '
-    + new Date().toLocaleString('es-ES', { timeZone: 'Atlantic/Canary' }) + ' · StaffPoint</p></body></html>');
-  win.document.close();
-  win.focus();
-  setTimeout(() => { try { win.print(); } catch (_) {} }, 300);
-}
-
-function exportarRegistroCSV() {
-  if (!detWorker || !detFsCache) return;
-  const leg = datosLegales();
-  const sep = ';';
-  const L = [];
-  L.push(['Razón social', leg.razon_social || ctx.business.name || ''].join(sep));
-  L.push(['CIF', leg.cif || ''].join(sep));
-  L.push(['Trabajador', detWorker.name].join(sep));
-  L.push(['NIF', detWorker.nif || ''].join(sep));
-  L.push(['Periodo', detEtiquetaCache || ''].join(sep));
-  L.push('');
-  L.push(['Fecha', 'Evento', 'Hora', 'Origen'].join(sep));
-  const porDia = agruparPorDia(detFsCache);
-  for (const dia of Object.keys(porDia).sort()) {
-    for (const f of porDia[dia]) L.push([dia, f.tipo, hora(f.momento), f.origen || ''].join(sep));
-    L.push(['', 'Total del día', segAHMS(totalSeg(porDia[dia])), ''].join(sep));
-  }
-  const blob = new Blob(['\ufeff' + L.join('\r\n')], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'registro_' + detWorker.name.replace(/\s+/g, '_') + '.csv';
-  a.click(); URL.revokeObjectURL(url);
 }
 
 // ==========================================================

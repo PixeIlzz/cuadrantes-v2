@@ -1,0 +1,398 @@
+// Árbol del registro de fichajes: Año → Meses → Semanas → Días.
+// Todo son desplegables. En el gestor cada nivel lleva botones PDF/CSV.
+// Lo usan la vista del gestor y la del empleado (esta sin botones). v1
+import { ctx } from '../auth.js';
+import { fichajesDe, diaDe, datosLegales, horarioNegocio, turnoPrevisto } from '../data/fichaje.js';
+import { toast } from './toast.js';
+
+const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+/* ================= utilidades de tiempo ================= */
+function hora(iso) {
+  return new Date(iso).toLocaleTimeString('es-ES',
+    { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Atlantic/Canary' });
+}
+function segDe(fichajes) {
+  let s = 0, e = null;
+  for (const f of fichajes) {
+    if (f.tipo === 'entrada') e = new Date(f.momento);
+    else if (f.tipo === 'salida' && e) { s += Math.round((new Date(f.momento) - e) / 1000); e = null; }
+  }
+  if (e) s += Math.round((Date.now() - e) / 1000);
+  return s;
+}
+function hms(seg) {
+  const t = Math.max(0, Math.floor(seg));
+  const p = (n) => String(n).padStart(2, '0');
+  return p(Math.floor(t / 3600)) + ':' + p(Math.floor((t % 3600) / 60)) + ':' + p(t % 60);
+}
+function hhmmAMin(hhmm) {
+  if (!hhmm) return null;
+  const [h, m] = String(hhmm).split(':').map(Number);
+  return h * 60 + m;
+}
+function minutosDelDia(iso) {
+  const t = new Date(iso).toLocaleTimeString('es-ES',
+    { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Atlantic/Canary' });
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+/* Minutos previstos de una lista de tramos */
+function minDeTramos(tramos) {
+  let t = 0;
+  for (const x of (tramos || [])) {
+    const a = hhmmAMin(x.desde), b = hhmmAMin(x.hasta);
+    if (a != null && b != null && b > a) t += b - a;
+  }
+  return t;
+}
+/* Minutos de retraso de la primera entrada del día (0 si es puntual) */
+function minRetraso(items, tramos, margenMin) {
+  const ent = items.find((f) => f.tipo === 'entrada');
+  if (!ent || !(tramos || []).length) return 0;
+  const minFich = minutosDelDia(ent.momento);
+  let mejor = null;
+  for (const t of tramos) {
+    const ini = hhmmAMin(t.desde);
+    if (ini == null) continue;
+    if (minFich >= ini - 30 && minFich <= ini + 240) {
+      if (mejor === null || Math.abs(minFich - ini) < Math.abs(minFich - mejor)) mejor = ini;
+    }
+  }
+  if (mejor === null) return 0;
+  const diff = minFich - mejor;
+  return diff > margenMin ? diff : 0;
+}
+/* Texto compacto del saldo: +1h 20m / −45m */
+function fmtSaldo(seg) {
+  const abs = Math.abs(Math.round(seg));
+  const h = Math.floor(abs / 3600), m = Math.round((abs % 3600) / 60);
+  const txt = h > 0 ? (h + 'h ' + String(m).padStart(2, '0') + 'm') : (m + 'm');
+  return (seg >= 0 ? '+' : '\u2212') + txt;
+}
+function fmtRetraso(min) {
+  const h = Math.floor(min / 60), m = min % 60;
+  return h > 0 ? (h + 'h ' + String(m).padStart(2, '0') + 'm') : (m + ' min');
+}
+
+function esc(t) {
+  return String(t == null ? '' : t)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+/* Lunes de la semana a la que pertenece una fecha ISO */
+function lunesIso(iso) {
+  const d = new Date(iso + 'T12:00:00');
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d.toISOString().slice(0, 10);
+}
+function fmtDia(iso) {
+  return new Date(iso + 'T12:00:00').toLocaleDateString('es-ES',
+    { weekday: 'long', day: 'numeric', month: 'short' });
+}
+function fmtCorto(iso) {
+  return new Date(iso + 'T12:00:00').toLocaleDateString('es-ES',
+    { day: '2-digit', month: '2-digit' });
+}
+
+/* ================= construir el árbol ================= */
+/* Devuelve: [{ anio, seg, meses:[{ mes, seg, semanas:[{ lunes, seg, dias:[{iso, seg, items}] }] }] }] */
+function construirArbol(fichajes, previstos, margenMin) {
+  const porDia = {};
+  for (const f of fichajes) (porDia[diaDe(f.momento)] ||= []).push(f);
+
+  const anios = new Map();
+  for (const iso of Object.keys(porDia).sort()) {
+    const items = porDia[iso];
+    const seg = segDe(items);
+    const tramos = previstos[iso] || [];
+    const est = minDeTramos(tramos) * 60;          // previsto en segundos
+    const ret = minRetraso(items, tramos, margenMin);
+    const anio = iso.slice(0, 4);
+    const mes = iso.slice(0, 7);
+    const lun = lunesIso(iso);
+
+    if (!anios.has(anio)) anios.set(anio, { anio, seg: 0, est: 0, ret: 0, retDias: 0, meses: new Map() });
+    const A = anios.get(anio);
+    A.seg += seg; A.est += est; A.ret += ret; if (ret) A.retDias += 1;
+
+    if (!A.meses.has(mes)) A.meses.set(mes, { mes, seg: 0, est: 0, ret: 0, retDias: 0, semanas: new Map() });
+    const M = A.meses.get(mes);
+    M.seg += seg; M.est += est; M.ret += ret; if (ret) M.retDias += 1;
+
+    if (!M.semanas.has(lun)) M.semanas.set(lun, { lunes: lun, seg: 0, est: 0, ret: 0, retDias: 0, dias: [] });
+    const S = M.semanas.get(lun);
+    S.seg += seg; S.est += est; S.ret += ret; if (ret) S.retDias += 1;
+    S.dias.push({ iso, seg, est, ret, items });
+  }
+
+  return [...anios.values()].sort((a, b) => b.anio.localeCompare(a.anio)).map((A) => ({
+    ...A,
+    meses: [...A.meses.values()].sort((a, b) => b.mes.localeCompare(a.mes)).map((M) => ({
+      ...M,
+      semanas: [...M.semanas.values()].sort((a, b) => b.lunes.localeCompare(a.lunes)),
+    })),
+  }));
+}
+
+/* Todos los fichajes contenidos en un nodo (para exportar) */
+function fichajesDeNodo(nodo, tipo) {
+  if (tipo === 'dia') return nodo.items;
+  if (tipo === 'semana') return nodo.dias.flatMap((d) => d.items);
+  if (tipo === 'mes') return nodo.semanas.flatMap((s) => s.dias.flatMap((d) => d.items));
+  return nodo.meses.flatMap((m) => m.semanas.flatMap((s) => s.dias.flatMap((d) => d.items)));
+}
+
+/* ================= exportar ================= */
+function exportarPDF(worker, titulo, fichajes) {
+  const leg = datosLegales();
+  const porDia = {};
+  for (const f of fichajes) (porDia[diaDe(f.momento)] ||= []).push(f);
+
+  let filas = '', total = 0;
+  for (const iso of Object.keys(porDia).sort()) {
+    const items = porDia[iso];
+    const fecha = new Date(iso + 'T12:00:00').toLocaleDateString('es-ES',
+      { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+    let primera = true;
+    for (const f of items) {
+      filas += '<tr><td>' + (primera ? esc(fecha) : '') + '</td><td>'
+        + (f.tipo === 'entrada' ? 'Entrada' : 'Salida') + '</td><td>' + hora(f.momento)
+        + (f.estimado ? ' (est.)' : '') + (f.origen === 'gestor' ? ' (corr.)' : '') + '</td></tr>';
+      primera = false;
+    }
+    const s = segDe(items); total += s;
+    filas += '<tr class="tot"><td></td><td>Total del día</td><td>' + hms(s) + '</td></tr>';
+  }
+
+  const win = window.open('', '_blank');
+  if (!win) { toast('Permite las ventanas emergentes para exportar'); return; }
+  win.document.write(
+    '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Registro de jornada</title>'
+    + '<style>body{font-family:Arial,Helvetica,sans-serif;color:#111;padding:24px;font-size:12px}'
+    + 'h1{font-size:16px;margin:0 0 6px}table{width:100%;border-collapse:collapse;margin-top:10px}'
+    + 'th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}th{background:#f2f2f2}'
+    + 'tr.tot td{font-weight:bold;background:#fafafa}.datos{margin:2px 0}'
+    + '.pie{margin-top:24px;color:#555}</style></head><body>'
+    + '<h1>REGISTRO DE JORNADA LABORAL</h1>'
+    + '<div class="datos"><b>Razón social:</b> ' + esc(leg.razon_social || ctx.business.name || '')
+    + ' &nbsp; <b>CIF:</b> ' + esc(leg.cif || '') + '</div>'
+    + '<div class="datos"><b>Trabajador:</b> ' + esc(worker.name)
+    + ' &nbsp; <b>NIF:</b> ' + esc(worker.nif || '') + '</div>'
+    + '<div class="datos"><b>Periodo:</b> ' + esc(titulo) + '</div>'
+    + '<table><thead><tr><th>Fecha</th><th>Evento</th><th>Hora</th></tr></thead><tbody>' + filas
+    + '<tr class="tot"><td></td><td>TOTAL PERIODO</td><td>' + hms(total) + '</td></tr>'
+    + '</tbody></table><p class="pie">Generado el '
+    + new Date().toLocaleString('es-ES', { timeZone: 'Atlantic/Canary' })
+    + ' · StaffPoint</p></body></html>');
+  win.document.close();
+  win.focus();
+  setTimeout(() => { try { win.print(); } catch (_) {} }, 300);
+}
+
+function exportarCSV(worker, titulo, fichajes) {
+  const leg = datosLegales();
+  const sep = ';';
+  const L = [];
+  L.push(['Razón social', leg.razon_social || ctx.business.name || ''].join(sep));
+  L.push(['CIF', leg.cif || ''].join(sep));
+  L.push(['Trabajador', worker.name].join(sep));
+  L.push(['NIF', worker.nif || ''].join(sep));
+  L.push(['Periodo', titulo].join(sep));
+  L.push('');
+  L.push(['Fecha', 'Evento', 'Hora', 'Origen'].join(sep));
+
+  const porDia = {};
+  for (const f of fichajes) (porDia[diaDe(f.momento)] ||= []).push(f);
+  let total = 0;
+  for (const iso of Object.keys(porDia).sort()) {
+    for (const f of porDia[iso]) {
+      L.push([iso, f.tipo, hora(f.momento), f.origen || ''].join(sep));
+    }
+    const s = segDe(porDia[iso]); total += s;
+    L.push(['', 'Total del día', hms(s), ''].join(sep));
+  }
+  L.push('');
+  L.push(['', 'TOTAL PERIODO', hms(total), ''].join(sep));
+
+  const blob = new Blob(['\ufeff' + L.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'registro_' + worker.name.replace(/\s+/g, '_') + '_'
+    + titulo.replace(/[^\w]+/g, '_') + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ================= pintar el árbol ================= */
+/* opciones: { worker, exportar:boolean } */
+export async function pintarArbolRegistro(cont, workerId, opciones = {}) {
+  const { worker = null, exportar = false } = opciones;
+  cont.innerHTML = '<span class="empty-note">Cargando registro…</span>';
+
+  let fich = [];
+  try {
+    // Rango amplio: desde 2 años atrás hasta hoy
+    const hoy = new Date();
+    const desde = (hoy.getFullYear() - 2) + '-01-01';
+    const hasta = hoy.toISOString().slice(0, 10);
+    fich = await fichajesDe(workerId, desde, hasta);
+  } catch (e) {
+    cont.innerHTML = '<span class="empty-note">' + (e.message || 'No se pudo cargar') + '</span>';
+    return;
+  }
+
+  // Turno previsto de cada día con fichajes (para saldo y retrasos)
+  const dias = [...new Set(fich.map((f) => diaDe(f.momento)))];
+  const previstos = {};
+  await Promise.all(dias.map(async (d) => {
+    try { previstos[d] = await turnoPrevisto(workerId, d); }
+    catch (_) { previstos[d] = []; }
+  }));
+  const margenMin = Math.round((Number(horarioNegocio().margen_seg) || 300) / 60);
+
+  const arbol = construirArbol(fich, previstos, margenMin);
+  cont.innerHTML = '';
+  if (arbol.length === 0) {
+    cont.innerHTML = '<div class="panel"><span class="empty-note">'
+      + 'Todavía no hay fichajes registrados.</span></div>';
+    return;
+  }
+
+  for (const A of arbol) {
+    cont.appendChild(nodoAnio(A, worker, exportar));
+  }
+}
+
+function botonesExport(worker, titulo, fichajes) {
+  const acc = document.createElement('span');
+  acc.className = 'arb-acc';
+  const pdf = document.createElement('button');
+  pdf.type = 'button'; pdf.className = 'arb-btn'; pdf.textContent = 'PDF';
+  pdf.title = 'Exportar ' + titulo + ' en PDF';
+  pdf.addEventListener('click', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    exportarPDF(worker, titulo, fichajes);
+  });
+  const csv = document.createElement('button');
+  csv.type = 'button'; csv.className = 'arb-btn'; csv.textContent = 'CSV';
+  csv.title = 'Exportar ' + titulo + ' en CSV';
+  csv.addEventListener('click', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    exportarCSV(worker, titulo, fichajes);
+  });
+  acc.append(pdf, csv);
+  return acc;
+}
+
+function cabecera(nivel, titulo, nodo, sub, worker, exportar, fichajes) {
+  const sum = document.createElement('summary');
+  sum.className = 'arb-sum arb-' + nivel;
+
+  const tit = document.createElement('span');
+  tit.className = 'arb-tit';
+  tit.textContent = titulo;
+
+  const datos = document.createElement('span');
+  datos.className = 'arb-datos';
+  let html = '<b>' + hms(nodo.seg) + '</b>';
+  // Saldo frente a lo previsto (solo si hay horario que comparar)
+  if (nodo.est > 0) {
+    const saldo = nodo.seg - nodo.est;
+    const cls = saldo >= 0 ? 'ok' : 'bad';
+    html += '<span class="arb-saldo ' + cls + '">' + fmtSaldo(saldo) + '</span>';
+  }
+  // Retraso acumulado
+  if (nodo.ret > 0) {
+    html += '<span class="arb-ret">\u23F1 ' + fmtRetraso(nodo.ret)
+      + (nodo.retDias > 1 ? ' \u00B7 ' + nodo.retDias + ' d' : '') + '</span>';
+  }
+  if (sub) html += '<span class="arb-sub">' + sub + '</span>';
+  datos.innerHTML = html;
+
+  sum.append(tit, datos);
+  if (exportar && worker) sum.appendChild(botonesExport(worker, titulo, fichajes));
+  return sum;
+}
+
+function nodoAnio(A, worker, exportar) {
+  const det = document.createElement('details');
+  det.className = 'arb-nodo arb-nivel-anio';
+  const nMeses = A.meses.length;
+  det.appendChild(cabecera('anio', A.anio, A,
+    nMeses + (nMeses === 1 ? ' mes' : ' meses'),
+    worker, exportar, fichajesDeNodo(A, 'anio')));
+
+  const body = document.createElement('div');
+  body.className = 'arb-body';
+  for (const M of A.meses) body.appendChild(nodoMes(M, worker, exportar));
+  det.appendChild(body);
+  return det;
+}
+
+function nodoMes(M, worker, exportar) {
+  const det = document.createElement('details');
+  det.className = 'arb-nodo arb-nivel-mes';
+  const titulo = MESES[Number(M.mes.slice(5, 7)) - 1] + ' ' + M.mes.slice(0, 4);
+  const n = M.semanas.length;
+  det.appendChild(cabecera('mes', titulo, M,
+    n + (n === 1 ? ' semana' : ' semanas'),
+    worker, exportar, fichajesDeNodo(M, 'mes')));
+
+  const body = document.createElement('div');
+  body.className = 'arb-body';
+  for (const S of M.semanas) body.appendChild(nodoSemana(S, worker, exportar));
+  det.appendChild(body);
+  return det;
+}
+
+function nodoSemana(S, worker, exportar) {
+  const det = document.createElement('details');
+  det.className = 'arb-nodo arb-nivel-semana';
+  const dias = [...S.dias].sort((a, b) => a.iso.localeCompare(b.iso));
+  const ultimo = dias[dias.length - 1].iso;
+  const titulo = 'Semana ' + fmtCorto(S.lunes) + ' – ' + fmtCorto(ultimo);
+  det.appendChild(cabecera('semana', titulo, S,
+    dias.length + (dias.length === 1 ? ' día' : ' días'),
+    worker, exportar, fichajesDeNodo(S, 'semana')));
+
+  const body = document.createElement('div');
+  body.className = 'arb-body';
+  for (const D of dias) body.appendChild(nodoDia(D, worker, exportar));
+  det.appendChild(body);
+  return det;
+}
+
+function nodoDia(D, worker, exportar) {
+  const det = document.createElement('details');
+  det.className = 'arb-nodo arb-nivel-dia';
+  const entradas = D.items.filter((f) => f.tipo === 'entrada').length;
+  det.appendChild(cabecera('dia', fmtDia(D.iso), { ...D, retDias: D.ret ? 1 : 0 },
+    entradas + (entradas === 1 ? ' jornada' : ' jornadas'),
+    worker, exportar, D.items));
+
+  const body = document.createElement('div');
+  body.className = 'arb-body arb-fichajes';
+  let primeraEntrada = true;
+  for (const f of D.items) {
+    const fila = document.createElement('div');
+    fila.className = 'arb-fila ' + f.tipo;
+    fila.innerHTML =
+      '<span class="af-tipo">' + (f.tipo === 'entrada' ? '▶ Entrada' : '⏹ Salida') + '</span>'
+      + '<span class="af-hora">' + hora(f.momento) + '</span>'
+      + '<span class="af-marca">'
+      + (f.estimado ? 'estimado' : (f.origen === 'gestor' ? 'corregido'
+        : (f.origen === 'kiosco' ? 'kiosco' : ''))) + '</span>';
+    if (f.tipo === 'entrada' && primeraEntrada && D.ret > 0) {
+      const t = document.createElement('span');
+      t.className = 'af-tarde';
+      t.textContent = '+' + D.ret + ' min tarde';
+      fila.appendChild(t);
+    }
+    if (f.tipo === 'entrada') primeraEntrada = false;
+    body.appendChild(fila);
+  }
+  det.appendChild(body);
+  return det;
+}

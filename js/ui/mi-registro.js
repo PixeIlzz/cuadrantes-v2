@@ -7,7 +7,7 @@ import {
   fichajesDe, horarioNegocio, miEstado, misFichajesHoy,
   suscribirFichajes, cerrarCanal, turnoPrevisto, diaDe,
 } from '../data/fichaje.js';
-import { isoDe, lunesDe, sumarDias, etiquetaSemana } from '../data/semanas.js';
+import { pintarArbolRegistro } from './registro-arbol.js';
 
 const $ = (id) => document.getElementById(id);
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -140,200 +140,24 @@ async function pintarRegistro(cont) {
   const volver = document.createElement('button');
   volver.type = 'button';
   volver.className = 'btn small reg-volver';
-  volver.textContent = '‹ Volver';
+  volver.textContent = '\u2039 Volver';
   volver.addEventListener('click', () => { vista = 'general'; pintar(); });
   cont.appendChild(volver);
 
-  const barra = document.createElement('div');
-  barra.className = 'reg-barra';
-  barra.innerHTML =
-    '<div class="reg-modos">' +
-      ['semana', 'mes', 'anio'].map((m) =>
-        '<button type="button" class="reg-modo' + (m === modo ? ' activo' : '') +
-        '" data-modo="' + m + '">' + ETI[m] + '</button>').join('') +
-    '</div>' +
-    '<div class="reg-nav">' +
-      '<button type="button" class="reg-flecha" id="reg-ant">&lsaquo;</button>' +
-      '<span class="reg-etiqueta" id="reg-etiqueta"></span>' +
-      '<button type="button" class="reg-flecha" id="reg-sig">&rsaquo;</button>' +
-    '</div>';
-  cont.appendChild(barra);
+  const tit = document.createElement('h2');
+  tit.className = 'arb-titulo';
+  tit.textContent = 'Mi registro de fichajes';
+  cont.appendChild(tit);
 
-  const lista = document.createElement('div');
-  lista.id = 'reg-lista';
-  cont.appendChild(lista);
+  const caja = document.createElement('div');
+  caja.id = 'reg-lista';
+  cont.appendChild(caja);
 
-  barra.querySelectorAll('.reg-modo').forEach((b) => {
-    b.onclick = () => { modo = b.dataset.modo; ancla = new Date(); pintarLista(); };
-  });
-  $('reg-ant').onclick = () => mover(-1);
-  $('reg-sig').onclick = () => mover(1);
-
-  await pintarLista();
-}
-
-function mover(dir) {
-  const d = new Date(ancla);
-  if (modo === 'semana') d.setDate(d.getDate() + dir * 7);
-  else if (modo === 'mes') d.setMonth(d.getMonth() + dir);
-  else d.setFullYear(d.getFullYear() + dir);
-  ancla = d;
-  pintarLista();
-}
-
-function rango() {
-  const a = new Date(ancla);
-  if (modo === 'semana') { const l = isoDe(lunesDe(a)); return { desde: l, hasta: sumarDias(l, 6) }; }
-  if (modo === 'mes') {
-    const y = a.getFullYear(), m = a.getMonth();
-    return { desde: isoDe(new Date(y, m, 1)), hasta: isoDe(new Date(y, m + 1, 0)) };
-  }
-  const y = a.getFullYear();
-  return { desde: y + '-01-01', hasta: y + '-12-31' };
-}
-
-function etiqueta() {
-  const a = new Date(ancla);
-  if (modo === 'semana') return etiquetaSemana(isoDe(lunesDe(a)));
-  if (modo === 'mes') return MESES[a.getMonth()] + ' ' + a.getFullYear();
-  return String(a.getFullYear());
-}
-
-async function pintarLista() {
-  const lista = $('reg-lista');
-  const et = $('reg-etiqueta');
-  if (et) et.textContent = etiqueta();
-  if (!lista) return;
-  lista.innerHTML = '<div class="panel"><span class="empty-note">Cargando…</span></div>';
-
-  const { desde, hasta } = rango();
-  let fich = [];
-  try {
-    fich = await fichajesDe(ctx.workerId, desde, hasta);
-  } catch (e) {
-    lista.innerHTML = '<div class="panel"><span class="empty-note">'
-      + (e.message || 'No se pudo cargar') + '</span></div>';
-    return;
-  }
-
-  const porDia = {};
-  for (const f of fich) (porDia[diaDe(f.momento)] ||= []).push(f);
-  const dias = Object.keys(porDia).sort();
-
-  lista.innerHTML = '';
-  if (dias.length === 0) {
-    lista.innerHTML = '<div class="panel"><span class="empty-note">'
-      + 'Sin fichajes en este periodo.</span></div>';
-    return;
-  }
-
-  const cfg = horarioNegocio();
-  const tramosPorDia = {};
-  await Promise.all(dias.map(async (d) => {
-    try { tramosPorDia[d] = await turnoPrevisto(ctx.workerId, d); }
-    catch (_) { tramosPorDia[d] = []; }
-  }));
-
-  // --- Agrupar según el modo: semana -> días; mes -> semanas; año -> meses ---
-  const grupos = agrupar(dias);
-  let totalPeriodo = 0, retrasosPeriodo = 0;
-
-  for (const g of grupos) {
-    let segG = 0, retG = 0;
-    for (const d of g.dias) {
-      segG += totalSeg(porDia[d]);
-      const ent = porDia[d].find((x) => x.tipo === 'entrada');
-      if (ent && calcularRetraso(ent, tramosPorDia[d] || [], cfg)) retG += 1;
-    }
-    totalPeriodo += segG; retrasosPeriodo += retG;
-
-    const det = document.createElement('details');
-    det.className = 'reg-grupo';
-    if (grupos.length === 1) det.open = true;   // en vista semana, abierto
-
-    const sum = document.createElement('summary');
-    sum.innerHTML =
-      '<span class="rg-tit"></span>'
-      + '<span class="rg-datos">'
-      +   '<b>' + fmtHMS(segG) + '</b>'
-      +   '<span class="rg-dias">' + g.dias.length
-      +     (g.dias.length === 1 ? ' día' : ' días') + '</span>'
-      +   (retG ? '<span class="rg-ret">' + retG + ' con retraso</span>' : '')
-      + '</span>';
-    sum.querySelector('.rg-tit').textContent = g.titulo;
-    det.appendChild(sum);
-
-    const cuerpo = document.createElement('div');
-    cuerpo.className = 'reg-grupo-body';
-    for (const clave of g.dias) {
-      cuerpo.appendChild(bloqueDia(clave, porDia[clave], tramosPorDia[clave] || [], cfg));
-    }
-    det.appendChild(cuerpo);
-    lista.appendChild(det);
-  }
-
-  const resumen = document.createElement('div');
-  resumen.className = 'reg-resumen';
-  resumen.innerHTML = 'Total del periodo: <b>' + fmtHMS(totalPeriodo) + '</b>'
-    + (retrasosPeriodo ? ' · <span class="reg-ret-tot">' + retrasosPeriodo
-        + (retrasosPeriodo === 1 ? ' día con retraso' : ' días con retraso') + '</span>' : '');
-  lista.appendChild(resumen);
+  await pintarArbolRegistro(caja, ctx.workerId, { exportar: false });
 }
 
 /* Agrupa los días según el modo activo */
-function agrupar(dias) {
-  const MESES_C = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  if (modo === 'semana') {
-    return [{ titulo: etiqueta(), dias }];
-  }
-  if (modo === 'mes') {
-    const mapa = new Map();
-    for (const d of dias) {
-      const l = isoDe(lunesDe(new Date(d + 'T12:00:00')));
-      if (!mapa.has(l)) mapa.set(l, []);
-      mapa.get(l).push(d);
-    }
-    return [...mapa.entries()].sort((a, b) => a[0] < b[0] ? -1 : 1)
-      .map(([l, ds]) => ({ titulo: etiquetaSemana(l), dias: ds }));
-  }
-  const mapa = new Map();
-  for (const d of dias) {
-    const k = d.slice(0, 7);
-    if (!mapa.has(k)) mapa.set(k, []);
-    mapa.get(k).push(d);
-  }
-  return [...mapa.entries()].sort((a, b) => a[0] < b[0] ? -1 : 1)
-    .map(([k, ds]) => ({ titulo: MESES_C[Number(k.slice(5, 7)) - 1] + ' ' + k.slice(0, 4), dias: ds }));
-}
-
 /* Bloque de un día con sus fichajes */
-function bloqueDia(clave, items, tramos, cfg) {
-  const fecha = new Date(clave + 'T12:00:00');
-  const panel = document.createElement('div');
-  panel.className = 'reg-dia';
-
-  const tit = document.createElement('div');
-  tit.className = 'reg-dia-tit';
-  tit.textContent = fecha.toLocaleDateString('es-ES',
-    { weekday: 'long', day: 'numeric', month: 'short' });
-  if (tramos.length) {
-    const h = document.createElement('span');
-    h.className = 'reg-dia-hor';
-    h.textContent = tramos.map((t) => t.desde + ' – ' + t.hasta).join(' · ');
-    tit.appendChild(h);
-  }
-  panel.appendChild(tit);
-
-  for (const f of items) panel.appendChild(filaFichaje(f, tramos, cfg));
-
-  const tot = document.createElement('div');
-  tot.className = 'reg-dia-total';
-  tot.innerHTML = 'Total del día: <b>' + fmtHMS(totalSeg(items)) + '</b>';
-  panel.appendChild(tot);
-  return panel;
-}
-
 function filaFichaje(f, tramos, cfg) {
   const tarde = calcularRetraso(f, tramos, cfg);
   const fila = document.createElement('div');
