@@ -23,6 +23,16 @@ export function cerrarCanal(canal) {
 }
 
 /* Fichajes de un trabajador en un rango de fechas (ISO). */
+/* Fichajes agrupados por DÍA LABORAL: un turno de noche que acaba de
+   madrugada cuenta en el día en que empezó. Cada fila trae 'dia'. */
+export async function fichajesPorJornada(workerId, desdeIso, hastaIso) {
+  const { data, error } = await sb.rpc('fichajes_por_jornada', {
+    p_worker_id: workerId, p_desde: desdeIso, p_hasta: hastaIso,
+  });
+  if (error) throw new Error('Fichajes: ' + error.message);
+  return (data || []).filter((f) => f.dia >= desdeIso && f.dia <= hastaIso);
+}
+
 export async function fichajesDe(workerId, desdeIso, hastaIso) {
   // Pedimos un día extra por cada lado: el corte por UTC podría dejarse
   // fuera fichajes de madrugada. Luego filtramos por la fecha real.
