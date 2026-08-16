@@ -190,7 +190,8 @@ function minDeTramos(tramos) {
   let t = 0;
   for (const x of (tramos || [])) {
     const a = hhmmAMin(x.desde), b = hhmmAMin(x.hasta);
-    if (a != null && b != null && b > a) t += b - a;
+    // Un tramo que cruza medianoche (20:00-01:00) cuenta hasta el día siguiente
+    if (a != null && b != null) t += (b > a) ? (b - a) : (b + 1440 - a);
   }
   return t;
 }

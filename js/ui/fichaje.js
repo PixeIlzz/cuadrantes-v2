@@ -343,7 +343,8 @@ function minEstablecidoDia(cfg, claveDia) {
   let t = 0;
   for (const x of tramos) {
     const a = hhmmAMin(x.desde), b = hhmmAMin(x.hasta);
-    if (a != null && b != null && b > a) t += b - a;
+    // Un tramo que cruza medianoche (20:00-01:00) cuenta hasta el día siguiente
+    if (a != null && b != null) t += (b > a) ? (b - a) : (b + 1440 - a);
   }
   return t;
 }
@@ -436,12 +437,13 @@ export function pintarDatosLegales() {
 //  AJUSTES: horario previsto por día
 // ==========================================================
 export function pintarAjustesFichaje() {
-  const cont = $('fichaje-horarios');
-  if (!cont) return;
   const cfg = horarioNegocio();
-  cont.innerHTML = '';
+  const cont = $('fichaje-horarios');
 
-  for (const d of DIAS) {
+  // El editor de tramos ya no se muestra: el horario de cada turno se
+  // define en el cuadrante (Días y columnas). Se conserva como respaldo
+  // en la configuración existente, pero no se edita aquí.
+  if (cont) for (const d of DIAS) {
     const fila = document.createElement('div');
     fila.className = 'fh-dia';
     const tit = document.createElement('div');

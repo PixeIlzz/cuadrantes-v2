@@ -2,7 +2,7 @@
 // Todo son desplegables. En el gestor cada nivel lleva botones PDF/CSV.
 // Lo usan la vista del gestor y la del empleado (esta sin botones). v1
 import { ctx } from '../auth.js';
-import { fichajesDe, diaDe, datosLegales, horarioNegocio, turnoPrevisto } from '../data/fichaje.js';
+import { fichajesPorJornada, diaDe, datosLegales, horarioNegocio, turnoPrevisto } from '../data/fichaje.js';
 import { toast } from './toast.js';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -43,7 +43,8 @@ function minDeTramos(tramos) {
   let t = 0;
   for (const x of (tramos || [])) {
     const a = hhmmAMin(x.desde), b = hhmmAMin(x.hasta);
-    if (a != null && b != null && b > a) t += b - a;
+    // Un tramo que cruza medianoche (20:00-01:00) cuenta hasta el día siguiente
+    if (a != null && b != null) t += (b > a) ? (b - a) : (b + 1440 - a);
   }
   return t;
 }
@@ -99,7 +100,7 @@ function fmtCorto(iso) {
 /* Devuelve: [{ anio, seg, meses:[{ mes, seg, semanas:[{ lunes, seg, dias:[{iso, seg, items}] }] }] }] */
 function construirArbol(fichajes, previstos, margenMin) {
   const porDia = {};
-  for (const f of fichajes) (porDia[diaDe(f.momento)] ||= []).push(f);
+  for (const f of fichajes) (porDia[f.dia || diaDe(f.momento)] ||= []).push(f);
 
   const anios = new Map();
   for (const iso of Object.keys(porDia).sort()) {
@@ -147,7 +148,7 @@ function fichajesDeNodo(nodo, tipo) {
 function exportarPDF(worker, titulo, fichajes) {
   const leg = datosLegales();
   const porDia = {};
-  for (const f of fichajes) (porDia[diaDe(f.momento)] ||= []).push(f);
+  for (const f of fichajes) (porDia[f.dia || diaDe(f.momento)] ||= []).push(f);
 
   let filas = '', total = 0;
   for (const iso of Object.keys(porDia).sort()) {
@@ -203,7 +204,7 @@ function exportarCSV(worker, titulo, fichajes) {
   L.push(['Fecha', 'Evento', 'Hora', 'Origen'].join(sep));
 
   const porDia = {};
-  for (const f of fichajes) (porDia[diaDe(f.momento)] ||= []).push(f);
+  for (const f of fichajes) (porDia[f.dia || diaDe(f.momento)] ||= []).push(f);
   let total = 0;
   for (const iso of Object.keys(porDia).sort()) {
     for (const f of porDia[iso]) {
@@ -237,14 +238,14 @@ export async function pintarArbolRegistro(cont, workerId, opciones = {}) {
     const hoy = new Date();
     const desde = (hoy.getFullYear() - 2) + '-01-01';
     const hasta = hoy.toISOString().slice(0, 10);
-    fich = await fichajesDe(workerId, desde, hasta);
+    fich = await fichajesPorJornada(workerId, desde, hasta);
   } catch (e) {
     cont.innerHTML = '<span class="empty-note">' + (e.message || 'No se pudo cargar') + '</span>';
     return;
   }
 
   // Turno previsto de cada día con fichajes (para saldo y retrasos)
-  const dias = [...new Set(fich.map((f) => diaDe(f.momento)))];
+  const dias = [...new Set(fich.map((f) => f.dia || diaDe(f.momento)))];
   const previstos = {};
   await Promise.all(dias.map(async (d) => {
     try { previstos[d] = await turnoPrevisto(workerId, d); }
