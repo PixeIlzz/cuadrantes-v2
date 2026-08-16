@@ -618,6 +618,12 @@ export async function abrirMisTurnos() {
       return;
     }
 
+    // Vacaciones: un turno "TODOS" no aplica si ese día estás de vacaciones
+    let misVacs = [];
+    try { misVacs = await misVacaciones(); } catch (_) {}
+    const deVacaciones = (iso) => !!iso
+      && misVacs.some((v) => v.start_date <= iso && v.end_date >= iso);
+
     // Semana publicada más reciente y las siguientes que ya estén visibles
     for (const s of semanas.slice(0, 4)) {
       const cfg = s.config_snapshot || {};
@@ -633,9 +639,11 @@ export async function abrirMisTurnos() {
         const r = ROLES.find((x) => x.id === a.position_id);
         if (!d) continue;
         const iBase = DAYS.filter((x) => !x.night).findIndex((x) => x.id === a.day_id.replace(/N$/, ''));
+        const fechaDia = iBase >= 0 ? sumarDias(s.start_date, iBase) : null;
+        if (deVacaciones(fechaDia)) continue;   // ese día no trabaja
         mios.push({
           orden: DAYS.findIndex((x) => x.id === a.day_id),
-          fecha: iBase >= 0 ? sumarDias(s.start_date, iBase) : null,
+          fecha: fechaDia,
           dia: d.label,
           horario: (d.desde && d.hasta) ? (d.desde + ' – ' + d.hasta) : '',
           puesto: a.is_all ? 'TODOS' : (r ? r.label : ''),

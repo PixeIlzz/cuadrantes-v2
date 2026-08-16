@@ -234,45 +234,106 @@ async function pintarLista() {
     catch (_) { tramosPorDia[d] = []; }
   }));
 
-  let totalPeriodo = 0;
-  for (const clave of dias) {
-    const items = porDia[clave];
-    const fecha = new Date(clave + 'T12:00:00');
-    const tramos = tramosPorDia[clave] || [];
+  // --- Agrupar según el modo: semana -> días; mes -> semanas; año -> meses ---
+  const grupos = agrupar(dias);
+  let totalPeriodo = 0, retrasosPeriodo = 0;
 
-    const panel = document.createElement('div');
-    panel.className = 'panel reg-dia';
-
-    const tit = document.createElement('div');
-    tit.className = 'reg-dia-tit';
-    tit.textContent = fecha.toLocaleDateString('es-ES',
-      { weekday: 'long', day: 'numeric', month: 'short' });
-    if (tramos.length) {
-      const h = document.createElement('span');
-      h.className = 'reg-dia-hor';
-      h.textContent = tramos.map((t) => t.desde + ' – ' + t.hasta).join(' · ');
-      tit.appendChild(h);
+  for (const g of grupos) {
+    let segG = 0, retG = 0;
+    for (const d of g.dias) {
+      segG += totalSeg(porDia[d]);
+      const ent = porDia[d].find((x) => x.tipo === 'entrada');
+      if (ent && calcularRetraso(ent, tramosPorDia[d] || [], cfg)) retG += 1;
     }
-    panel.appendChild(tit);
+    totalPeriodo += segG; retrasosPeriodo += retG;
 
-    for (const f of items) panel.appendChild(filaFichaje(f, tramos, cfg));
+    const det = document.createElement('details');
+    det.className = 'reg-grupo';
+    if (grupos.length === 1) det.open = true;   // en vista semana, abierto
 
-    const seg = totalSeg(items);
-    totalPeriodo += seg;
-    const tot = document.createElement('div');
-    tot.className = 'reg-dia-total';
-    tot.innerHTML = 'Total del día: <b>' + fmtHMS(seg) + '</b>';
-    panel.appendChild(tot);
-    lista.appendChild(panel);
+    const sum = document.createElement('summary');
+    sum.innerHTML =
+      '<span class="rg-tit"></span>'
+      + '<span class="rg-datos">'
+      +   '<b>' + fmtHMS(segG) + '</b>'
+      +   '<span class="rg-dias">' + g.dias.length
+      +     (g.dias.length === 1 ? ' día' : ' días') + '</span>'
+      +   (retG ? '<span class="rg-ret">' + retG + ' con retraso</span>' : '')
+      + '</span>';
+    sum.querySelector('.rg-tit').textContent = g.titulo;
+    det.appendChild(sum);
+
+    const cuerpo = document.createElement('div');
+    cuerpo.className = 'reg-grupo-body';
+    for (const clave of g.dias) {
+      cuerpo.appendChild(bloqueDia(clave, porDia[clave], tramosPorDia[clave] || [], cfg));
+    }
+    det.appendChild(cuerpo);
+    lista.appendChild(det);
   }
 
   const resumen = document.createElement('div');
   resumen.className = 'reg-resumen';
-  resumen.innerHTML = 'Total del periodo: <b>' + fmtHMS(totalPeriodo) + '</b>';
+  resumen.innerHTML = 'Total del periodo: <b>' + fmtHMS(totalPeriodo) + '</b>'
+    + (retrasosPeriodo ? ' · <span class="reg-ret-tot">' + retrasosPeriodo
+        + (retrasosPeriodo === 1 ? ' día con retraso' : ' días con retraso') + '</span>' : '');
   lista.appendChild(resumen);
 }
 
-/* ========================= AUXILIARES ========================= */
+/* Agrupa los días según el modo activo */
+function agrupar(dias) {
+  const MESES_C = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  if (modo === 'semana') {
+    return [{ titulo: etiqueta(), dias }];
+  }
+  if (modo === 'mes') {
+    const mapa = new Map();
+    for (const d of dias) {
+      const l = isoDe(lunesDe(new Date(d + 'T12:00:00')));
+      if (!mapa.has(l)) mapa.set(l, []);
+      mapa.get(l).push(d);
+    }
+    return [...mapa.entries()].sort((a, b) => a[0] < b[0] ? -1 : 1)
+      .map(([l, ds]) => ({ titulo: etiquetaSemana(l), dias: ds }));
+  }
+  const mapa = new Map();
+  for (const d of dias) {
+    const k = d.slice(0, 7);
+    if (!mapa.has(k)) mapa.set(k, []);
+    mapa.get(k).push(d);
+  }
+  return [...mapa.entries()].sort((a, b) => a[0] < b[0] ? -1 : 1)
+    .map(([k, ds]) => ({ titulo: MESES_C[Number(k.slice(5, 7)) - 1] + ' ' + k.slice(0, 4), dias: ds }));
+}
+
+/* Bloque de un día con sus fichajes */
+function bloqueDia(clave, items, tramos, cfg) {
+  const fecha = new Date(clave + 'T12:00:00');
+  const panel = document.createElement('div');
+  panel.className = 'reg-dia';
+
+  const tit = document.createElement('div');
+  tit.className = 'reg-dia-tit';
+  tit.textContent = fecha.toLocaleDateString('es-ES',
+    { weekday: 'long', day: 'numeric', month: 'short' });
+  if (tramos.length) {
+    const h = document.createElement('span');
+    h.className = 'reg-dia-hor';
+    h.textContent = tramos.map((t) => t.desde + ' – ' + t.hasta).join(' · ');
+    tit.appendChild(h);
+  }
+  panel.appendChild(tit);
+
+  for (const f of items) panel.appendChild(filaFichaje(f, tramos, cfg));
+
+  const tot = document.createElement('div');
+  tot.className = 'reg-dia-total';
+  tot.innerHTML = 'Total del día: <b>' + fmtHMS(totalSeg(items)) + '</b>';
+  panel.appendChild(tot);
+  return panel;
+}
+
 function filaFichaje(f, tramos, cfg) {
   const tarde = calcularRetraso(f, tramos, cfg);
   const fila = document.createElement('div');
