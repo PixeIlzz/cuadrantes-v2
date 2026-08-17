@@ -164,6 +164,10 @@ notificaciones push configurables.
     vacaciones y cambios de turno, que son una comodidad; corregir el propio registro
     de jornada es un derecho del trabajador y no puede depender de una preferencia
     del gestor. Por eso van por RPC propia y no por `crearSolicitud`.
+  - Ojo: hay un trigger `trg_bloquear_solicitud()` sobre `requests` que rechaza
+    inserciones con el interruptor apagado. **Un trigger salta aunque la función sea
+    `SECURITY DEFINER`**, así que la RPC no lo esquivaba; la migración 37 lo exime
+    para `type = 'timefix'`. Si algún día se añaden más tipos exentos, es ahí.
   - **`solicitudes_activas` es asimétrico** (v71). Al apagarlo, al **empleado** se le
     oculta la pestaña Solicitudes entera —así no puede enviar vacaciones ni cambios—,
     pero al **gestor** le queda siempre visible: le siguen llegando correcciones de
@@ -234,7 +238,7 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 |---|---|
 | App (`js/version.js` → `APP_VERSION`) | v71 |
 | Service worker (`sw.js` → `VERSION`) | v71 |
-| Migración SQL | 36 |
+| Migración SQL | 37 |
 
 Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en real.
 
