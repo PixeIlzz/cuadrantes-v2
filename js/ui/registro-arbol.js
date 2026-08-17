@@ -327,9 +327,11 @@ function exportarCSV(worker, titulo, fichajes) {
 }
 
 /* ================= pintar el árbol ================= */
-/* opciones: { worker, exportar:boolean } */
+/* opciones: { worker, exportar:boolean, onCorregir:(dia, items)=>void }
+   onCorregir solo lo pasa la vista del empleado: añade el botón de corrección
+   en el nivel de día. En año, mes y semana no tiene sentido corregir nada. */
 export async function pintarArbolRegistro(cont, workerId, opciones = {}) {
-  const { worker = null, exportar = false } = opciones;
+  const { worker = null, exportar = false, onCorregir = null } = opciones;
   cont.innerHTML = '<span class="empty-note">Cargando registro…</span>';
 
   let fich = [];
@@ -362,7 +364,7 @@ export async function pintarArbolRegistro(cont, workerId, opciones = {}) {
   }
 
   for (const A of arbol) {
-    cont.appendChild(nodoAnio(A, worker, exportar));
+    cont.appendChild(nodoAnio(A, worker, exportar, onCorregir));
   }
 }
 
@@ -417,7 +419,7 @@ function cabecera(nivel, titulo, nodo, sub, worker, exportar, fichajes) {
   return sum;
 }
 
-function nodoAnio(A, worker, exportar) {
+function nodoAnio(A, worker, exportar, onCorregir) {
   const det = document.createElement('details');
   det.className = 'arb-nodo arb-nivel-anio';
   const nMeses = A.meses.length;
@@ -427,12 +429,12 @@ function nodoAnio(A, worker, exportar) {
 
   const body = document.createElement('div');
   body.className = 'arb-body';
-  for (const M of A.meses) body.appendChild(nodoMes(M, worker, exportar));
+  for (const M of A.meses) body.appendChild(nodoMes(M, worker, exportar, onCorregir));
   det.appendChild(body);
   return det;
 }
 
-function nodoMes(M, worker, exportar) {
+function nodoMes(M, worker, exportar, onCorregir) {
   const det = document.createElement('details');
   det.className = 'arb-nodo arb-nivel-mes';
   const titulo = MESES[Number(M.mes.slice(5, 7)) - 1] + ' ' + M.mes.slice(0, 4);
@@ -443,12 +445,12 @@ function nodoMes(M, worker, exportar) {
 
   const body = document.createElement('div');
   body.className = 'arb-body';
-  for (const S of M.semanas) body.appendChild(nodoSemana(S, worker, exportar));
+  for (const S of M.semanas) body.appendChild(nodoSemana(S, worker, exportar, onCorregir));
   det.appendChild(body);
   return det;
 }
 
-function nodoSemana(S, worker, exportar) {
+function nodoSemana(S, worker, exportar, onCorregir) {
   const det = document.createElement('details');
   det.className = 'arb-nodo arb-nivel-semana';
   const dias = [...S.dias].sort((a, b) => a.iso.localeCompare(b.iso));
@@ -460,12 +462,12 @@ function nodoSemana(S, worker, exportar) {
 
   const body = document.createElement('div');
   body.className = 'arb-body';
-  for (const D of dias) body.appendChild(nodoDia(D, worker, exportar));
+  for (const D of dias) body.appendChild(nodoDia(D, worker, exportar, onCorregir));
   det.appendChild(body);
   return det;
 }
 
-function nodoDia(D, worker, exportar) {
+function nodoDia(D, worker, exportar, onCorregir) {
   const det = document.createElement('details');
   det.className = 'arb-nodo arb-nivel-dia';
   const entradas = D.items.filter((f) => f.tipo === 'entrada').length;
@@ -494,6 +496,23 @@ function nodoDia(D, worker, exportar) {
     if (f.tipo === 'entrada') primeraEntrada = false;
     body.appendChild(fila);
   }
+
+  // Solo el empleado, y solo aquí: corregir un día concreto
+  if (onCorregir) {
+    const acc = document.createElement('div');
+    acc.className = 'arb-corregir';
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn small';
+    b.textContent = '✎ Proponer una corrección';
+    b.addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      onCorregir(D.iso, D.items);
+    });
+    acc.appendChild(b);
+    body.appendChild(acc);
+  }
+
   det.appendChild(body);
   return det;
 }

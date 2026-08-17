@@ -8,6 +8,7 @@ import {
   suscribirFichajes, cerrarCanal, turnoPrevisto, diaDe,
 } from '../data/fichaje.js';
 import { pintarArbolRegistro } from './registro-arbol.js';
+import { pedirCorreccion } from './correccion.js';
 
 const $ = (id) => document.getElementById(id);
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -149,11 +150,28 @@ async function pintarRegistro(cont) {
   tit.textContent = 'Mi registro de fichajes';
   cont.appendChild(tit);
 
+  // Los días sin ningún fichaje no aparecen en el árbol —se construye a partir
+  // de los fichajes—, así que el olvido completo necesita su propia entrada.
+  const falta = document.createElement('button');
+  falta.type = 'button';
+  falta.className = 'btn small reg-falta-dia';
+  falta.textContent = '✎ Falta un día entero';
+  falta.title = 'Un día en el que no fichaste nada y por eso no sale en la lista';
+  falta.addEventListener('click', async () => {
+    if (await pedirCorreccion(null, [])) pintar();
+  });
+  cont.appendChild(falta);
+
   const caja = document.createElement('div');
   caja.id = 'reg-lista';
   cont.appendChild(caja);
 
-  await pintarArbolRegistro(caja, ctx.workerId, { exportar: false });
+  await pintarArbolRegistro(caja, ctx.workerId, {
+    exportar: false,
+    onCorregir: async (dia, items) => {
+      if (await pedirCorreccion(dia, items)) pintar();
+    },
+  });
 }
 
 /* Agrupa los días según el modo activo */

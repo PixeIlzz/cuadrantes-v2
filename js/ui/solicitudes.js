@@ -7,14 +7,53 @@ import { etiquetaSemana, fmtCorto } from '../data/semanas.js';
 import {
   crearSolicitud, misSolicitudes, retirarSolicitud,
   solicitudesDelNegocio, contarPendientes, resolverSolicitud, semanasAfectadas,
+  resolverCorreccion,
 } from '../data/solicitudes.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g,
   (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-const TIPO = { vacation: 'Vacaciones', change: 'Cambio de turno', other: 'Otro' };
+const TIPO = {
+  vacation: 'Vacaciones', change: 'Cambio de turno', other: 'Otro',
+  timefix: 'Corrección de fichaje',
+};
 const ESTADO = { pending: 'Pendiente', approved: 'Aprobada', denied: 'Denegada' };
+
+/* --- Correcciones de fichaje (type = 'timefix') --- */
+const esCorreccion = (s) => s.type === 'timefix';
+
+function horaDe(iso) {
+  return new Date(iso).toLocaleString('es-ES', {
+    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+    hour12: false, timeZone: 'Atlantic/Canary',
+  });
+}
+
+/* Qué pide exactamente la corrección, en una frase */
+function textoCorreccion(s) {
+  const fix = s.fix || {};
+  const m = fix.momento ? horaDe(fix.momento) : '?';
+  if (fix.accion === 'editar') return 'Cambiar la hora de un fichaje a ' + m;
+  if (fix.accion === 'anadir') {
+    return 'Añadir la ' + (fix.tipo === 'entrada' ? 'entrada' : 'salida') + ' de las ' + m;
+  }
+  if (fix.accion === 'borrar') return 'Borrar un fichaje que sobra';
+  if (fix.accion === 'jornada') {
+    return 'Añadir la jornada entera: ' + m
+      + ' → ' + (fix.momento_fin ? horaDe(fix.momento_fin) : '?');
+  }
+  return 'Corrección de fichaje';
+}
+
+/* Lo que va a pasar al aprobar, para el diálogo de confirmación */
+function efectoCorreccion(s) {
+  const a = (s.fix || {}).accion;
+  if (a === 'borrar') return 'Se borrará el fichaje. Queda en la auditoría.';
+  if (a === 'jornada') return 'Se crearán la entrada y la salida de ese día.';
+  if (a === 'anadir') return 'Se creará el fichaje que falta.';
+  return 'Se cambiará la hora del fichaje.';
+}
 
 let equipoCache = [];
 
@@ -88,6 +127,14 @@ async function tarjetaGestor(s) {
     : 'Sin fecha concreta';
   card.appendChild(fechas);
 
+  // Qué pide exactamente la corrección
+  if (esCorreccion(s)) {
+    const q = document.createElement('div');
+    q.className = 'sol-fix';
+    q.textContent = textoCorreccion(s);
+    card.appendChild(q);
+  }
+
   if (s.message) {
     const m = document.createElement('div');
     m.className = 'sol-msg';
@@ -96,8 +143,9 @@ async function tarjetaGestor(s) {
   }
 
   if (s.status === 'pending') {
-    // Aviso si las fechas caen en semanas ya programadas o publicadas
-    if (s.start_date) {
+    // Aviso si las fechas caen en semanas ya programadas o publicadas.
+    // Las correcciones de fichaje no tocan el cuadrante: no aplica.
+    if (s.start_date && !esCorreccion(s)) {
       const afectadas = await semanasAfectadas(s.start_date, s.end_date);
       if (afectadas.length) {
         const av = document.createElement('div');
@@ -121,16 +169,18 @@ async function tarjetaGestor(s) {
     const bSi = document.createElement('button');
     bSi.type = 'button'; bSi.className = 'btn small primary'; bSi.textContent = 'Aprobar';
     bSi.addEventListener('click', async () => {
-      const extra = s.type === 'vacation'
-        ? 'Se añadirá el periodo a sus vacaciones.'
-        : s.type === 'change'
-          ? 'Queda constancia de la aprobación. Recuerda mover los turnos a mano en el cuadrante.'
-          : 'Queda constancia de la aprobación y de tu nota.';
+      const extra = esCorreccion(s) ? efectoCorreccion(s)
+        : s.type === 'vacation'
+          ? 'Se añadirá el periodo a sus vacaciones.'
+          : s.type === 'change'
+            ? 'Queda constancia de la aprobación. Recuerda mover los turnos a mano en el cuadrante.'
+            : 'Queda constancia de la aprobación y de tu nota.';
       const ok = await confirmar('Aprobar la solicitud de ' + nombreDe(s.worker_id) + '. ' + extra,
         { textoOk: 'Aprobar' });
       if (!ok) return;
       try {
-        await resolverSolicitud(s.id, true, nota.value);
+        if (esCorreccion(s)) await resolverCorreccion(s.id, true, nota.value);
+        else await resolverSolicitud(s.id, true, nota.value);
         toast('Solicitud aprobada');
         abrirSolicitudes(estadoActivo());
       } catch (err) { toast(err.message); }
@@ -143,7 +193,8 @@ async function tarjetaGestor(s) {
         { textoOk: 'Denegar', peligro: true });
       if (!ok) return;
       try {
-        await resolverSolicitud(s.id, false, nota.value);
+        if (esCorreccion(s)) await resolverCorreccion(s.id, false, nota.value);
+        else await resolverSolicitud(s.id, false, nota.value);
         toast('Solicitud denegada');
         abrirSolicitudes(estadoActivo());
       } catch (err) { toast(err.message); }
@@ -260,6 +311,13 @@ export async function abrirMisSolicitudes() {
             : 'El ' + fmtCorto(s.start_date))
         : '';
       card.appendChild(f);
+
+      if (esCorreccion(s)) {
+        const q = document.createElement('div');
+        q.className = 'sol-fix';
+        q.textContent = textoCorreccion(s);
+        card.appendChild(q);
+      }
 
       if (s.message) {
         const m = document.createElement('div');

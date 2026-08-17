@@ -70,8 +70,8 @@ sql/                Migraciones numeradas. Ver aviso abajo: las 1–32 NO
 `data/`: `avisos`, `empleado`, `equipo`, `fichaje`, `invitaciones`, `kiosco`,
 `migracion`, `notificaciones`, `semanas`, `solicitudes`, `tareas`
 
-`ui/`: `ajustes`, `ajustes-empleado`, `avisos`, `confirmar`, `cuadrante`, `empleado`,
-`equipo`, `exportar`, `fichaje`, `hoy`, `kiosco`, `mi-registro`, `migracion`,
+`ui/`: `ajustes`, `ajustes-empleado`, `avisos`, `confirmar`, `correccion`, `cuadrante`,
+`empleado`, `equipo`, `exportar`, `fichaje`, `hoy`, `kiosco`, `mi-registro`, `migracion`,
 `notificaciones`, `privacidad`, `programadas`, `push`, `push-bienvenida`,
 `registro-arbol`, `solicitudes`, `tareas`, `tema`, `toast`, `version`
 
@@ -152,6 +152,24 @@ notificaciones push configurables.
 - **Jornada nocturna.** `dia_laboral()` atribuye los fichajes de madrugada al día
   anterior si ese día tenía turno que cruza medianoche (viernes 20:00 → sábado 01:00
   cuenta como viernes).
+- **Correcciones propuestas por el empleado** (migración 35). El trabajador propone
+  desde *Mi registro* y el gestor aprueba o deniega en Solicitudes.
+  - Cuatro acciones: cambiar la hora de un fichaje, añadir el que falta, borrar uno
+    que sobra, o registrar la jornada entera de un día en el que no fichó nada.
+  - **Dos puertas, un diálogo** (`ui/correccion.js`): botón por día en el árbol, y
+    botón general "Falta un día entero" —porque el árbol se construye a partir de los
+    fichajes y un día sin ninguno sencillamente no aparece.
+  - Viaja por `requests` con `type='timefix'`, más `entry_id` y `fix` (jsonb).
+  - **Siempre activas, al margen de `solicitudes_activas`.** Ese interruptor apaga
+    vacaciones y cambios de turno, que son una comodidad; corregir el propio registro
+    de jornada es un derecho del trabajador y no puede depender de una preferencia
+    del gestor. Por eso van por RPC propia y no por `crearSolicitud`.
+  - **Aisladas en `resolve_timefix`**: `resolve_request` (vacaciones) no se toca.
+  - Trazabilidad: al aprobar, el fichaje se escribe con `origen: 'gestor'` **y**
+    `time_entries.request_id` apuntando a la solicitud, así `time_entry_audit` recoge
+    por trigger quién pidió el cambio y por qué, sin tocar el trigger.
+  - La hora viaja como texto `'YYYY-MM-DDTHH:MM'` y la interpreta el servidor en la
+    zona del negocio. Nunca se manda un instante calculado en el navegador.
 
 ---
 
@@ -199,9 +217,9 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 
 | Elemento | Versión |
 |---|---|
-| App (`js/version.js` → `APP_VERSION`) | v69 |
-| Service worker (`sw.js` → `VERSION`) | v69 |
-| Migración SQL | 34 |
+| App (`js/version.js` → `APP_VERSION`) | v70 |
+| Service worker (`sw.js` → `VERSION`) | v70 |
+| Migración SQL | 35 |
 
 Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en real.
 
@@ -217,13 +235,9 @@ Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en rea
    roto hasta la migración 33, así que el PDF y el CSV **nunca se han ejecutado con
    datos de verdad**. Es el documento que hay que entregar a inspección: comprobar
    razón social, CIF, NIF, entradas/salidas y totales antes de nada.
-2. **Correcciones de fichaje por el empleado** — que pueda proponer una corrección
-   (reusando el módulo de solicitudes) y que el gestor la apruebe, quedando en la
-   auditoría. **Va antes de sacar el fichaje de beta**: en cuanto lo use toda la
-   plantilla habrá olvidos, y sin este flujo el único cauce es corregirlos a mano como
-   `origen: gestor`, sin registro de quién lo pidió ni por qué.
-3. **Sacar el fichaje de beta** — quitar el flag de probador y activarlo para toda la
-   plantilla, una vez hechos los dos puntos anteriores.
+2. **Sacar el fichaje de beta** — quitar el flag de probador y activarlo para toda la
+   plantilla, una vez validada la exportación legal (punto 1) y probadas en real las
+   correcciones (apartado 5).
 4. **Volcar las migraciones 1–32 a `sql/`** — hoy el esquema no tiene copia
    versionada (ver aviso en el apartado 4).
 5. **Rendimiento del árbol del registro** — [registro-arbol.js](js/ui/registro-arbol.js)
