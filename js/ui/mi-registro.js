@@ -9,6 +9,9 @@ import {
 } from '../data/fichaje.js';
 import { pintarArbolRegistro } from './registro-arbol.js';
 import { pedirCorreccion } from './correccion.js';
+import { misSolicitudes, retirarSolicitud } from '../data/solicitudes.js';
+import { confirmar } from './confirmar.js';
+import { toast } from './toast.js';
 
 const $ = (id) => document.getElementById(id);
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -162,6 +165,14 @@ async function pintarRegistro(cont) {
   });
   cont.appendChild(falta);
 
+  // Estado de sus correcciones. Va aquí y no en Solicitudes porque esa pestaña
+  // desaparece si el gestor apaga las solicitudes, y el trabajador tiene que
+  // poder seguir sus correcciones igualmente.
+  const misCorr = document.createElement('div');
+  misCorr.id = 'reg-correcciones';
+  cont.appendChild(misCorr);
+  pintarCorrecciones(misCorr);
+
   const caja = document.createElement('div');
   caja.id = 'reg-lista';
   cont.appendChild(caja);
@@ -172,6 +183,83 @@ async function pintarRegistro(cont) {
       if (await pedirCorreccion(dia, items)) pintar();
     },
   });
+}
+
+/* ---- Mis correcciones: pendientes y las últimas resueltas ---- */
+const ESTADO_CORR = { pending: 'Pendiente', approved: 'Aprobada', denied: 'Denegada' };
+
+async function pintarCorrecciones(cont) {
+  let lista = [];
+  try {
+    lista = (await misSolicitudes()).filter((s) => s.type === 'timefix');
+  } catch (_) { return; }
+
+  // Todas las pendientes, y solo las 3 últimas ya resueltas
+  const pendientes = lista.filter((s) => s.status === 'pending');
+  const resueltas = lista.filter((s) => s.status !== 'pending').slice(0, 3);
+  const mostrar = [...pendientes, ...resueltas];
+  if (mostrar.length === 0) { cont.innerHTML = ''; return; }
+
+  const panel = document.createElement('div');
+  panel.className = 'panel';
+  const tit = document.createElement('h2');
+  tit.textContent = 'Mis correcciones';
+  panel.appendChild(tit);
+
+  for (const s of mostrar) {
+    const fila = document.createElement('div');
+    fila.className = 'corr-fila corr-' + s.status;
+
+    const txt = document.createElement('div');
+    txt.className = 'corr-txt';
+    txt.innerHTML = '<b></b><span class="corr-motivo"></span>';
+    txt.querySelector('b').textContent =
+      (s.start_date ? new Date(s.start_date + 'T12:00:00').toLocaleDateString('es-ES',
+        { day: 'numeric', month: 'short' }) : '') + ' · ' + textoFix(s.fix);
+    txt.querySelector('.corr-motivo').textContent = s.message || '';
+    fila.appendChild(txt);
+
+    const chip = document.createElement('span');
+    chip.className = 'status-chip sol-estado-' + s.status;
+    chip.textContent = ESTADO_CORR[s.status] || s.status;
+    fila.appendChild(chip);
+
+    if (s.manager_note) {
+      const n = document.createElement('div');
+      n.className = 'corr-respuesta';
+      n.textContent = 'Respuesta: ' + s.manager_note;
+      fila.appendChild(n);
+    }
+
+    if (s.status === 'pending') {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'btn small'; b.textContent = 'Retirar';
+      b.addEventListener('click', async () => {
+        const ok = await confirmar('Se retirará la corrección. ¿Continuar?',
+          { textoOk: 'Retirar', peligro: true });
+        if (!ok) return;
+        try { await retirarSolicitud(s.id); toast('Corrección retirada'); pintar(); }
+        catch (err) { toast(err.message); }
+      });
+      fila.appendChild(b);
+    }
+
+    panel.appendChild(fila);
+  }
+
+  cont.innerHTML = '';
+  cont.appendChild(panel);
+}
+
+function textoFix(fix) {
+  const f = fix || {};
+  const m = f.momento ? new Date(f.momento).toLocaleTimeString('es-ES',
+    { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Atlantic/Canary' }) : '?';
+  if (f.accion === 'editar') return 'cambiar una hora a las ' + m;
+  if (f.accion === 'anadir') return 'añadir la ' + (f.tipo === 'entrada' ? 'entrada' : 'salida') + ' de las ' + m;
+  if (f.accion === 'borrar') return 'borrar un fichaje que sobra';
+  if (f.accion === 'jornada') return 'añadir la jornada entera';
+  return 'corrección';
 }
 
 /* Agrupa los días según el modo activo */

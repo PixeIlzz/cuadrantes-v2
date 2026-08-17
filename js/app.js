@@ -74,25 +74,35 @@ document.querySelectorAll('.tab-btn[data-tab]').forEach((btn) => {
 });
 
 /* ---------- Vistas ---------- */
-/* Muestra u oculta las pestañas de solicitudes (gestor y empleado)
-   según la preferencia guardada en el negocio. */
+/* El interruptor `solicitudes_activas` apaga vacaciones y cambios de turno.
+   Es asimétrico a propósito:
+
+   · Al EMPLEADO se le oculta la pestaña entera: así no puede enviar nada.
+     Sus correcciones de fichaje las sigue proponiendo y consultando desde
+     «Mi registro», que no depende de este interruptor.
+   · Al GESTOR la pestaña le queda SIEMPRE visible: aunque haya apagado las
+     solicitudes le pueden seguir llegando correcciones de fichaje, y si la
+     pestaña desapareciera tendría una cola invisible de peticiones que está
+     obligado a atender. */
 function aplicarVisibilidadSolicitudes() {
   const activas = !(ctx.business && ctx.business.config
     && ctx.business.config.solicitudes_activas === false);
-  // Solo tocamos la pestaña del rol actual, para no romper la separación gestor/empleado
-  const selector = (ctx.role === 'manager')
-    ? '[data-tab="solicitudes"]' : '[data-tab="emp-solicitudes"]';
-  const btn = document.querySelector(selector);
-  if (btn) {
-    // Si se desactiva, se oculta. Si se activa, se muestra (su clase de rol ya la controla mostrarApp).
-    btn.hidden = !activas;
+  const esGestor = (ctx.role === 'manager');
+
+  if (esGestor) {
+    const aviso = $('sol-apagadas-gestor');
+    if (aviso) aviso.hidden = activas;
+    return activas;
   }
-  // Si estabas en esa pestaña y se desactiva, vuelve a Hoy
+
+  // Empleado: la pestaña se oculta si están desactivadas
+  const btn = document.querySelector('[data-tab="emp-solicitudes"]');
+  if (btn) btn.hidden = !activas;
+
+  // Si estaba dentro y se desactivan, vuelve a Hoy
   if (!activas) {
     const actual = document.querySelector('.tab-btn.active');
-    if (actual && /solicitudes/.test(actual.dataset.tab || '')) {
-      cambiarPestana(ctx.role === 'manager' ? 'hoy' : 'emp-hoy');
-    }
+    if (actual && /solicitudes/.test(actual.dataset.tab || '')) cambiarPestana('emp-hoy');
   }
   return activas;
 }

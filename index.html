@@ -314,6 +314,10 @@
         <button class="btn small sol-filtro" type="button" data-estado="">Todas</button>
       </div>
       <p class="note">Al aprobar unas vacaciones se añaden solas al periodo del trabajador. Los cambios de turno quedan aprobados por escrito, pero los turnos los mueves tú en el cuadrante.</p>
+      <p class="note sol-apagadas" id="sol-apagadas-gestor" hidden>
+        Tienes las solicitudes desactivadas: el equipo solo puede enviarte
+        <b>correcciones de fichaje</b>, que no se pueden desactivar.
+      </p>
       <div class="sol-list" id="lista-solicitudes"></div>
     </div>
   </section>
@@ -361,7 +365,7 @@
         <span class="pref-label">Permitir que el equipo envíe solicitudes</span>
         <input type="checkbox" class="pref-switch" id="sw-solicitudes" checked>
         </label>
-        <p class="note">Al desactivarlo, desaparece la pestaña «Solicitudes» para ti y para el equipo. Las solicitudes ya enviadas no se borran: vuelven a aparecer si lo reactivas.</p>
+        <p class="note">Al desactivarlo, el equipo deja de poder pedirte vacaciones y cambios de turno. Las ya enviadas no se borran. <b>Las correcciones del registro de jornada siguen activas siempre</b>: son un derecho del trabajador sobre sus propios fichajes y la pestaña sigue ahí para tramitarlas.</p>
         </div>
 
       </div>
@@ -692,7 +696,7 @@
 
   <!-- ============ EMPLEADO · SOLICITUDES ============ -->
   <section id="tab-emp-solicitudes" class="solo-empleado" hidden>
-    <div class="panel">
+    <div class="panel" id="panel-nueva-solicitud">
       <h2>Nueva solicitud</h2>
       <div class="sol-form">
         <div class="sol-radios">

@@ -164,12 +164,27 @@ notificaciones push configurables.
     vacaciones y cambios de turno, que son una comodidad; corregir el propio registro
     de jornada es un derecho del trabajador y no puede depender de una preferencia
     del gestor. Por eso van por RPC propia y no por `crearSolicitud`.
+  - **`solicitudes_activas` es asimétrico** (v71). Al apagarlo, al **empleado** se le
+    oculta la pestaña Solicitudes entera —así no puede enviar vacaciones ni cambios—,
+    pero al **gestor** le queda siempre visible: le siguen llegando correcciones de
+    fichaje y sin la pestaña tendría una cola invisible de peticiones que está obligado
+    a atender. Con un aviso que se lo explica.
+  - Como el empleado puede quedarse sin esa pestaña, **el estado de sus correcciones
+    vive en «Mi registro»** (panel «Mis correcciones»): pendientes con botón de retirar,
+    y las 3 últimas resueltas con la respuesta del gestor. Esa pantalla no depende del
+    interruptor.
   - **Aisladas en `resolve_timefix`**: `resolve_request` (vacaciones) no se toca.
   - Trazabilidad: al aprobar, el fichaje se escribe con `origen: 'gestor'` **y**
     `time_entries.request_id` apuntando a la solicitud, así `time_entry_audit` recoge
     por trigger quién pidió el cambio y por qué, sin tocar el trigger.
   - La hora viaja como texto `'YYYY-MM-DDTHH:MM'` y la interpreta el servidor en la
     zona del negocio. Nunca se manda un instante calculado en el navegador.
+  - **Avisos** (migración 36): al proponer se notifica a los gestores con el tipo
+    `request_new`; al resolver, al trabajador con `request_resolved`. El aviso del
+    empleado enlaza a `emp-fichaje` (Mi registro), **no** a `emp-solicitudes`, porque
+    esa pestaña puede estar oculta. Los dos `insert` van dentro de un `begin/exception`
+    que se traga el error: un fallo de notificación no puede tumbar una corrección ya
+    guardada.
 
 ---
 
@@ -217,9 +232,9 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 
 | Elemento | Versión |
 |---|---|
-| App (`js/version.js` → `APP_VERSION`) | v70 |
-| Service worker (`sw.js` → `VERSION`) | v70 |
-| Migración SQL | 35 |
+| App (`js/version.js` → `APP_VERSION`) | v71 |
+| Service worker (`sw.js` → `VERSION`) | v71 |
+| Migración SQL | 36 |
 
 Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en real.
 

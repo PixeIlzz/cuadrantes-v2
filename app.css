@@ -2150,6 +2150,27 @@ main{padding:16px;max-width:1100px;margin:0 auto}
 /* Botón general "falta un día entero" */
 .reg-falta-dia{margin:0 0 1rem}
 
+/* Aviso al gestor: solicitudes apagadas, pero las correcciones siguen llegando */
+.sol-apagadas{
+  background:var(--t-ama-bg2);border:1px solid var(--t-ama-brd);color:var(--t-ama-txt);
+  border-radius:10px;padding:.7rem .85rem;margin-bottom:1rem;line-height:1.45;
+}
+.sol-apagadas[hidden]{display:none}
+
+/* Mis correcciones, dentro de Mi registro */
+.corr-fila{
+  display:flex;align-items:center;flex-wrap:wrap;gap:.5rem;
+  padding:.6rem 0;border-bottom:1px solid var(--line);
+}
+.corr-fila:last-child{border-bottom:none}
+.corr-txt{flex:1 1 200px;min-width:0;font-size:.9rem;line-height:1.35}
+.corr-txt b{display:block;font-weight:600}
+.corr-motivo{color:var(--ink-soft);font-size:.8rem}
+.corr-respuesta{
+  flex:1 1 100%;font-size:.8rem;color:var(--ink-soft);
+  border-left:2px solid var(--line);padding-left:.55rem;
+}
+
 /* Qué pide una corrección, en la tarjeta de solicitud */
 .sol-fix{
   font-size:.85rem;font-weight:600;color:var(--t-azu-txt);

@@ -5,7 +5,7 @@
    IMPORTANTE: este número y APP_VERSION en js/version.js son el mismo
    número y se suben juntos. Si divergen, Ajustes avisa de que el
    navegador está sirviendo código viejo. */
-const VERSION = 'v70';
+const VERSION = 'v71';
 const CACHE = 'cuadrantes-' + VERSION;
 
 const ARCHIVOS = [
