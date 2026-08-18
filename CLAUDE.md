@@ -4,7 +4,7 @@
 > **Actualizar al cerrar cada tanda de trabajo**: versiones, migración SQL, módulos
 > tocados y la lista de pendientes.
 
-**Última actualización:** 2026-08-16 · v68 (versión única visible en pantalla)
+**Última actualización:** 2026-08-19 · v72 · migración SQL 39
 
 ---
 
@@ -92,10 +92,16 @@ sql/                Migraciones numeradas. Ver aviso abajo: las 1–32 NO
 
 Migraciones SQL numeradas secuencialmente.
 
-> **Aviso: el esquema no está versionado.** Las migraciones 1–32 solo existen dentro
-> de Supabase; en `sql/` está únicamente la 33 en adelante. No hay a qué volver si se
-> rompe una función, y ningún error de SQL se puede diagnosticar sin abrir el panel.
-> Volcar las 32 anteriores a `sql/` es tarea pendiente.
+> **El esquema ya está versionado** (2026-08-18). `sql/000_baseline/` contiene el
+> estado real volcado de Supabase —tablas, restricciones, funciones, triggers, RLS
+> y cron—, y levanta el esquema desde cero en un proyecto nuevo. Encima se aplica
+> `sql/033…` en adelante. Dos salvedades anotadas en su README: el trigger sobre
+> `auth.users` no se pudo volcar (el volcado cubría solo `public`) y los permisos
+> de las funciones están reconstruidos, no volcados.
+>
+> El historial con los comentarios de diseño originales, rescatado de los snippets
+> del SQL Editor, está en `sql/historico/`. **Es historial, no estado actual: no
+> ejecutarlo.**
 
 **`id` sin cualificar en funciones `RETURNS TABLE`.** Si la función declara una
 columna de salida `id`, cualquier `id` sin alias dentro del cuerpo es ambiguo y la
@@ -141,6 +147,11 @@ notificaciones push configurables.
 - **Registro en árbol.** Año → Mes → Semana → Día, desplegable. Cada nivel muestra
   horas totales, saldo (vs. previsto) y retraso acumulado. Gestor: botones PDF y CSV
   en cada nivel. Empleado: solo visual.
+  Se carga con **una sola petición**: `registro_arbol()` (migración 38) devuelve,
+  por día laboral, sus fichajes y su turno previsto ya resuelto. Antes lanzaba una
+  RPC `turno_previsto` por cada día con fichajes. Las horas, el saldo y el retraso
+  se siguen calculando en el navegador a propósito: son las cifras del PDF legal y
+  no interesa tener dos implementaciones que puedan divergir.
 - **Exportación legal.** PDF imprimible y CSV con razón social, CIF, nombre legal,
   NIF, nº de Seguridad Social, entradas/salidas y totales. El PDF lleva bloques de
   empresa y trabajador, tabla agrupada por día (un `<tbody>` por día para que no se
@@ -236,9 +247,10 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 
 | Elemento | Versión |
 |---|---|
-| App (`js/version.js` → `APP_VERSION`) | v71 |
-| Service worker (`sw.js` → `VERSION`) | v71 |
-| Migración SQL | 37 |
+| App (`js/version.js` → `APP_VERSION`) | v72 |
+| Service worker (`sw.js` → `VERSION`) | v72 |
+| Migración SQL | 39 (la 39 requiere pasos manuales: ver pendiente 3) |
+| Baseline del esquema | `sql/000_baseline/` (volcado 2026-08-18) |
 
 Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en real.
 
@@ -257,22 +269,51 @@ Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en rea
 2. **Sacar el fichaje de beta** — quitar el flag de probador y activarlo para toda la
    plantilla, una vez validada la exportación legal (punto 1) y probadas en real las
    correcciones (apartado 5).
-4. **Volcar las migraciones 1–32 a `sql/`** — hoy el esquema no tiene copia
-   versionada (ver aviso en el apartado 4).
-5. **Rendimiento del árbol del registro** — [registro-arbol.js](js/ui/registro-arbol.js)
-   pide 2 años de fichajes y lanza una RPC `turno_previsto` **por cada día con
-   fichajes** (`Promise.all`); además `dia_laboral()` se ejecuta por fila y vuelve a
-   llamar a `turno_previsto`. Con un año de datos son cientos de peticiones por
-   pantalla. Solución limpia: una RPC que devuelva días, previsto y totales ya
-   calculados en el servidor.
-6. **Limpieza** — eliminar el respaldo de "horario general del negocio" cuando todas
-   las semanas publicadas lleven horas por columna.
-7. **Comandero** (futuro, arquitectura ya diseñada) — comandas desde el móvil del
+3. **[URGENTE · te toca a ti] Rotar el secreto del push** — el código ya está
+   listo (migración 39 + `edge/enviar-push/index.ts`), pero los pasos que
+   necesitan el panel de Supabase están sin hacer y hasta entonces
+   **`enviar-push` sigue siendo un endpoint público sin autenticar**.
+   El diagnóstico real: `trg_enviar_push()` mandaba un token escrito en su
+   cuerpo que la Edge Function **nunca comprobaba**. O sea, no era una
+   credencial (no abría nada), pero el endpoint no tenía puerta. Ahora la
+   función valida la cabecera y el secreto vive en `app_config`.
+   Pasos, en este orden: crear el secreto `PUSH_SECRET` en Edge Functions →
+   Secrets, desplegar la función, ejecutar la migración 39, rellenar el PASO 3
+   con el mismo valor y comprobar con el PASO 4. Si se hace al revés, el push
+   deja de llegar entre medias.
+4. **No existe el cierre automático de jornada** — el esquema lo da por hecho
+   (`origen = 'auto'`, columna `estimado`, acción `cierre_auto` en la auditoría,
+   ajuste `config.fichaje.cierre_auto`, y el comentario de `fichar_worker`),
+   pero no hay ninguna función que lo haga ni ningún job de `pg_cron` salvo
+   `recordatorios-fichaje`. Como `fichar_worker` coge el último fichaje **sin
+   filtrar por día**, quien olvida fichar la salida el viernes convierte su
+   entrada del sábado en la salida del viernes: una jornada de veinte horas en
+   el registro legal. Bloquea de hecho el punto 1.
+5. **Revisar los permisos de las funciones** — el volcado no daba las ACL.
+   `avisar_gestores()` y `crear_notif()` son `SECURITY DEFINER`, no comprueban
+   quién llama e insertan notificaciones con título y cuerpo arbitrarios: si
+   están concedidas a `authenticated` (el defecto de Postgres es `public`),
+   cualquier usuario puede mandar push a los gestores de cualquier negocio.
+   `turno_previsto`, `tiene_turno_hoy` y `dia_laboral` tampoco comprueban nada
+   y filtran horarios de cualquier trabajador. La sección de permisos de
+   [03_funciones.sql](sql/000_baseline/03_funciones.sql) tiene la consulta para
+   verificarlo y los `revoke` propuestos.
+6. **Multi-tenancy en `fichar()`** — lleva `'Atlantic/Canary'` escrito a fuego
+   (el resto del módulo lee `config->'fichaje'->>'tz'`) y busca la ficha con
+   `where w.profile_id = auth.uid() limit 1`, sin filtrar por negocio: quien
+   tenga ficha en dos, ficha en uno arbitrario. En el cliente, lo mismo:
+   [js/data/fichaje.js](js/data/fichaje.js) exporta `const TZ = 'Atlantic/Canary'`,
+   así que el árbol, los totales y el PDF se pintan en hora canaria sea cual sea
+   el negocio.
+7. **Limpieza** — eliminar el respaldo de "horario general del negocio" cuando todas
+   las semanas publicadas lleven horas por columna. Y retirar
+   `fichajes_por_jornada()`, que desde la migración 38 ya no la usa nadie.
+8. **Comandero** (futuro, arquitectura ya diseñada) — comandas desde el móvil del
    camarero, pantallas de cocina por estación (parrilla, cocina) y vista de caja no
    fiscal. Se mantiene como **herramienta interna**, emitiendo los tickets por el TPV
    existente, para no entrar en las obligaciones de VeriFactu (enero 2027 sociedades,
    julio 2027 autónomos).
-8. **Comercial** — piloto gratuito con un negocio vecino antes de invertir en la
+9. **Comercial** — piloto gratuito con un negocio vecino antes de invertir en la
    migración multicliente.
 
 ---

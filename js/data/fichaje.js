@@ -33,6 +33,17 @@ export async function fichajesPorJornada(workerId, desdeIso, hastaIso) {
   return (data || []).filter((f) => f.dia >= desdeIso && f.dia <= hastaIso);
 }
 
+/* Todo lo que necesita el árbol del registro, en UNA sola llamada:
+   por cada día laboral con fichajes, sus fichajes y su turno previsto.
+   Sustituye a fichajesPorJornada + una turnoPrevisto por día (migración 38). */
+export async function registroArbol(workerId, desdeIso, hastaIso) {
+  const { data, error } = await sb.rpc('registro_arbol', {
+    p_worker_id: workerId, p_desde: desdeIso, p_hasta: hastaIso,
+  });
+  if (error) throw new Error('Registro: ' + error.message);
+  return data || [];
+}
+
 export async function fichajesDe(workerId, desdeIso, hastaIso) {
   // Pedimos un día extra por cada lado: el corte por UTC podría dejarse
   // fuera fichajes de madrugada. Luego filtramos por la fecha real.

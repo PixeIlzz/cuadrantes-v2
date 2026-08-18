@@ -2,7 +2,7 @@
 // Todo son desplegables. En el gestor cada nivel lleva botones PDF/CSV.
 // Lo usan la vista del gestor y la del empleado (esta sin botones). v1
 import { ctx } from '../auth.js';
-import { fichajesPorJornada, diaDe, datosLegales, horarioNegocio, turnoPrevisto } from '../data/fichaje.js';
+import { registroArbol, diaDe, datosLegales, horarioNegocio } from '../data/fichaje.js';
 import { toast } from './toast.js';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -334,25 +334,28 @@ export async function pintarArbolRegistro(cont, workerId, opciones = {}) {
   const { worker = null, exportar = false, onCorregir = null } = opciones;
   cont.innerHTML = '<span class="empty-note">Cargando registro…</span>';
 
-  let fich = [];
+  // Una sola petición: el servidor devuelve, por día laboral, sus fichajes y
+  // el turno previsto ya resuelto. Antes era una petición por cada día.
+  let dias = [];
   try {
     // Rango amplio: desde 2 años atrás hasta hoy
     const hoy = new Date();
     const desde = (hoy.getFullYear() - 2) + '-01-01';
     const hasta = hoy.toISOString().slice(0, 10);
-    fich = await fichajesPorJornada(workerId, desde, hasta);
+    dias = await registroArbol(workerId, desde, hasta);
   } catch (e) {
     cont.innerHTML = '<span class="empty-note">' + (e.message || 'No se pudo cargar') + '</span>';
     return;
   }
 
-  // Turno previsto de cada día con fichajes (para saldo y retrasos)
-  const dias = [...new Set(fich.map((f) => f.dia || diaDe(f.momento)))];
+  // Aplanamos a la forma que ya esperan construirArbol y los exportadores
+  const fich = [];
   const previstos = {};
-  await Promise.all(dias.map(async (d) => {
-    try { previstos[d] = await turnoPrevisto(workerId, d); }
-    catch (_) { previstos[d] = []; }
-  }));
+  for (const d of dias) {
+    previstos[d.dia] = d.tramos || [];
+    for (const it of (d.items || [])) fich.push({ ...it, dia: d.dia });
+  }
+
   const margenMin = Math.round((Number(horarioNegocio().margen_seg) || 300) / 60);
 
   const arbol = construirArbol(fich, previstos, margenMin);

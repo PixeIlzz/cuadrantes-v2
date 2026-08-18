@@ -5,7 +5,14 @@
 // Desplegar desde el panel de Supabase: Edge Functions → Deploy a new
 // function → Via Editor → nombre "enviar-push" → pegar todo esto.
 //
-// Necesita los secretos: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT.
+// Necesita los secretos: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT
+// y PUSH_SECRET.
+//
+// PUSH_SECRET: esta función tiene "Verify JWT" desactivado, así que la llama
+// cualquiera que sepa la URL. Antes no se comprobaba nada y bastaba con
+// mandar un notification_id para disparar un push. Ahora exige la cabecera
+// Authorization con este secreto, que es el mismo que guarda la base de datos
+// en app_config.push_key (migración 39). Si no coincide, 401.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import webpush from 'npm:web-push@3.6.7';
@@ -15,11 +22,20 @@ const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const VAPID_PUBLIC  = Deno.env.get('VAPID_PUBLIC_KEY')!;
 const VAPID_PRIVATE = Deno.env.get('VAPID_PRIVATE_KEY')!;
 const VAPID_SUBJECT = Deno.env.get('VAPID_SUBJECT') || 'mailto:admin@example.com';
+const PUSH_SECRET   = Deno.env.get('PUSH_SECRET') || '';
 
 webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
 
 Deno.serve(async (req) => {
   try {
+    // Solo el trigger de la base de datos puede llamar aquí. Se falla cerrado:
+    // si PUSH_SECRET no está configurado, no se atiende a nadie.
+    const cabecera = req.headers.get('Authorization') || '';
+    const token = cabecera.startsWith('Bearer ') ? cabecera.slice(7) : '';
+    if (!PUSH_SECRET || token !== PUSH_SECRET) {
+      return new Response('no autorizado', { status: 401 });
+    }
+
     const { notification_id } = await req.json();
     if (!notification_id) {
       return new Response('falta notification_id', { status: 400 });
