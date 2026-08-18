@@ -103,6 +103,12 @@ function fmtDia(iso) {
   return new Date(iso + 'T12:00:00').toLocaleDateString('es-ES',
     { weekday: 'long', day: 'numeric', month: 'short' });
 }
+/* Suma días a una fecha ISO. Todo en UTC para que no dependa de la zona
+   del dispositivo: aquí solo se manejan fechas, no instantes. */
+function masDias(iso, n) {
+  const [a, m, d] = iso.split('-').map(Number);
+  return new Date(Date.UTC(a, m - 1, d + n)).toISOString().slice(0, 10);
+}
 function fmtCorto(iso) {
   return new Date(iso + 'T12:00:00').toLocaleDateString('es-ES',
     { day: '2-digit', month: '2-digit' });
@@ -338,10 +344,13 @@ export async function pintarArbolRegistro(cont, workerId, opciones = {}) {
   // el turno previsto ya resuelto. Antes era una petición por cada día.
   let dias = [];
   try {
-    // Rango amplio: desde 2 años atrás hasta hoy
+    // Rango amplio: desde 2 años atrás hasta hoy.
+    // "Hoy" va por diaDe(), que resuelve en la zona del negocio. Con
+    // toISOString() —que da UTC— entre las 00:00 y la 01:00 el rango se
+    // quedaba en ayer y los fichajes de esa madrugada no salían.
     const hoy = new Date();
     const desde = (hoy.getFullYear() - 2) + '-01-01';
-    const hasta = hoy.toISOString().slice(0, 10);
+    const hasta = diaDe(hoy);
     dias = await registroArbol(workerId, desde, hasta);
   } catch (e) {
     cont.innerHTML = '<span class="empty-note">' + (e.message || 'No se pudo cargar') + '</span>';
@@ -457,8 +466,10 @@ function nodoSemana(S, worker, exportar, onCorregir) {
   const det = document.createElement('details');
   det.className = 'arb-nodo arb-nivel-semana';
   const dias = [...S.dias].sort((a, b) => a.iso.localeCompare(b.iso));
-  const ultimo = dias[dias.length - 1].iso;
-  const titulo = 'Semana ' + fmtCorto(S.lunes) + ' – ' + fmtCorto(ultimo);
+  // La semana natural, de lunes a domingo. Antes se pintaba hasta el último
+  // día CON fichajes, así que una semana con un solo día salía como
+  // "Semana 10/08 – 10/08". Cuántos días tienen datos ya lo dice el subtítulo.
+  const titulo = 'Semana ' + fmtCorto(S.lunes) + ' – ' + fmtCorto(masDias(S.lunes, 6));
   det.appendChild(cabecera('semana', titulo, S,
     dias.length + (dias.length === 1 ? ' día' : ' días'),
     worker, exportar, fichajesDeNodo(S, 'semana')));

@@ -208,6 +208,16 @@ notificaciones push configurables.
 **Zona horaria.** Todo cálculo de fechas se hace en `Atlantic/Canary` **en el
 servidor**. Comparar cadenas en UTC provocó un bug real de medianoche.
 
+**`toISOString()` nunca para sacar "hoy".** Devuelve UTC, así que entre las 00:00
+y la 01:00 (horario de verano canario) da la fecha de ayer. Volvió a morder en
+v73: el árbol del registro pedía el rango `hasta = hoy.toISOString()` y los
+fichajes de esa madrugada se caían fuera —desaparecía la semana entera—. Para una
+fecha del calendario, `diaDe()` de [data/fichaje.js](js/data/fichaje.js), que
+resuelve en la zona del negocio. `toISOString()` solo vale para instantes
+completos que van a la base de datos. Quedan dos casos iguales sin arreglar, en
+[data/avisos.js:15](js/data/avisos.js:15) y [ui/avisos.js:86](js/ui/avisos.js:86):
+un aviso caducado se ve una hora de más.
+
 **RPC de Postgres.** Devolver los errores **como datos JSONB**, nunca con
 `raise exception`: la excepción revierte la transacción y se pierden efectos que
 deben persistir, como el contador de intentos de PIN.
@@ -247,8 +257,8 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 
 | Elemento | Versión |
 |---|---|
-| App (`js/version.js` → `APP_VERSION`) | v72 |
-| Service worker (`sw.js` → `VERSION`) | v72 |
+| App (`js/version.js` → `APP_VERSION`) | v73 |
+| Service worker (`sw.js` → `VERSION`) | v73 |
 | Migración SQL | 39 (la 39 requiere pasos manuales: ver pendiente 3) |
 | Baseline del esquema | `sql/000_baseline/` (volcado 2026-08-18) |
 
