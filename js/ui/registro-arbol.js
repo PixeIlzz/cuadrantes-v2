@@ -83,6 +83,15 @@ function datosDia(iso) {
   return DIAS[iso] || { seg: 0, abierta: false, enCurso: false, huerfanas: 0 };
 }
 
+/* Observaciones de un fichaje suelto, para el CSV. No repite el origen,
+   que ya tiene su propia columna: solo lo que no se ve de otro modo. */
+function notaFichaje(f) {
+  const p = [];
+  if (f.estimado) p.push('Estimado');
+  if (f.id && CRUCES.has(f.id)) p.push('Entrada del día anterior');
+  return p.join(' · ');
+}
+
 /* Qué poner en la columna de observaciones del día */
 function notaDia(dd) {
   if (dd.enCurso) return 'Jornada en curso';
@@ -383,21 +392,21 @@ function exportarCSV(worker, titulo, fichajes) {
   L.push(['Nº Seguridad Social', worker.nss || ''].join(sep));
   L.push(['Periodo', titulo].join(sep));
   L.push('');
-  L.push(['Fecha', 'Evento', 'Hora', 'Origen'].join(sep));
+  L.push(['Fecha', 'Evento', 'Hora', 'Origen', 'Observaciones'].join(sep));
 
   const porDia = {};
   for (const f of fichajes) (porDia[f.dia || diaDe(f.momento)] ||= []).push(f);
   let total = 0;
   for (const iso of Object.keys(porDia).sort()) {
     for (const f of porDia[iso]) {
-      L.push([iso, f.tipo, hora(f.momento), f.origen || ''].join(sep));
+      L.push([iso, f.tipo, hora(f.momento), f.origen || '', notaFichaje(f)].join(sep));
     }
     const dd = datosDia(iso);
     total += dd.seg;
-    L.push(['', 'Total del día', hms(dd.seg), notaDia(dd)].join(sep));
+    L.push(['', 'Total del día', hms(dd.seg), '', notaDia(dd)].join(sep));
   }
   L.push('');
-  L.push(['', 'TOTAL PERIODO', hms(total), ''].join(sep));
+  L.push(['', 'TOTAL PERIODO', hms(total), '', ''].join(sep));
 
   const blob = new Blob(['\ufeff' + L.join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);

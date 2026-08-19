@@ -350,14 +350,24 @@ function mostrarConsola(session, mem) {
 /* Franja fija mientras se está dentro de la empresa de un cliente. Que no
    se pueda olvidar en qué cuenta estás es media seguridad del asunto. */
 function avisoSoporte(nombre, businessId) {
-  const b = document.createElement('div');
-  b.className = 'soporte-banda';
-  b.innerHTML = '<span>🛟 Modo soporte · <b>' + (nombre || '') + '</b></span>';
+  // Va junto a "Cerrar sesión", no en una franja al pie: ahí es donde se
+  // busca cómo salir de una cuenta, y una barra fija abajo la tapaba la
+  // barra de actualización de la PWA, que tiene más z-index.
+  const salir = $('btn-salir');
+  if (!salir || !salir.parentNode) return;
 
-  // Salir sin cerrar: la sesión sigue viva y puedes volver a entrar
+  const caja = document.createElement('div');
+  caja.className = 'soporte-caja';
+
+  const et = document.createElement('span');
+  et.className = 'soporte-et';
+  et.textContent = '🛟 Soporte · ' + (nombre || '');
+
+  // Volver sin cerrar: la sesión sigue viva y se puede volver a entrar
   const volver = document.createElement('button');
   volver.type = 'button'; volver.className = 'btn small';
-  volver.textContent = 'Volver a la consola';
+  volver.textContent = 'Consola';
+  volver.title = 'Volver a la consola sin cerrar la sesión de soporte';
   volver.addEventListener('click', () => {
     try { sessionStorage.removeItem(CLAVE_ENTRAR); } catch (_) {}
     location.reload();
@@ -366,12 +376,12 @@ function avisoSoporte(nombre, businessId) {
   // Cerrar y anular: se acaba el acceso ya, sin esperar a que caduque
   const cerrar = document.createElement('button');
   cerrar.type = 'button'; cerrar.className = 'btn small';
-  cerrar.textContent = 'Cerrar soporte';
+  cerrar.textContent = 'Salir del soporte';
   cerrar.addEventListener('click', async () => {
     const ok = await confirmar(
       'Se cierra la sesión de soporte y pierdes el acceso a ' + (nombre || 'esta empresa')
       + ' inmediatamente. Para volver a entrar habrá que abrir otra. ¿Cerrar?',
-      { textoOk: 'Cerrar soporte', textoNo: 'Seguir dentro' });
+      { textoOk: 'Salir del soporte', textoNo: 'Seguir dentro' });
     if (!ok) return;
     cerrar.disabled = true;
     try { await cerrarSoporte(businessId); } catch (_) { /* al salir da igual */ }
@@ -379,9 +389,8 @@ function avisoSoporte(nombre, businessId) {
     location.reload();
   });
 
-  b.append(cerrar, volver);
-  document.body.appendChild(b);
-  document.body.classList.add('con-soporte');
+  caja.append(et, cerrar, volver);
+  salir.parentNode.insertBefore(caja, salir);
 }
 
 document.addEventListener('staffpoint:salir', async () => {
