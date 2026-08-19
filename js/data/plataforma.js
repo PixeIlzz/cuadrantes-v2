@@ -60,6 +60,14 @@ export async function abrirSoporte(businessId, motivo, minutos = 60) {
   if (error) throw new Error(error.message);
 }
 
+/* ¿Tengo una sesión de soporte viva sobre este negocio? Lo decide el
+   servidor: es lo mismo que consulta la RLS para darme acceso. */
+export async function soporteActivo(businessId) {
+  const { data, error } = await sb.rpc('soporte_activo', { p_business_id: businessId });
+  if (error) return false;
+  return data === true;
+}
+
 export async function cerrarSoporte(businessId) {
   const { error } = await sb.rpc('soporte_cerrar', { p_business_id: businessId });
   if (error) throw new Error(error.message);

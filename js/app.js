@@ -24,7 +24,7 @@ import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos, abrirEmpHoy } from './
 import { initAjustesEmpleado, abrirAjustesEmpleado } from './ui/ajustes-empleado.js';
 import { arrancarKiosco, mostrarEmparejamiento, revisarVinculacionPendiente, pintarPinEmpleado, escanearYVincular, pintarKioscos } from './ui/kiosco.js';
 import { canjearCodigo, nombreDelCodigo } from './data/invitaciones.js';
-import { soyAdmin, cerrarSoporte } from './data/plataforma.js';
+import { soyAdmin, cerrarSoporte, soporteActivo } from './data/plataforma.js';
 import { initConsola, CLAVE_ENTRAR } from './ui/consola.js';
 import {
 
@@ -276,21 +276,23 @@ async function cargarNegocio(session) {
   const { data: mem, error: e1 } = await sb
     .from('memberships').select('role, business_id');
   if (e1) throw new Error('memberships: ' + e1.message);
-  /* Sesión iniciada pero sin negocio. Antes esto era un callejón sin salida
-     ("Tu cuenta no está asociada a ningún negocio") y solo se arreglaba desde
-     el SQL Editor. Ahora se ofrece crear uno o entrar con un código. */
-  if (!mem || mem.length === 0) { mostrarAltaNegocio(); return; }
-
   /* El administrador de la plataforma aterriza en la CONSOLA, no en la app
      de gestor: no gestiona turnos, gestiona empresas. Solo entra en un
      negocio si lo ha elegido expresamente desde allí (el suyo, o uno de un
-     cliente con sesión de soporte abierta). */
+     cliente con sesión de soporte abierta).
+
+     Esta comprobación va ANTES que la de "no tengo negocio": si no, una
+     cuenta de consola sin negocio propio acabaría en la pantalla de crear
+     empresa en vez de en su consola. */
   ctx.esAdmin = await soyAdmin();
   let entrarEn = null;
   try { entrarEn = sessionStorage.getItem(CLAVE_ENTRAR); } catch (_) {}
 
-  if (ctx.esAdmin && !entrarEn) { mostrarConsola(session, mem); return; }
+  if (ctx.esAdmin && !entrarEn) { mostrarConsola(session, mem || []); return; }
 
+  /* Sesión iniciada pero sin negocio. Antes esto era un callejón sin salida
+     ("Tu cuenta no está asociada a ningún negocio") y solo se arreglaba desde
+     el SQL Editor. Ahora se ofrece crear uno o entrar con un código. */
   if ((!mem || mem.length === 0) && !entrarEn) { mostrarAltaNegocio(); return; }
 
   const bizId = entrarEn || mem[0].business_id;
@@ -298,7 +300,15 @@ async function cargarNegocio(session) {
   // En soporte no hay membresía: se entra con permisos de gestor, que es lo
   // que concede la sesión, y con un aviso visible en pantalla.
   const rol = propia ? propia.role : 'manager';
+  /* Si hay sesión de soporte viva sobre este negocio, los controles se
+     muestran AUNQUE además seas su gestor. Antes se deducía de "no tengo
+     membresía aquí", y eso fallaba justo en ese caso: sesión abierta y sin
+     forma de cerrarla desde dentro. Lo decide el servidor, que es quien
+     concede el acceso. */
   ctx.enSoporte = !propia;
+  if (ctx.esAdmin) {
+    try { ctx.enSoporte = ctx.enSoporte || await soporteActivo(bizId); } catch (_) {}
+  }
 
   const { data: biz, error: e2 } = await sb
     .from('businesses').select('id, name, config')
@@ -354,7 +364,8 @@ function avisoSoporte(nombre, businessId) {
   // busca cómo salir de una cuenta, y una barra fija abajo la tapaba la
   // barra de actualización de la PWA, que tiene más z-index.
   const salir = $('btn-salir');
-  if (!salir || !salir.parentNode) return;
+  const destino = (salir && salir.parentNode) || document.querySelector('#vista-app header');
+  if (!destino) return;
 
   const caja = document.createElement('div');
   caja.className = 'soporte-caja';
@@ -390,7 +401,8 @@ function avisoSoporte(nombre, businessId) {
   });
 
   caja.append(et, cerrar, volver);
-  salir.parentNode.insertBefore(caja, salir);
+  if (salir && salir.parentNode) destino.insertBefore(caja, salir);
+  else destino.appendChild(caja);
 }
 
 document.addEventListener('staffpoint:salir', async () => {
