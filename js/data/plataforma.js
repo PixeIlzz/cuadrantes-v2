@@ -60,6 +60,17 @@ export async function abrirSoporte(businessId, motivo, minutos = 60) {
   if (error) throw new Error(error.message);
 }
 
+/* Copia completa de una empresa. Sirve de red antes de borrarla, para
+   entregársela a un cliente que se va, y como copia manual mientras no
+   haya plan con recuperación a un punto en el tiempo. */
+export async function exportarNegocio(businessId) {
+  const { data, error } = await sb.rpc('admin_exportar_negocio', {
+    p_business_id: businessId,
+  });
+  if (error) throw new Error('No se pudo exportar: ' + error.message);
+  return data;
+}
+
 /* ¿Tengo una sesión de soporte viva sobre este negocio? Lo decide el
    servidor: es lo mismo que consulta la RLS para darme acceso. */
 export async function soporteActivo(businessId) {

@@ -10,7 +10,7 @@
 import {
   listarNegocios, cambiarEstadoNegocio, crearCodigoAlta, listarCodigosAlta,
   detalleNegocio, abrirSoporte, cerrarSoporte, misSesionesSoporte,
-  archivarNegocio, eliminarNegocio,
+  archivarNegocio, eliminarNegocio, exportarNegocio,
 } from '../data/plataforma.js';
 import { toast } from './toast.js';
 import { confirmar, pedirDatos, pedirTexto } from './confirmar.js';
@@ -189,12 +189,23 @@ function filaNegocio(n) {
     } catch (err) { toast(err.message); bArch.disabled = false; }
   });
 
+  const bExp = document.createElement('button');
+  bExp.type = 'button'; bExp.className = 'btn small';
+  bExp.textContent = 'Exportar';
+  bExp.title = 'Descargar todos los datos de la empresa';
+  bExp.addEventListener('click', async () => {
+    bExp.disabled = true;
+    try { await descargarExport(n); }
+    catch (err) { toast(err.message); }
+    finally { bExp.disabled = false; }
+  });
+
   const bDel = document.createElement('button');
   bDel.type = 'button'; bDel.className = 'btn small danger';
   bDel.textContent = 'Eliminar';
   bDel.addEventListener('click', () => pedirEliminar(n));
 
-  acc.append(bDet, bSop, bEst, bArch, bDel);
+  acc.append(bDet, bSop, bEst, bArch, bExp, bDel);
   fila.append(datos, acc);
   caja.appendChild(fila);
 
@@ -285,6 +296,25 @@ function pintarFicha(d) {
     + config + actividad + cuentas + equipo + kioscos + soporte + '</div>';
 }
 
+/* ============ EXPORTAR ============ */
+
+async function descargarExport(n) {
+  const datos = await exportarNegocio(n.id);
+  const txt = JSON.stringify(datos, null, 2);
+  const blob = new Blob([txt], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'staffpoint_' + (n.nombre || 'empresa').replace(/[^\w]+/g, '_')
+    + '_' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+
+  const kb = Math.round(txt.length / 1024);
+  const f = (datos && datos.fichajes) ? datos.fichajes.length : 0;
+  toast('Exportado · ' + f + ' fichajes · ' + kb + ' KB');
+}
+
 /* ============ ELIMINAR ============ */
 /* Dos puertas a propósito: escribir el nombre exacto, y si hay fichajes,
    una segunda confirmación. Borrar un registro de jornada no debería poder
@@ -293,9 +323,18 @@ async function pedirEliminar(n) {
   const seguir = await confirmar(
     'Eliminar ' + n.nombre + ' borra la empresa y todo lo suyo: equipo, '
     + 'cuadrantes, vacaciones, solicitudes y fichajes. No se puede deshacer. '
-    + 'Si el cliente simplemente se ha ido, lo correcto es Archivar.',
+    + 'Si el cliente simplemente se ha ido, lo correcto es Archivar.\n\n'
+    + 'Se descargará primero una copia completa.',
     { textoOk: 'Continuar', textoNo: 'Cancelar', peligro: true });
   if (!seguir) return;
+
+  // Red de seguridad: nunca se borra sin haber bajado antes la copia
+  try {
+    await descargarExport(n);
+  } catch (err) {
+    toast('No se pudo exportar, no se borra nada: ' + err.message);
+    return;
+  }
 
   const nombre = await pedirTexto(
     'Escribe el nombre exacto para confirmar: ' + n.nombre,

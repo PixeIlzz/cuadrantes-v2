@@ -340,9 +340,9 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 
 | Elemento | Versión |
 |---|---|
-| App (`js/version.js` → `APP_VERSION`) | v85 |
-| Service worker (`sw.js` → `VERSION`) | v85 |
-| Migración SQL | 48 |
+| App (`js/version.js` → `APP_VERSION`) | v88 |
+| Service worker (`sw.js` → `VERSION`) | v88 |
+| Migración SQL | 49 (la **49 pendiente**) |
 | Baseline del esquema | `sql/000_baseline/` (volcado 2026-08-18) |
 
 Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en real.
@@ -405,8 +405,13 @@ Lo primero al retomar:
    ni la 43:
    - **Backups.** El plan gratuito de Supabase guarda copias diarias con 7 días
      de retención y sin point-in-time recovery. El registro de jornada hay que
-     conservarlo **4 años**. Hace falta plan de pago con PITR o una exportación
-     periódica a un sitio duradero.
+     conservarlo **4 años**. Hace falta plan de pago con PITR.
+     Paliativo desde la v88: botón **Exportar** en la consola
+     ([049](sql/049_exportar_negocio.sql)) que baja la empresa entera en JSON —
+     equipo, semanas, fichajes y auditoría, sin `device_token` ni `pin_hash`—.
+     **Eliminar una empresa exporta antes automáticamente y aborta si falla.**
+     No sustituye a un backup: es manual. Lo que hace es que borrar deje de ser
+     irreversible.
    - **Sin separación desarrollo/producción.** Cada migración se ejecuta directa
      contra los datos reales de la plantilla. Para vender esto hace falta un
      proyecto de staging donde probarlas antes.
