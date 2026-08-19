@@ -225,6 +225,17 @@ deben persistir, como el contador de intentos de PIN.
 **Cambiar el tipo de retorno de una función** exige `DROP FUNCTION` antes;
 `CREATE OR REPLACE` falla.
 
+**Toda función nueva nace abierta a internet.** Postgres concede EXECUTE a
+`public` por defecto, y encima Supabase deja unos DEFAULT PRIVILEGES que la
+conceden también a `anon` y `authenticated`. Como aquí casi todo es
+`SECURITY DEFINER`, una función sin `revoke` explícito es una puerta abierta con
+permisos de propietario. Pasó con todo el esquema hasta la migración 41. **Regla:
+toda migración que cree una función termina con su `revoke` y su `grant`.** Y si
+una función interna necesita exponerse al cliente, no se le mete el control
+dentro —la llaman otras funciones sin `auth.uid()`, como el cron o el kiosco—:
+se le pone un envoltorio delante, como `mi_turno_previsto()` sobre
+`turno_previsto()`.
+
 **Tramos que cruzan medianoche.** `hasta - desde` da negativo: hay que sumar 1440
 minutos.
 
@@ -257,9 +268,9 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 
 | Elemento | Versión |
 |---|---|
-| App (`js/version.js` → `APP_VERSION`) | v73 |
-| Service worker (`sw.js` → `VERSION`) | v73 |
-| Migración SQL | 39 (aplicadas en Supabase la 38 y la 39) |
+| App (`js/version.js` → `APP_VERSION`) | v74 |
+| Service worker (`sw.js` → `VERSION`) | v74 |
+| Migración SQL | 41 (la 40 y la 41 escritas, **sin ejecutar**) |
 | Baseline del esquema | `sql/000_baseline/` (volcado 2026-08-18) |
 
 Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en real.
@@ -277,6 +288,16 @@ Hecho y probado en real:
   con validación de cabecera, `app_config` relleno. El endpoint ya no está
   abierto a cualquiera.
 - El árbol del registro carga con **una sola petición** y se ve bien.
+
+Escrito pero **sin ejecutar ni desplegar** (v74 en los archivos, v73 en producción):
+
+- **Migración 40**, cierre automático de jornada. Nace apagada; hay que
+  activarla por negocio a mano tras revisar qué jornadas hay abiertas.
+- **Migración 41**, permisos. Va **junto con la v74**: la app ya llama a
+  `mi_turno_previsto()`, que crea esa migración. Si se sube la v74 sin ejecutar
+  la 41, *Mi registro* no encuentra la función; si se ejecuta la 41 sin subir la
+  v74, el cliente sigue llamando a `turno_previsto` y recibe permission denied.
+  **Las dos cosas a la vez.**
 
 Lo primero al retomar:
 
@@ -304,23 +325,29 @@ Lo primero al retomar:
 2. **Sacar el fichaje de beta** — quitar el flag de probador y activarlo para toda la
    plantilla, una vez validada la exportación legal (punto 1) y probadas en real las
    correcciones (apartado 5).
-3. **No existe el cierre automático de jornada** — el esquema lo da por hecho
-   (`origen = 'auto'`, columna `estimado`, acción `cierre_auto` en la auditoría,
-   ajuste `config.fichaje.cierre_auto`, y el comentario de `fichar_worker`),
-   pero no hay ninguna función que lo haga ni ningún job de `pg_cron` salvo
-   `recordatorios-fichaje`. Como `fichar_worker` coge el último fichaje **sin
-   filtrar por día**, quien olvida fichar la salida el viernes convierte su
-   entrada del sábado en la salida del viernes: una jornada de veinte horas en
-   el registro legal. Bloquea de hecho el punto 1.
-4. **Revisar los permisos de las funciones** — el volcado no daba las ACL.
-   `avisar_gestores()` y `crear_notif()` son `SECURITY DEFINER`, no comprueban
-   quién llama e insertan notificaciones con título y cuerpo arbitrarios: si
-   están concedidas a `authenticated` (el defecto de Postgres es `public`),
-   cualquier usuario puede mandar push a los gestores de cualquier negocio.
-   `turno_previsto`, `tiene_turno_hoy` y `dia_laboral` tampoco comprueban nada
-   y filtran horarios de cualquier trabajador. La sección de permisos de
-   [03_funciones.sql](sql/000_baseline/03_funciones.sql) tiene la consulta para
-   verificarlo y los `revoke` propuestos.
+3. **Activar el cierre automático de jornada** — la migración 40 ya está escrita
+   ([040_cierre_automatico.sql](sql/040_cierre_automatico.sql)) pero **nace
+   apagada**: escribe en un registro legal y es opt-in por negocio. Cierra con
+   el fin del turno de esa persona (`turno_previsto`), con respaldo a
+   `entrada + cierre_max_h` si no hay turno, marcando `estimado` y `origen='auto'`
+   y avisando al trabajador para que lo revise. Pasos: ejecutar la migración,
+   mirar con la consulta del PASO 3 qué jornadas están abiertas ahora, limpiar
+   la basura vieja a mano si la hay, y solo entonces activarlo.
+   Hasta que se active sigue el problema de fondo: `fichar_worker` coge el
+   último fichaje **sin filtrar por día**, así que quien olvida la salida del
+   viernes convierte su entrada del sábado en la salida del viernes. Bloquea
+   de hecho el punto 1.
+4. **Ejecutar la migración 41 (permisos)** — revisado el 2026-08-19 con
+   [sql/tools/revisar_permisos.sql](sql/tools/revisar_permisos.sql): **casi todas
+   las funciones tenían `=X/postgres`**, es decir EXECUTE para PUBLIC, o sea
+   invocables sin sesión. Y casi todas son `SECURITY DEFINER`. La peor,
+   `avisar_gestores()`: sin control de quién llama, inserta una notificación con
+   texto arbitrario en cualquier negocio, y eso dispara push real al gestor.
+   [041_permisos_funciones.sql](sql/041_permisos_funciones.sql) cierra en bloque
+   y reabre solo lo justo (kiosco e `invite_owner` para `anon`), y añade
+   `mi_turno_previsto()` para que el cliente no pueda pedir el horario de un
+   trabajador ajeno. **Escrita, sin ejecutar.** Va junto con la v74, que ya usa
+   la función nueva.
 5. **Multi-tenancy en `fichar()`** — lleva `'Atlantic/Canary'` escrito a fuego
    (el resto del módulo lee `config->'fichaje'->>'tz'`) y busca la ficha con
    `where w.profile_id = auth.uid() limit 1`, sin filtrar por negocio: quien

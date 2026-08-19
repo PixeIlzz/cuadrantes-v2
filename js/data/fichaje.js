@@ -131,11 +131,13 @@ export function horarioNegocio() {
   return (ctx.business.config && ctx.business.config.fichaje) || { horarios: {}, cierre_auto: '' };
 }
 
-/* Tramos previstos de un trabajador un día concreto (del cuadrante,
-   con respaldo al horario general del negocio). */
-export async function turnoPrevisto(workerId, diaIso) {
-  const { data, error } = await sb.rpc('turno_previsto', {
-    p_business_id: ctx.business.id, p_worker_id: workerId, p_dia: diaIso,
+/* Mis tramos previstos de un día (del cuadrante, con respaldo al horario
+   general del negocio). El servidor resuelve MI ficha por la sesión: no
+   acepta un worker_id ajeno (migración 41). Para el gestor no hace falta,
+   jornadaHoy() ya trae los tramos de cada persona. */
+export async function miTurnoPrevisto(diaIso) {
+  const { data, error } = await sb.rpc('mi_turno_previsto', {
+    p_business_id: ctx.business.id, p_dia: diaIso,
   });
   if (error) return [];
   return data || [];

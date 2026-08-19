@@ -5,7 +5,7 @@
 import { ctx } from '../auth.js';
 import {
   fichajesDe, horarioNegocio, miEstado, misFichajesHoy,
-  suscribirFichajes, cerrarCanal, turnoPrevisto, diaDe,
+  suscribirFichajes, cerrarCanal, miTurnoPrevisto, diaDe,
 } from '../data/fichaje.js';
 import { pintarArbolRegistro } from './registro-arbol.js';
 import { pedirCorreccion } from './correccion.js';
@@ -80,7 +80,7 @@ async function pintarGeneral(cont) {
   const cfg = horarioNegocio();
   const hoyIso = diaDe(new Date());
   let tramosHoy = [];
-  try { tramosHoy = await turnoPrevisto(ctx.workerId, hoyIso); } catch (_) {}
+  try { tramosHoy = await miTurnoPrevisto(hoyIso); } catch (_) {}
 
   const tarde = (estado.dentro && estado.desde)
     ? !!calcularRetraso({ tipo: 'entrada', momento: estado.desde }, tramosHoy, cfg) : false;

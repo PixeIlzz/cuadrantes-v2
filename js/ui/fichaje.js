@@ -6,7 +6,7 @@ import {
   fichar, misFichajesHoy, miEstado, fichajesHoyEquipo, fichajesDe,
   horarioNegocio, guardarHorarioFichaje, corregirFichaje, borrarFichaje,
   datosLegales, guardarDatosLegales, estadoDeWorker,
-  suscribirFichajes, jornadaHoy, turnoPrevisto,
+  suscribirFichajes, jornadaHoy,
 } from '../data/fichaje.js';
 import { listarEquipo } from '../data/equipo.js';
 import { pintarArbolRegistro } from './registro-arbol.js';
