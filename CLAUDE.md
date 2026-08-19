@@ -80,13 +80,19 @@ sql/                Migraciones numeradas. Ver aviso abajo: las 1–32 NO
 `migracion`, `notificaciones`, `onboarding`, `privacidad`, `programadas`, `push`,
 `push-bienvenida`, `registro-arbol`, `solicitudes`, `tareas`, `tema`, `toast`, `version`
 
-### Varios negocios por cuenta (v89)
+### Varios negocios por cuenta (v89-v90)
 `memberships` siempre fue de muchos a muchos, pero el arranque cogía
 `mem[0].business_id` — la primera fila que devolviera Postgres, sin orden
-garantizado. Con un solo negocio daba igual; desde que cualquiera puede crear
-otro, entraba en uno arbitrario que podía cambiar entre recargas. Ahora hay
-selector en la cabecera (oculto si solo hay uno) y el elegido se recuerda en
-`sessionStorage`.
+garantizado. Ahora hay selector en la cabecera (oculto si solo hay uno), el
+elegido se recuerda en `sessionStorage`, y se da de alta otro desde
+**Ajustes → Otro negocio**, que reutiliza la pantalla del alta con su código.
+
+**Al consultar `memberships` hay que filtrar SIEMPRE por `profile_id`.** La
+política deja a un gestor ver las de todo su negocio, así que un
+`select role, business_id` sin filtro devuelve una fila por empleado. Eso
+llenaba el selector de duplicados y, peor, podía hacer que el `find` del
+arranque cogiera la membresía de un empleado y metiera al gestor en su propio
+negocio con rol `employee`.
 
 ### Guías de bienvenida (v89)
 Salen solas la primera vez y se pueden releer desde Ajustes. La del gestor se
@@ -361,8 +367,8 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 
 | Elemento | Versión |
 |---|---|
-| App (`js/version.js` → `APP_VERSION`) | v89 |
-| Service worker (`sw.js` → `VERSION`) | v89 |
+| App (`js/version.js` → `APP_VERSION`) | v90 |
+| Service worker (`sw.js` → `VERSION`) | v90 |
 | Migración SQL | 51 (la **51 pendiente**) |
 | Baseline del esquema | `sql/000_baseline/` (volcado 2026-08-18) |
 

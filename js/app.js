@@ -278,8 +278,14 @@ async function cargarNegocio(session) {
     }
   } catch (_) { /* si falla, se verá el aviso de 'sin negocio' y podrá reintentar */ }
   paso('Cargando tu negocio…');
+  /* El filtro por profile_id NO es redundante: la política de memberships
+     deja a un gestor ver las de TODO su negocio, así que sin él esta
+     consulta devuelve una fila por cada empleado. Eso llenaba el selector
+     de duplicados y, peor, podía hacer que `find` cogiera la membresía de
+     un empleado y te metiera en tu propio negocio con su rol. */
   const { data: mem, error: e1 } = await sb
-    .from('memberships').select('role, business_id');
+    .from('memberships').select('role, business_id')
+    .eq('profile_id', session.user.id);
   if (e1) throw new Error('memberships: ' + e1.message);
   /* El administrador de la plataforma aterriza en la CONSOLA, no en la app
      de gestor: no gestiona turnos, gestiona empresas. Solo entra en un
@@ -462,6 +468,27 @@ function avisoSoporte(nombre, businessId) {
   caja.append(et, cerrar, volver);
   if (salir && salir.parentNode) destino.insertBefore(caja, salir);
   else destino.appendChild(caja);
+}
+
+/* Dar de alta otro negocio con la misma cuenta. Reutiliza la pantalla del
+   alta, que ya pide el código y llama a create_business(). Va en Ajustes y
+   no en el selector: el selector se oculta cuando solo tienes un negocio,
+   que es justo cuando querrías crear el segundo. */
+if ($('btn-otro-negocio')) {
+  $('btn-otro-negocio').addEventListener('click', () => {
+    const volver = $('link-volver-app');
+    if (volver) volver.hidden = false;      // aquí sí hay app a la que volver
+    if ($('n-nombre')) $('n-nombre').value = '';
+    if ($('n-codigo')) $('n-codigo').value = '';
+    if ($('negocio-error')) $('negocio-error').textContent = '';
+    mostrarAltaNegocio();
+  });
+}
+if ($('link-volver-app')) {
+  $('link-volver-app').addEventListener('click', (e) => {
+    e.preventDefault();
+    location.reload();
+  });
 }
 
 /* Releer las guías cuando uno quiera, desde Ajustes */

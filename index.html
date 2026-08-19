@@ -140,6 +140,7 @@
     <button id="btn-crear-negocio" class="btn primary" type="submit">Crear negocio</button>
     <p id="negocio-error" class="login-msg" role="alert"></p>
     <p class="login-alt">¿Te han dado un código de empresa? <a href="#" id="link-canjear">Únete con él</a></p>
+    <p class="login-alt"><a href="#" id="link-volver-app" hidden>Volver</a></p>
     <p class="login-alt"><a href="#" id="link-salir-alta">Cerrar sesión</a></p>
   </form>
 
@@ -459,6 +460,14 @@
         <input type="checkbox" class="pref-switch" id="sw-solicitudes" checked>
         </label>
         <p class="note">Al desactivarlo, el equipo deja de poder pedirte vacaciones y cambios de turno. Las ya enviadas no se borran. <b>Las correcciones del registro de jornada siguen activas siempre</b>: son un derecho del trabajador sobre sus propios fichajes y la pestaña sigue ahí para tramitarlas.</p>
+        </div>
+
+        <div class="panel">
+        <h2>Otro negocio</h2>
+        <p class="note">Si llevas más de un local o empresa, puedes darlo de alta aquí y cambiar entre ellos desde la cabecera. Necesitas un <b>código de alta</b>.</p>
+        <div class="setting-row">
+          <button class="btn" id="btn-otro-negocio" type="button">Dar de alta otro negocio</button>
+        </div>
         </div>
 
         <div class="panel">

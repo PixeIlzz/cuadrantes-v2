@@ -50,8 +50,12 @@ export async function marcarGuiaEmpleado() {
 /* Todos los negocios donde esta cuenta tiene ficha o gestión. `memberships`
    siempre fue de muchos a muchos; lo que faltaba era enseñarlos. */
 export async function misNegocios() {
+  /* Filtrar por profile_id es imprescindible: un gestor ve por RLS las
+     membresías de todo su negocio, así que sin esto salía una entrada por
+     cada empleado. */
   const { data: mem, error } = await sb
-    .from('memberships').select('role, business_id');
+    .from('memberships').select('role, business_id')
+    .eq('profile_id', ctx.user.id);
   if (error || !mem || mem.length === 0) return [];
 
   const ids = mem.map((m) => m.business_id);
