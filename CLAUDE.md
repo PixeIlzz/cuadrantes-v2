@@ -76,8 +76,18 @@ sql/                Migraciones numeradas. Ver aviso abajo: las 1–32 NO
 
 `ui/`: `ajustes`, `ajustes-empleado`, `avisos`, `confirmar`, `correccion`, `cuadrante`,
 `empleado`, `equipo`, `exportar`, `fichaje`, `hoy`, `kiosco`, `mi-registro`, `migracion`,
-`notificaciones`, `privacidad`, `programadas`, `push`, `push-bienvenida`,
+`notificaciones`, `plataforma`, `privacidad`, `programadas`, `push`, `push-bienvenida`,
 `registro-arbol`, `solicitudes`, `tareas`, `tema`, `toast`, `version`
+
+### Tres niveles de permiso, no dos
+
+- `profiles.es_admin` — **dueño de la plataforma**. Emite códigos de alta, ve
+  todas las empresas y las suspende. No le da acceso a los datos de nadie.
+- `memberships.role = 'manager'` — dueño de **un** negocio.
+- `memberships.role = 'employee'` — trabajador de un negocio.
+
+El primero es nuevo (migración 45) y es lo que permite gestionar clientes sin
+entrar a Supabase. Panel en Ajustes → Plataforma, oculto salvo para admins.
 
 ---
 
@@ -132,13 +142,20 @@ NIF por diálogo modal.
 Su cuadrante, "hoy", mis turnos, próximos turnos, solicitudes (cambios, vacaciones),
 notificaciones push configurables.
 
-### Alta de negocios (v78)
+### Alta de negocios (v79)
 Desde la pantalla de acceso: «¿Vas a dar de alta tu negocio?» → cuenta de
-responsable sin código → nombre del negocio → dentro como gestor, llamando a
-`create_business()`. Esa función existía desde la migración 1 pero **no la
-llamaba nadie**: dar de alta un cliente exigía entrar al SQL Editor.
+responsable → nombre del negocio **y código de alta** → dentro como gestor,
+llamando a `create_business()`. Esa función existía desde la migración 1 pero
+**no la llamaba nadie**: dar de alta un cliente exigía entrar al SQL Editor.
 Quien inicia sesión y no tiene negocio ya no ve un error sin salida, sino esa
 misma pantalla, con un atajo para canjear un código si en realidad era empleado.
+
+**Los códigos de alta los emites tú** (migración 45), uno por cliente vendido:
+`select public.crear_codigo_alta('Bar Manolo, Telde', 90);`. Sin código no se
+puede crear un negocio, así que la app no se llena de altas que no has vendido.
+Requiere `profiles.es_admin`, que es el dueño **de la plataforma** — un concepto
+nuevo, distinto de `manager`, que es el dueño de un negocio. Un admin puede
+crear negocios sin código.
 
 ### Fichaje — el módulo más reciente, completo (en beta tras flag)
 
@@ -284,9 +301,9 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 
 | Elemento | Versión |
 |---|---|
-| App (`js/version.js` → `APP_VERSION`) | v79 |
-| Service worker (`sw.js` → `VERSION`) | v79 |
-| Migración SQL | 44 (ejecutadas hasta la 43; la **44 pendiente**) |
+| App (`js/version.js` → `APP_VERSION`) | v80 |
+| Service worker (`sw.js` → `VERSION`) | v80 |
+| Migración SQL | 46 (**44, 45 y 46 pendientes**) |
 | Baseline del esquema | `sql/000_baseline/` (volcado 2026-08-18) |
 
 Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en real.

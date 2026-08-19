@@ -135,6 +135,8 @@
     <p class="login-claim">Ponle nombre para empezar. Podrás cambiarlo luego en Ajustes.</p>
     <label for="n-nombre">Nombre del negocio</label>
     <input id="n-nombre" type="text" maxlength="60" placeholder="Ej.: Asadero Las Brasas" required>
+    <label for="n-codigo">Código de alta</label>
+    <input id="n-codigo" type="text" autocomplete="one-time-code" maxlength="10" placeholder="Ej.: KQ7MTPBD" required>
     <button id="btn-crear-negocio" class="btn primary" type="submit">Crear negocio</button>
     <p id="negocio-error" class="login-msg" role="alert"></p>
     <p class="login-alt">¿Te han dado un código de empresa? <a href="#" id="link-canjear">Únete con él</a></p>
@@ -563,6 +565,27 @@
         </div>
       </div>
     </details>
+    <details class="ajustes-bloque solo-admin" hidden>
+      <summary>Plataforma</summary>
+      <div class="ajustes-bloque-body">
+        <div class="panel">
+        <h2>Empresas</h2>
+        <p class="note">Todas las empresas dadas de alta en StaffPoint. Suspender corta el acceso pero <b>no borra nada</b>: al reactivar vuelve todo.</p>
+        <div id="plat-negocios" class="plat-lista"></div>
+        </div>
+
+        <div class="panel">
+        <h2>Códigos de alta</h2>
+        <p class="note">Sin un código no se puede crear una empresa. Genera uno por cada cliente al que vendas: sirve una sola vez.</p>
+        <div class="setting-row">
+          <input type="text" id="plat-nota" maxlength="80" placeholder="Para quién es. Ej.: Bar Manolo, Telde">
+          <button class="btn primary" id="btn-nuevo-codigo" type="button">Emitir código</button>
+        </div>
+        <div id="plat-codigos" class="plat-lista"></div>
+        </div>
+      </div>
+    </details>
+
     <details class="ajustes-bloque">
       <summary>Datos y privacidad</summary>
       <div class="ajustes-bloque-body">

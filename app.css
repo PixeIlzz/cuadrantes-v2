@@ -2177,3 +2177,22 @@ main{padding:16px;max-width:1100px;margin:0 auto}
   background:var(--t-azu-bg);border:1px solid var(--t-azu-brd);
   border-radius:8px;padding:.45rem .6rem;margin:.4rem 0;
 }
+
+/* Panel de plataforma: empresas y códigos de alta (solo administrador) */
+.plat-lista{display:flex;flex-direction:column;gap:2px;margin-top:8px}
+.plat-fila{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:11px 0;border-bottom:1px dashed var(--line);
+}
+.plat-fila:last-child{border-bottom:none}
+.plat-fila.suspendida{opacity:.55}
+.plat-datos{min-width:0}
+.plat-nombre{font-size:.9rem;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.plat-nombre code{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.06em}
+.plat-meta{font-size:.76rem;color:var(--ink-soft);margin-top:2px}
+.plat-tag{
+  font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--ink-soft);border:1px solid var(--line);border-radius:999px;
+  padding:1px 7px;
+}
+.plat-tag.ok{color:var(--t-azu-txt);border-color:var(--t-azu-brd);background:var(--t-azu-bg)}

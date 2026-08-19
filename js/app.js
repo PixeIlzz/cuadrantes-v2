@@ -24,6 +24,8 @@ import { initEmpleado, abrirEmpCuadrante, abrirMisTurnos, abrirEmpHoy } from './
 import { initAjustesEmpleado, abrirAjustesEmpleado } from './ui/ajustes-empleado.js';
 import { arrancarKiosco, mostrarEmparejamiento, revisarVinculacionPendiente, pintarPinEmpleado, escanearYVincular, pintarKioscos } from './ui/kiosco.js';
 import { canjearCodigo, nombreDelCodigo } from './data/invitaciones.js';
+import { soyAdmin } from './data/plataforma.js';
+import { initPlataforma } from './ui/plataforma.js';
 import {
 
   initSolicitudes, abrirSolicitudes, refrescarContador,
@@ -168,6 +170,10 @@ function mostrarApp(session, role, biz) {
     e.hidden = !ctx.fichajeActivo || ocultarPorRol;
   });
 
+  // Panel de plataforma: solo el dueño del servicio
+  document.querySelectorAll('.solo-admin').forEach((e) => { e.hidden = !ctx.esAdmin; });
+  if (ctx.esAdmin && esGestor) initPlataforma();
+
   if (esGestor) {
     initEquipo();
     initCuadrante();
@@ -296,6 +302,11 @@ async function cargarNegocio(session) {
   const fichajeDelNegocio = !!(biz.config && biz.config.fichaje
     && biz.config.fichaje.activo === true);
   ctx.fichajeActivo = fichajeDelNegocio || ctx.esProbador;
+
+  /* ¿Dueño de la plataforma? Distinto de gestor: gestor lo eres DE un
+     negocio, admin lo eres DEL servicio. Ocultar el panel es comodidad;
+     el permiso lo comprueba el servidor en cada RPC. */
+  ctx.esAdmin = await soyAdmin();
 
   ctx.workerId = null;
   if (mem[0].role === 'employee') {
@@ -464,7 +475,10 @@ $('form-negocio').addEventListener('submit', async (e) => {
   if (!nombre) return;
   msg.textContent = ''; btn.disabled = true;
   try {
-    const { error } = await sb.rpc('create_business', { p_name: nombre });
+    // El código de alta lo emites tú, uno por cliente (migración 45).
+    // Sin él no se puede crear un negocio, salvo que la cuenta sea admin.
+    const codigo = ($('n-codigo').value || '').trim().toUpperCase();
+    const { error } = await sb.rpc('create_business', { p_name: nombre, p_codigo: codigo });
     if (error) throw new Error(error.message);
     location.reload();          // se recarga ya con negocio y rol de gestor
   } catch (err) {
