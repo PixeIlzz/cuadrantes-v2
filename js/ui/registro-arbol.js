@@ -31,11 +31,17 @@ function hora(iso) {
  * Las dos se marcan en pantalla y en el PDF: una jornada sin cerrar tiene
  * que verse, no convertirse en un cero silencioso. */
 let DIAS = {};
+/* Salidas que cierran una jornada empezada el día anterior. Se marcan en el
+   documento: si no, en el día de la salida aparece un fichaje de salida sin
+   ninguna entrada que lo justifique, y quien lo revise no puede saber que
+   viene de la noche anterior. */
+let CRUCES = new Set();
 
 function emparejar(fichajes) {
   const orden = [...fichajes].sort((a, b) => new Date(a.momento) - new Date(b.momento));
   const dias = {};
-  const dia = (iso) => (dias[iso] ||= { seg: 0, abierta: false, huerfanas: 0 });
+  const cruces = new Set();
+  const dia = (iso) => (dias[iso] ||= { seg: 0, abierta: false, enCurso: false, huerfanas: 0 });
   const hoy = diaDe(new Date());
   let ent = null;
 
@@ -48,6 +54,7 @@ function emparejar(fichajes) {
       ent = { momento: f.momento, iso };
     } else if (ent) {
       dia(ent.iso).seg += Math.round((new Date(f.momento) - new Date(ent.momento)) / 1000);
+      if (ent.iso !== iso && f.id) cruces.add(f.id);
       ent = null;
     } else {
       dia(iso).huerfanas += 1;
@@ -55,21 +62,33 @@ function emparejar(fichajes) {
   }
 
   if (ent) {
-    // Solo la jornada de HOY sigue contando en vivo. Una entrada sin cerrar
-    // de un día pasado no son horas trabajadas: es un registro incompleto.
     if (ent.iso === hoy) {
+      // Hoy y sin salida = jornada en curso: cuenta en vivo y así se dice.
       dia(ent.iso).seg += Math.round((Date.now() - new Date(ent.momento)) / 1000);
+      dia(ent.iso).enCurso = true;
+    } else {
+      // Un día pasado sin salida no son horas trabajadas, es un registro
+      // incompleto. Vale cero y tiene que constar como tal.
+      dia(ent.iso).abierta = true;
     }
-    dia(ent.iso).abierta = true;
   }
 
+  CRUCES = cruces;
   return dias;
 }
 
 /* Datos de un día ya emparejado, con respaldo por si se pide uno que no
    estaba en la última carga */
 function datosDia(iso) {
-  return DIAS[iso] || { seg: 0, abierta: false, huerfanas: 0 };
+  return DIAS[iso] || { seg: 0, abierta: false, enCurso: false, huerfanas: 0 };
+}
+
+/* Qué poner en la columna de observaciones del día */
+function notaDia(dd) {
+  if (dd.enCurso) return 'Jornada en curso';
+  if (dd.abierta) return 'Jornada sin salida registrada';
+  if (dd.huerfanas) return 'Salida sin entrada registrada';
+  return '';
 }
 function hms(seg) {
   const t = Math.max(0, Math.floor(seg));
@@ -136,11 +155,15 @@ function nombreLegal(worker) {
 }
 /* Marca de un fichaje para la columna de observaciones */
 function marcaDe(f) {
-  if (f.estimado) return 'Estimado';
-  if (f.origen === 'gestor') return 'Corregido';
-  if (f.origen === 'kiosco') return 'Kiosco';
-  if (f.origen === 'auto') return 'Automático';
-  return '';
+  // Una salida que cierra la jornada de la noche anterior tiene que decirlo:
+  // en su día aparece sin entrada que la justifique.
+  const cruce = (f.id && CRUCES.has(f.id)) ? 'Entrada del día anterior' : '';
+  let m = '';
+  if (f.estimado) m = 'Estimado';
+  else if (f.origen === 'gestor') m = 'Corregido';
+  else if (f.origen === 'kiosco') m = 'Kiosco';
+  else if (f.origen === 'auto') m = 'Automático';
+  return cruce ? (m ? m + ' · ' + cruce : cruce) : m;
 }
 /* Lunes de la semana a la que pertenece una fecha ISO */
 function lunesIso(iso) {
@@ -192,7 +215,8 @@ function construirArbol(fichajes, previstos, margenMin) {
     if (!M.semanas.has(lun)) M.semanas.set(lun, { lunes: lun, seg: 0, est: 0, ret: 0, retDias: 0, dias: [] });
     const S = M.semanas.get(lun);
     S.seg += seg; S.est += est; S.ret += ret; if (ret) S.retDias += 1;
-    S.dias.push({ iso, seg, est, ret, items, abierta: dd.abierta, huerfanas: dd.huerfanas });
+    S.dias.push({ iso, seg, est, ret, items,
+                  abierta: dd.abierta, enCurso: dd.enCurso, huerfanas: dd.huerfanas });
   }
 
   return [...anios.values()].sort((a, b) => b.anio.localeCompare(a.anio)).map((A) => ({
@@ -293,12 +317,9 @@ function exportarPDF(worker, titulo, fichajes) {
     });
     const dd = datosDia(iso);
     total += dd.seg;
-    // Una jornada sin cerrar tiene que constar como tal en el documento
-    const nota = dd.abierta ? 'Jornada sin salida registrada'
-               : (dd.huerfanas ? 'Salida sin entrada registrada' : '');
     filas += '<tr class="dia-tot"><td class="ev">Total del día</td>'
       + '<td class="hora">' + hms(dd.seg) + '</td>'
-      + '<td class="obs">' + esc(nota) + '</td></tr>';
+      + '<td class="obs">' + esc(notaDia(dd)) + '</td></tr>';
     cuerpo += '<tbody class="dia">' + filas + '</tbody>';
   }
 
@@ -373,9 +394,7 @@ function exportarCSV(worker, titulo, fichajes) {
     }
     const dd = datosDia(iso);
     total += dd.seg;
-    const nota = dd.abierta ? 'Jornada sin salida registrada'
-               : (dd.huerfanas ? 'Salida sin entrada registrada' : '');
-    L.push(['', 'Total del día', hms(dd.seg), nota].join(sep));
+    L.push(['', 'Total del día', hms(dd.seg), notaDia(dd)].join(sep));
   }
   L.push('');
   L.push(['', 'TOTAL PERIODO', hms(total), ''].join(sep));
@@ -549,7 +568,8 @@ function nodoDia(D, worker, exportar, onCorregir) {
   det.className = 'arb-nodo arb-nivel-dia';
   const entradas = D.items.filter((f) => f.tipo === 'entrada').length;
   // Un día incompleto se marca: en el registro legal no puede pasar callado
-  const sub = (D.abierta ? '⚠ sin salida · ' : (D.huerfanas ? '⚠ sin entrada · ' : ''))
+  const sub = (D.enCurso ? '● en curso · '
+              : (D.abierta ? '⚠ sin salida · ' : (D.huerfanas ? '⚠ sin entrada · ' : '')))
     + entradas + (entradas === 1 ? ' jornada' : ' jornadas');
   det.appendChild(cabecera('dia', fmtDia(D.iso), { ...D, retDias: D.ret ? 1 : 0 },
     sub, worker, exportar, D.items));

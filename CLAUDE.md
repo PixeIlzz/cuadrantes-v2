@@ -340,8 +340,8 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 
 | Elemento | Versión |
 |---|---|
-| App (`js/version.js` → `APP_VERSION`) | v84 |
-| Service worker (`sw.js` → `VERSION`) | v84 |
+| App (`js/version.js` → `APP_VERSION`) | v85 |
+| Service worker (`sw.js` → `VERSION`) | v85 |
 | Migración SQL | 48 |
 | Baseline del esquema | `sql/000_baseline/` (volcado 2026-08-18) |
 
@@ -381,13 +381,18 @@ Lo primero al retomar:
 
 ## 8. Pendiente
 
-1. **Volver a validar la exportación legal** — hecho por primera vez el
-   2026-08-19 y **salió mal**: los turnos que cruzan medianoche se emparejaban
-   dentro de cada día, así que una entrada sin su salida sumaba el tiempo hasta
-   ahora (264 h en un día). Arreglado en la v84. Los datos de cabecera —razón
-   social, CIF, nombre legal, NIF, NSS— sí salían bien. **Falta reexportar y
-   comprobar los totales nuevos**, en particular el 8 de agosto (debe dar
-   17:12:54) y el total del periodo (31:16:12 con los datos de ese día).
+1. **Exportación legal: validada** (2026-08-19). A la primera salió mal —los
+   turnos que cruzan medianoche se emparejaban dentro de cada día y una entrada
+   sin salida sumaba el tiempo hasta *ahora*: 264 h en un solo día—. Arreglado
+   en la v84 y **verificado con los datos reales**: el 8 de agosto pasó de
+   264:13:00 a 17:12:54 y el periodo de 281:34:56 a 34:40:32. Cabecera legal
+   (razón social, CIF, nombre, NIF, NSS) correcta desde el principio.
+   La v85 añade el vocabulario del documento: «Jornada en curso» para la de hoy,
+   «Jornada sin salida registrada» para un día pasado incompleto, y
+   «Entrada del día anterior» en la salida que cierra un turno nocturno — sin
+   eso, en el día de la salida aparecía un fichaje sin entrada que lo explicara.
+   Queda **limpiar los fichajes de prueba** de segundos antes de dar el registro
+   por bueno.
 2. **Sacar el fichaje de beta** — el mecanismo ya está (migración 44 + v78): la
    puerta pasó de `soy_probador()` —marca global de la cuenta— a un ajuste **del
    negocio**, `config.fichaje.activo`, con su interruptor en Ajustes → Registro
