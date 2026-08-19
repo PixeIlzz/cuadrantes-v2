@@ -276,9 +276,9 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 
 | Elemento | Versión |
 |---|---|
-| App (`js/version.js` → `APP_VERSION`) | v76 (en producción la v75) |
-| Service worker (`sw.js` → `VERSION`) | v76 |
-| Migración SQL | 43 (ejecutadas hasta la 41; **42 y 43 pendientes**) |
+| App (`js/version.js` → `APP_VERSION`) | v78 (en producción la v77) |
+| Service worker (`sw.js` → `VERSION`) | v78 |
+| Migración SQL | 44 (ejecutadas hasta la 43; la **44 pendiente**) |
 | Baseline del esquema | `sql/000_baseline/` (volcado 2026-08-18) |
 
 Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en real.
@@ -289,21 +289,22 @@ En producción y funcionando: **v75**, migraciones hasta la **41** ejecutadas.
 Push rotado y con la Edge Function validando cabecera. Árbol del registro en una
 sola petición. Cierre automático activado y en observación.
 
-**Sin ejecutar ni desplegar: las migraciones 42 y 43, y la v76.** Salen de la
-revisión de seguridad del 2026-08-19 y **van las tres juntas**: la app deja de
-leer `nif`/`nss` como columnas y los pide por `equipo_datos_legales()` (42),
-manda el negocio al fichar (43) y lee la zona horaria del kiosco de
-`kiosco_estado()` (43).
+En producción: **v77**, migraciones hasta la **43**. Revisión de seguridad
+aplicada (42 y 43) y **cero dependencias de CDN**: las cuatro librerías viven en
+`js/vendor/` y se cachean en el service worker, así que la PWA ya arranca sin
+conexión.
+
+**Sin ejecutar ni desplegar: la migración 44 y la v78** — el fichaje por negocio
+en vez de por persona. Van juntas y **no abren el fichaje a nadie nuevo**.
 
 Lo primero al retomar:
 
-- Ejecutar la **42** y la **43** y desplegar la **v76**, y probar después con las
-  dos cuentas: gestor (Equipo, diálogo de NIF, exportar PDF) y empleado (fichar,
-  Mi registro, proponer una corrección), más el kiosco. Si algo dice
-  `permission denied for column X`, esa columna falta en un `grant` de la 42.
-- **El PDF y el CSV con datos reales** (pendiente 1). Sigue sin hacerse nunca y es
-  lo que desbloquea sacar el fichaje de beta.
-- Mirar qué hizo el cierre automático la primera noche.
+- **El PDF y el CSV con datos reales** (pendiente 1). Sigue sin hacerse nunca, y
+  ahora que el cierre automático lleva días funcionando el registro debería estar
+  limpio por primera vez. Es lo que desbloquea todo lo demás.
+- Ejecutar la **44** y desplegar la **v78**. Después, y solo después del PDF,
+  encender el interruptor de Ajustes → Registro de jornada.
+- Comprobar qué hizo el cierre automático (`where origen = 'auto'`).
 
 > En v68 se unificaron las dos versiones (la app iba por v67 y el SW por v50) en un
 > único número visible en pantalla. Antes la versión de app no constaba en ningún
@@ -317,9 +318,14 @@ Lo primero al retomar:
    roto hasta la migración 33, así que el PDF y el CSV **nunca se han ejecutado con
    datos de verdad**. Es el documento que hay que entregar a inspección: comprobar
    razón social, CIF, NIF, entradas/salidas y totales antes de nada.
-2. **Sacar el fichaje de beta** — quitar el flag de probador y activarlo para toda la
-   plantilla, una vez validada la exportación legal (punto 1) y probadas en real las
-   correcciones (apartado 5).
+2. **Sacar el fichaje de beta** — el mecanismo ya está (migración 44 + v78): la
+   puerta pasó de `soy_probador()` —marca global de la cuenta— a un ajuste **del
+   negocio**, `config.fichaje.activo`, con su interruptor en Ajustes → Registro
+   de jornada. Durante la transición la condición es
+   `fichaje_activo(negocio) OR soy_probador()`, así que ejecutar la 44 **no abre
+   el fichaje a nadie nuevo**. Solo falta encender el interruptor, y eso va
+   **después de validar el PDF** (punto 1). Cuando ya no quede ningún probador,
+   se puede quitar el `OR` y borrar `profiles.es_probador`.
 3. **Resto de la revisión de seguridad (2026-08-19)** — lo que no arreglan la 42
    ni la 43:
    - **Backups.** El plan gratuito de Supabase guarda copias diarias con 7 días

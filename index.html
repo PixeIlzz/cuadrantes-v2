@@ -361,11 +361,21 @@
 
         <div class="panel">
         <h2>Solicitudes del equipo</h2>
-        <label class="pref-fila" style="cursor:pointer">
+        <label class="pref-fila">
         <span class="pref-label">Permitir que el equipo envíe solicitudes</span>
         <input type="checkbox" class="pref-switch" id="sw-solicitudes" checked>
         </label>
         <p class="note">Al desactivarlo, el equipo deja de poder pedirte vacaciones y cambios de turno. Las ya enviadas no se borran. <b>Las correcciones del registro de jornada siguen activas siempre</b>: son un derecho del trabajador sobre sus propios fichajes y la pestaña sigue ahí para tramitarlas.</p>
+        </div>
+
+        <div class="panel">
+        <h2>Registro de jornada</h2>
+        <label class="pref-fila">
+        <span class="pref-label">Activar el fichaje para este negocio</span>
+        <input type="checkbox" class="pref-switch" id="sw-fichaje">
+        </label>
+        <p class="note">Abre el fichaje a toda la plantilla: cada persona podrá fichar desde su móvil o desde una tablet en modo kiosco, y tú tendrás el registro horario y su exportación en PDF y CSV. <b>El registro de jornada es obligatorio en España</b> y hay que conservarlo cuatro años.</p>
+        <p class="note">Antes de activarlo, revisa que los datos legales del negocio (razón social y CIF) y el NIF de cada trabajador estén rellenos: son los que salen en el documento que se entrega a inspección.</p>
         </div>
 
       </div>
@@ -429,7 +439,7 @@
       <summary>Fichaje</summary>
       <div class="ajustes-bloque-body">
         <div class="panel solo-probador" id="panel-fichaje-ajustes" hidden>
-        <h2>Fichaje · puntualidad y avisos 🧪</h2>
+        <h2>Fichaje · puntualidad, avisos y cierre 🧪</h2>
         <p class="note">El horario de cada turno se define en <b>Días y columnas</b> (botón 🕒 de cada columna). Aquí ajustas cómo se mide la puntualidad y cuándo avisar.</p>
         <div class="fich-cfg">
           <label>Margen de cortesía al fichar la entrada
@@ -451,11 +461,14 @@
             </span>
             <small>desde que fichó la entrada. 0 = desactivado.</small>
           </label>
-          <label class="check">
-            <input type="checkbox" id="fichaje-cierre-auto">
-            <b>Cerrar automáticamente las jornadas que se queden abiertas</b>
-          </label>
-          <p class="note">Si alguien olvida fichar la salida, se le anota una <b>salida estimada</b> a la hora de fin de su turno y le llega un aviso para que la revise y la corrija si no cuadra. La entrada original no se toca y todo queda registrado en la auditoría. Sin esto, su siguiente entrada se convierte en la salida que falta y quedan jornadas de veinte horas en el registro que hay que entregar a inspección.</p>
+        </div>
+
+        <label class="pref-fila">
+          <span class="pref-label">Cerrar automáticamente las jornadas abiertas</span>
+          <input type="checkbox" class="pref-switch" id="fichaje-cierre-auto">
+        </label>
+        <p class="note">Si alguien olvida fichar la salida, se le anota una <b>salida estimada</b> a la hora de fin de su turno y le llega un aviso para que la revise y la corrija si no cuadra. La entrada original no se toca y todo queda registrado en la auditoría. Sin esto, su siguiente entrada se convierte en la salida que falta y quedan jornadas de veinte horas en el registro.</p>
+        <div class="fich-cfg">
           <label>Esperar antes de cerrar
             <span class="fich-cfg-in">
               <input type="number" id="fichaje-cierre-margen" min="0" max="24" step="1"> horas

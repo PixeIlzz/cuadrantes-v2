@@ -59,11 +59,11 @@ function cambiarPestana(nombre) {
   if (nombre === 'equipo') abrirEquipo();
   if (nombre === 'cuadrante') abrirCuadrante();
   if (nombre === 'programar') abrirProgramadas();
-  if (nombre === 'ajustes') { abrirAjustes(); abrirAvisos(); if (ctx.esProbador) { pintarAjustesFichaje(); pintarKioscos(ctx); pintarDatosLegales(); } }
+  if (nombre === 'ajustes') { abrirAjustes(); abrirAvisos(); if (ctx.fichajeActivo) { pintarAjustesFichaje(); pintarKioscos(ctx); pintarDatosLegales(); } }
   if (nombre === 'emp-cuadrante') abrirEmpCuadrante();
   if (nombre === 'emp-turnos') abrirMisTurnos();
   if (nombre === 'emp-solicitudes') abrirMisSolicitudes();
-  if (nombre === 'emp-ajustes') { abrirAjustesEmpleado(); if (ctx.esProbador) pintarPinEmpleado(ctx); }
+  if (nombre === 'emp-ajustes') { abrirAjustesEmpleado(); if (ctx.fichajeActivo) pintarPinEmpleado(ctx); }
   if (nombre === 'solicitudes') abrirSolicitudes('pending');
   if (nombre === 'fichaje') abrirFichajeGestor();
   if (nombre === 'emp-fichaje') abrirMiRegistro();
@@ -146,7 +146,8 @@ function mostrarApp(session, role, biz) {
   const esGestor = (role === 'manager');
   document.querySelectorAll('.solo-gestor').forEach((e) => { e.hidden = !esGestor; });
   document.querySelectorAll('.solo-empleado').forEach((e) => { e.hidden = esGestor; });
-  // Módulo de fichaje: solo visible para cuentas de prueba
+  // Módulo de fichaje: visible si el negocio lo tiene activo (o, mientras
+  // dure la transición, si la cuenta es probadora). Ver migración 44.
   document.querySelectorAll('.solo-probador').forEach((e) => {
     // respeta también la separación de rol: si es panel de gestor y soy empleado, sigue oculto
     const esDeGestor = e.classList.contains('solo-gestor');
@@ -154,7 +155,7 @@ function mostrarApp(session, role, biz) {
     let ocultarPorRol = false;
     if (esDeGestor && !esGestor) ocultarPorRol = true;
     if (esDeEmpleado && esGestor) ocultarPorRol = true;
-    e.hidden = !ctx.esProbador || ocultarPorRol;
+    e.hidden = !ctx.fichajeActivo || ocultarPorRol;
   });
 
   if (esGestor) {
@@ -186,6 +187,34 @@ function mostrarApp(session, role, biz) {
         toast(swSol.checked ? 'Solicitudes activadas' : 'Solicitudes desactivadas');
       });
     }
+
+    /* Interruptor del fichaje. Vive AQUÍ y no en Ajustes → Fichaje a
+       propósito: esa sección está oculta mientras el módulo esté apagado,
+       así que un negocio nuevo nunca podría encenderlo desde dentro. */
+    const swFich = $('sw-fichaje');
+    if (swFich) {
+      swFich.checked = !!(ctx.business.config && ctx.business.config.fichaje
+        && ctx.business.config.fichaje.activo === true);
+      swFich.addEventListener('change', async () => {
+        if (swFich.checked) {
+          const ok = await confirmar(
+            'El fichaje pasará a estar disponible para toda la plantilla, y sus '
+            + 'registros son el documento que hay que entregar a una inspección. '
+            + 'Comprueba antes la razón social, el CIF y los NIF. ¿Activarlo?',
+            { textoOk: 'Activar', textoNo: 'Ahora no' });
+          if (!ok) { swFich.checked = false; return; }
+        }
+        const fich = { ...((ctx.business.config || {}).fichaje || {}), activo: swFich.checked };
+        const cfg = { ...(ctx.business.config || {}), fichaje: fich };
+        const { error } = await sb.from('businesses').update({ config: cfg }).eq('id', ctx.business.id);
+        if (error) { swFich.checked = !swFich.checked; toast('No se pudo guardar: ' + error.message); return; }
+        ctx.business.config = cfg;
+        toast(swFich.checked
+          ? 'Fichaje activado. Recarga para verlo.'
+          : 'Fichaje desactivado. Recarga para aplicarlo.');
+      });
+    }
+
     aplicarVisibilidadSolicitudes();
     initPushUI('btn-push-gestor');
     ofrecerAvisos();
@@ -194,7 +223,7 @@ function mostrarApp(session, role, biz) {
     refrescarContador();              // aviso de pendientes al entrar
     pintarTablon('tablon-gestor');
     pintarTablon('tablon-hoy');
-    if (ctx.esProbador) {
+    if (ctx.fichajeActivo) {
       const bvk = $('btn-vincular-kiosko');
       if (bvk) bvk.onclick = () => escanearYVincular(ctx);
     }
@@ -243,11 +272,18 @@ async function cargarNegocio(session) {
   if (e2) throw new Error('businesses: ' + e2.message);
   if (!biz) throw new Error('No se pudo cargar el negocio.');
 
-  // ¿Es cuenta de prueba? (para el módulo de fichaje en desarrollo)
+  /* ¿Se ve el módulo de fichaje? Desde la migración 44 la puerta es un
+     ajuste DEL NEGOCIO (config.fichaje.activo). La marca de probador se
+     mantiene como respaldo durante la transición, para no dejar sin
+     fichaje a quien ya lo estaba usando mientras el negocio siga apagado. */
   try {
     const { data: prof } = await sb.rpc('soy_probador');
     ctx.esProbador = prof === true;
   } catch (_) { ctx.esProbador = false; }
+
+  const fichajeDelNegocio = !!(biz.config && biz.config.fichaje
+    && biz.config.fichaje.activo === true);
+  ctx.fichajeActivo = fichajeDelNegocio || ctx.esProbador;
 
   ctx.workerId = null;
   if (mem[0].role === 'employee') {
