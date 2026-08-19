@@ -60,6 +60,7 @@ js/vendor/          Librerías de terceros alojadas aquí, NO por CDN.
                     build ESM se trae seis paquetes más de internet.
 
 edge/enviar-push/   Edge Function de push (VAPID)
+edge/respaldo/      Edge Function de respaldo semanal a GitHub privado
 sql/                Migraciones numeradas. Ver aviso abajo: las 1–32 NO
                     están aquí, solo viven en Supabase.
 ```
@@ -342,7 +343,7 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 |---|---|
 | App (`js/version.js` → `APP_VERSION`) | v88 |
 | Service worker (`sw.js` → `VERSION`) | v88 |
-| Migración SQL | 49 (la **49 pendiente**) |
+| Migración SQL | 50 (la **50 pendiente**, con pasos manuales) |
 | Baseline del esquema | `sql/000_baseline/` (volcado 2026-08-18) |
 
 Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en real.
@@ -403,15 +404,21 @@ Lo primero al retomar:
    se puede quitar el `OR` y borrar `profiles.es_probador`.
 3. **Resto de la revisión de seguridad (2026-08-19)** — lo que no arreglan la 42
    ni la 43:
-   - **Backups.** El plan gratuito de Supabase guarda copias diarias con 7 días
-     de retención y sin point-in-time recovery. El registro de jornada hay que
-     conservarlo **4 años**. Hace falta plan de pago con PITR.
-     Paliativo desde la v88: botón **Exportar** en la consola
-     ([049](sql/049_exportar_negocio.sql)) que baja la empresa entera en JSON —
-     equipo, semanas, fichajes y auditoría, sin `device_token` ni `pin_hash`—.
-     **Eliminar una empresa exporta antes automáticamente y aborta si falla.**
-     No sustituye a un backup: es manual. Lo que hace es que borrar deje de ser
-     irreversible.
+   - **Backups.** Precios comprobados el 2026-08-19: el plan gratuito **no
+     guarda ninguna copia**; Pro son 25 $/mes con 7 días; el PITR es un añadido
+     de 100 $/mes por cada 7 días. **El PITR no resuelve lo nuestro**: la
+     obligación es conservar el registro de jornada *cuatro años*, y ni el más
+     caro pasa de 28 días. Son dos problemas distintos.
+     - *Archivo a largo plazo* → resuelto gratis (migración 50): `pg_cron`
+       semanal → Edge Function `respaldo` → repositorio **privado** de GitHub,
+       un archivo por fecha. Más el botón **Exportar** de la consola
+       ([049](sql/049_exportar_negocio.sql)), que además se dispara solo antes
+       de eliminar una empresa y aborta el borrado si falla.
+     - *Recuperación ante desastre* → **sigue sin cubrir `auth.users`**: las
+       cuentas y contraseñas no salen en el volcado. Perder el proyecto
+       significaría restaurar datos y que todos restablezcan su contraseña.
+       Eso solo lo arregla el plan Pro, y merece la pena en cuanto haya dos o
+       tres clientes de pago.
    - **Sin separación desarrollo/producción.** Cada migración se ejecuta directa
      contra los datos reales de la plantilla. Para vender esto hace falta un
      proyecto de staging donde probarlas antes.
