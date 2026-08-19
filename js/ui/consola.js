@@ -10,7 +10,7 @@
 import {
   listarNegocios, cambiarEstadoNegocio, crearCodigoAlta, listarCodigosAlta,
   detalleNegocio, abrirSoporte, cerrarSoporte, misSesionesSoporte,
-  archivarNegocio, eliminarNegocio, exportarNegocio,
+  archivarNegocio, eliminarNegocio, exportarNegocio, crearDemo,
 } from '../data/plataforma.js';
 import { toast } from './toast.js';
 import { confirmar, pedirDatos, pedirTexto } from './confirmar.js';
@@ -100,9 +100,11 @@ export async function pintarNegocios() {
   try { lista = await listarNegocios(); }
   catch (err) { cont.innerHTML = '<span class="empty-note">' + esc(err.message) + '</span>'; return; }
 
+  pintarMetricas(lista);
+
   const resumen = $('cons-resumen');
   if (resumen) {
-    const activas = lista.filter((n) => n.activo).length;
+    const activas = lista.filter((n) => n.activo && !n.archivado).length;
     resumen.textContent = lista.length + ' en total · ' + activas + ' activas';
   }
 
@@ -113,6 +115,32 @@ export async function pintarNegocios() {
 
   cont.innerHTML = '';
   for (const n of lista) cont.appendChild(filaNegocio(n));
+}
+
+/* Las cifras que quieres ver al abrir la consola, sin entrar en nada.
+   Salen de la misma lista, así que no cuestan una consulta más. */
+function pintarMetricas(lista) {
+  const cont = $('cons-metricas');
+  if (!cont) return;
+
+  const vivas = lista.filter((n) => n.activo && !n.archivado);
+  const empleados = vivas.reduce((s, n) => s + (n.n_empleados || 0), 0);
+  const cuentas = vivas.reduce((s, n) => s + (n.n_cuentas || 0), 0);
+  const conFichaje = vivas.filter((n) => n.fichaje_activo).length;
+  // "Vivas" de verdad: alguien ha entrado en los últimos 14 días
+  const limite = Date.now() - 14 * 86400000;
+  const activas = vivas.filter((n) => n.ultimo_acceso && new Date(n.ultimo_acceso) > limite).length;
+
+  const dato = (n, et, aviso) =>
+    '<div class="cons-metrica' + (aviso ? ' aviso' : '') + '">'
+    + '<b>' + n + '</b><span>' + et + '</span></div>';
+
+  cont.innerHTML =
+    dato(vivas.length, 'empresas')
+    + dato(activas, 'con uso reciente', activas < vivas.length)
+    + dato(conFichaje, 'con fichaje')
+    + dato(empleados, 'trabajadores')
+    + dato(cuentas, 'cuentas');
 }
 
 function filaNegocio(n) {
@@ -126,6 +154,7 @@ function filaNegocio(n) {
   datos.className = 'plat-datos';
   datos.innerHTML =
     '<div class="plat-nombre">' + esc(n.nombre)
+    + (n.demo ? ' <span class="plat-tag">demo</span>' : '')
     + (n.archivado ? ' <span class="plat-tag">archivada</span>'
                    : (n.activo ? '' : ' <span class="plat-tag">suspendida</span>'))
     + (n.fichaje_activo ? ' <span class="plat-tag ok">fichaje</span>' : '')
@@ -413,6 +442,24 @@ export function initConsola(email, tieneNegocioPropio, businessIdPropio) {
           + '\n\nDáselo al cliente. Lo necesita para crear su empresa y solo sirve una vez.',
           { textoOk: 'Hecho', textoNo: 'Cerrar' });
         pintarCodigos();
+      } catch (err) { toast(err.message); }
+      finally { btn.disabled = false; }
+    });
+  }
+
+  if ($('cons-crear-demo')) {
+    $('cons-crear-demo').addEventListener('click', async () => {
+      const btn = $('cons-crear-demo');
+      btn.disabled = true;
+      try {
+        const r = await crearDemo(($('cons-demo-nombre') || {}).value || '');
+        if ($('cons-demo-nombre')) $('cons-demo-nombre').value = '';
+        const entrar = await confirmar(
+          'Creada «' + (r.nombre || 'la demo') + '» con equipo, cuadrante publicado '
+          + 'y fichajes de los últimos días. ¿Entras a verla?',
+          { textoOk: 'Entrar', textoNo: 'Ahora no' });
+        pintarNegocios();
+        if (entrar && r.id) entrarEn(r.id);
       } catch (err) { toast(err.message); }
       finally { btn.disabled = false; }
     });

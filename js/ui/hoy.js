@@ -2,6 +2,7 @@
 import { toast } from './toast.js';
 import { ctx } from '../auth.js';
 import { listarEquipo } from '../data/equipo.js';
+import { jornadaHoy, diaDe } from '../data/fichaje.js';
 import { contarPendientes } from '../data/solicitudes.js';
 import { pendientesDeHoy } from './tareas.js';
 import { marcarHecha, desmarcar, tocaHoy, listarTareas } from '../data/tareas.js';
@@ -45,6 +46,10 @@ export async function abrirHoy() {
     cont.appendChild(await tarjetaTurnosHoy(hoy, lunes, semana, equipo));
     cont.appendChild(tarjetaVacaciones(hoy, equipo));
     cont.appendChild(tarjetaProximasVacaciones(hoy, equipo));
+    if (ctx.fichajeActivo) {
+      const t = await tarjetaFichaje();
+      if (t) cont.appendChild(t);
+    }
     if (semana) cont.appendChild(await tarjetaMinimos(semana));
   } catch (err) {
     cont.innerHTML = '';
@@ -81,6 +86,62 @@ function cabecera(hoy, semana, lunes) {
   }
   p.append(t, sub);
   return p;
+}
+
+/* Fichaje de hoy: quién está dentro y, sobre todo, qué jornadas se han
+   quedado sin cerrar de días anteriores.
+   Eso último es lo que de verdad importa: una entrada sin su salida
+   estropea el registro que se entrega a inspección, y hasta ahora solo se
+   veía si el gestor entraba al árbol del registro y se fijaba. */
+async function tarjetaFichaje() {
+  let estado = [];
+  try { estado = await jornadaHoy(); } catch (_) { return null; }
+  if (!estado.length) return null;
+
+  const hoy = diaDe(new Date());
+  const dentro = estado.filter((w) => w.dentro);
+  // Dentro "desde" un día que no es hoy = jornada que nadie cerró
+  const colgadas = dentro.filter((w) => w.desde && diaDe(w.desde) !== hoy);
+  const trabajando = dentro.filter((w) => !colgadas.includes(w));
+  const segHoy = estado.reduce((s, w) => s + (Number(w.seg_hoy) || 0), 0);
+
+  const p = panel('Fichaje de hoy');
+
+  const fila = document.createElement('div');
+  fila.className = 'hoy-fich-cifras';
+  fila.innerHTML =
+    '<div><b>' + trabajando.length + '</b><span>' + (trabajando.length === 1 ? 'trabajando' : 'trabajando') + '</span></div>'
+    + '<div><b>' + hms(segHoy) + '</b><span>fichadas hoy</span></div>';
+  p.appendChild(fila);
+
+  if (trabajando.length) {
+    const n = document.createElement('div');
+    n.className = 'hoy-fich-nombres';
+    n.textContent = trabajando.map((w) => w.name).join(', ');
+    p.appendChild(n);
+  }
+
+  if (colgadas.length) {
+    const av = document.createElement('button');
+    av.type = 'button';
+    av.className = 'hoy-alerta hoy-alerta-mal';
+    av.innerHTML = '<span class="hoy-alerta-num">' + colgadas.length + '</span>'
+      + '<span>' + (colgadas.length === 1
+          ? 'jornada sin cerrar de un día anterior'
+          : 'jornadas sin cerrar de días anteriores')
+      + ': ' + esc(colgadas.map((w) => w.name).join(', ')) + '</span>'
+      + '<span class="hoy-alerta-ir">Corregir →</span>';
+    av.addEventListener('click', () => alIrA && alIrA('fichaje'));
+    p.appendChild(av);
+  }
+
+  return p;
+}
+
+function hms(seg) {
+  const t = Math.max(0, Math.floor(Number(seg) || 0));
+  const p = (n) => String(n).padStart(2, '0');
+  return p(Math.floor(t / 3600)) + ':' + p(Math.floor((t % 3600) / 60));
 }
 
 function tarjetaSolicitudes(n) {

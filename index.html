@@ -177,6 +177,7 @@
   </header>
 
   <main class="cons-cuerpo">
+    <div id="cons-metricas" class="cons-metricas"></div>
     <div id="cons-soporte-vivo"></div>
 
     <section class="panel">
@@ -196,6 +197,15 @@
         <button class="btn primary" id="cons-nuevo-codigo" type="button">Emitir código</button>
       </div>
       <div id="cons-codigos" class="plat-lista"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Enseñar StaffPoint</h2>
+      <p class="note">Crea una empresa ficticia —equipo, cuadrante publicado, solicitudes y registro de jornada con horas— para enseñársela a un cliente <b>sin abrirle los datos reales de tu plantilla</b>. Entras en ella como en cualquier otra y la borras cuando quieras.</p>
+      <div class="setting-row">
+        <input type="text" id="cons-demo-nombre" maxlength="60" placeholder="Nombre (opcional). Ej.: Bar Manolo">
+        <button class="btn primary" id="cons-crear-demo" type="button">Crear demo</button>
+      </div>
     </section>
 
     <section class="panel" id="cons-mi-negocio-panel" hidden>
@@ -219,13 +229,13 @@
     <button class="tab-btn solo-gestor" data-tab="cuadrante">Cuadrante</button>
     <button class="tab-btn solo-gestor" data-tab="programar">Programadas</button>
     <button class="tab-btn solo-gestor" data-tab="equipo">Equipo</button>
-    <button class="tab-btn solo-gestor solo-probador" data-tab="fichaje" hidden>Fichaje 🧪</button>
+    <button class="tab-btn solo-gestor solo-probador" data-tab="fichaje" hidden>Fichaje</button>
     <button class="tab-btn solo-gestor" data-tab="tareas">Tareas <span id="badge-tareas" class="badge" hidden></span></button>
     <button class="tab-btn solo-gestor" data-tab="solicitudes">Solicitudes <span id="badge-solicitudes" class="badge" hidden></span></button>
     <button class="tab-btn solo-gestor" data-tab="ajustes">Ajustes</button>
     <button class="tab-btn active solo-empleado" data-tab="emp-hoy">Hoy</button>
     <button class="tab-btn solo-empleado" data-tab="emp-turnos">Mis turnos</button>
-    <button class="tab-btn solo-empleado solo-probador" data-tab="emp-fichaje" hidden>Mi registro 🧪</button>
+    <button class="tab-btn solo-empleado solo-probador" data-tab="emp-fichaje" hidden>Mi registro</button>
     <button class="tab-btn solo-empleado" data-tab="emp-cuadrante">Cuadrantes</button>
     <button class="tab-btn solo-empleado" data-tab="emp-solicitudes">Solicitudes</button>
     <button class="tab-btn solo-empleado" data-tab="emp-ajustes">Ajustes</button>
@@ -353,7 +363,6 @@
 
   <!-- ============ TAB TAREAS ============ -->
   <section class="solo-gestor" id="tab-fichaje" hidden>
-    <div class="fich-testeo-aviso">🧪 Módulo en pruebas · solo lo ves tú</div>
     <div id="fichaje-gestor"></div>
   </section>
 
@@ -419,10 +428,10 @@
   <!-- ============ TAB AJUSTES ============ -->
   <section class="solo-gestor" id="tab-ajustes" hidden>
     <details class="ajustes-bloque" open>
-      <summary>Negocio y equipo</summary>
+      <summary>Mi cuenta</summary>
       <div class="ajustes-bloque-body">
         <div class="panel">
-        <h2>Cuenta</h2>
+        <h2>Acceso</h2>
         <div class="setting-row"><span class="note" id="ajustes-cuenta"></span></div>
         <div class="email-form">
         <label>Cambiar mi email de acceso
@@ -442,17 +451,25 @@
         </div>
         </div>
 
-        <div class="panel solo-probador" id="panel-legal" hidden>
-        <h2>Datos para el registro legal 🧪</h2>
-        <p class="note">Se usan en el registro de jornada exportable (PDF/CSV) que entregas a inspección.</p>
-        <div id="datos-legales" class="legal-form">
-        <label>Razón social<input type="text" id="leg-razon" placeholder="Melper 2001 S.L."></label>
-        <label>CIF<input type="text" id="leg-cif" maxlength="12" placeholder="B00000000"></label>
-        <button class="btn primary" id="btn-guardar-legal" type="button">Guardar</button>
-        </div>
-        <p class="note">El NIF de cada trabajador se pone desde Fichaje → al abrir su ficha.</p>
+        <div class="panel">
+        <h2>Aspecto</h2>
+        <div class="tema-opciones" id="tema-gestor"></div>
+        <p class="note">«Automático» sigue el ajuste de tu móvil o PC.</p>
         </div>
 
+        <div class="panel">
+        <h2>Guía de bienvenida</h2>
+        <p class="note">Un repaso de dónde está cada cosa: datos de la empresa, puestos, días y equipo.</p>
+        <div class="setting-row">
+          <button class="btn" id="btn-guia-gestor" type="button">Ver la guía</button>
+        </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="ajustes-bloque">
+      <summary>El negocio</summary>
+      <div class="ajustes-bloque-body">
         <div class="panel">
         <h2>Solicitudes del equipo</h2>
         <label class="pref-fila">
@@ -469,25 +486,6 @@
           <button class="btn" id="btn-otro-negocio" type="button">Dar de alta otro negocio</button>
         </div>
         </div>
-
-        <div class="panel">
-        <h2>Guía de bienvenida</h2>
-        <p class="note">Un repaso de dónde está cada cosa: datos de la empresa, puestos, días y equipo.</p>
-        <div class="setting-row">
-          <button class="btn" id="btn-guia-gestor" type="button">Ver la guía</button>
-        </div>
-        </div>
-
-        <div class="panel">
-        <h2>Registro de jornada</h2>
-        <label class="pref-fila">
-        <span class="pref-label">Activar el fichaje para este negocio</span>
-        <input type="checkbox" class="pref-switch" id="sw-fichaje">
-        </label>
-        <p class="note">Abre el fichaje a toda la plantilla: cada persona podrá fichar desde su móvil o desde una tablet en modo kiosco, y tú tendrás el registro horario y su exportación en PDF y CSV. <b>El registro de jornada es obligatorio en España</b> y hay que conservarlo cuatro años.</p>
-        <p class="note">Antes de activarlo, revisa que los datos legales del negocio (razón social y CIF) y el NIF de cada trabajador estén rellenos: son los que salen en el documento que se entrega a inspección.</p>
-        </div>
-
       </div>
     </details>
     <details class="ajustes-bloque">
@@ -545,11 +543,35 @@
 
       </div>
     </details>
-    <details class="ajustes-bloque solo-probador">
-      <summary>Fichaje</summary>
+    <!-- El bloque NO es solo-probador: dentro está el interruptor que
+         enciende el fichaje, y si se ocultara con él apagado un negocio
+         nuevo no podría activarlo nunca. Los paneles de dentro sí. -->
+    <details class="ajustes-bloque">
+      <summary>Registro de jornada</summary>
       <div class="ajustes-bloque-body">
+        <div class="panel">
+        <h2>Activar el fichaje</h2>
+        <label class="pref-fila">
+        <span class="pref-label">Activar el fichaje para este negocio</span>
+        <input type="checkbox" class="pref-switch" id="sw-fichaje">
+        </label>
+        <p class="note">Abre el fichaje a toda la plantilla: cada persona podrá fichar desde su móvil o desde una tablet en modo kiosco, y tú tendrás el registro horario y su exportación en PDF y CSV. <b>El registro de jornada es obligatorio en España</b> y hay que conservarlo cuatro años.</p>
+        <p class="note">Antes de activarlo, revisa que los datos legales del negocio y el NIF de cada trabajador estén rellenos: son los que salen en el documento que se entrega a inspección.</p>
+        </div>
+
+        <div class="panel solo-probador" id="panel-legal" hidden>
+        <h2>Datos de la empresa</h2>
+        <p class="note">Salen en el registro de jornada exportable (PDF y CSV) que se entrega a inspección.</p>
+        <div id="datos-legales" class="legal-form">
+        <label>Razón social<input type="text" id="leg-razon" placeholder="Melper 2001 S.L."></label>
+        <label>CIF<input type="text" id="leg-cif" maxlength="12" placeholder="B00000000"></label>
+        <button class="btn primary" id="btn-guardar-legal" type="button">Guardar</button>
+        </div>
+        <p class="note">El NIF y el nº de Seguridad Social de cada trabajador se ponen en <b>Equipo</b>, con el botón de datos de su ficha.</p>
+        </div>
+
         <div class="panel solo-probador" id="panel-fichaje-ajustes" hidden>
-        <h2>Fichaje · puntualidad, avisos y cierre 🧪</h2>
+        <h2>Puntualidad, avisos y cierre</h2>
         <p class="note">El horario de cada turno se define en <b>Días y columnas</b> (botón 🕒 de cada columna). Aquí ajustas cómo se mide la puntualidad y cuándo avisar.</p>
         <div class="fich-cfg">
           <label>Margen de cortesía al fichar la entrada
@@ -596,7 +618,7 @@
         </div>
 
         <div class="panel solo-probador" id="panel-kioscos" hidden>
-        <h2>Kioscos de fichaje 🧪</h2>
+        <h2>Kioscos de fichaje</h2>
         <p class="note">Para vincular una tablet: en la tablet, abre la app y pulsa <b>«Emparejar kiosko»</b> en la pantalla de inicio. Aquí pulsa <b>Escanear</b> y apunta al QR que muestra.</p>
         <div class="setting-row">
         <button class="btn primary" id="btn-vincular-kiosko" type="button">📷 Escanear QR de un kiosko</button>
@@ -615,12 +637,6 @@
         <div id="pref-notif-gestor" class="pref-lista"></div>
         <button class="btn primary push-btn" id="btn-push-gestor" type="button">Activar avisos en este dispositivo</button>
         <p class="note">Los avisos llegan aunque tengas la app cerrada. En iPhone, primero añade la app a la pantalla de inicio.</p>
-        </div>
-
-        <div class="panel">
-        <h2>Aspecto</h2>
-        <div class="tema-opciones" id="tema-gestor"></div>
-        <p class="note">«Automático» sigue el ajuste de tu móvil o PC.</p>
         </div>
 
         <div class="panel">
@@ -690,7 +706,6 @@
   </section>
   <!-- ============ EMPLEADO · CUADRANTE ============ -->
   <section class="solo-empleado" id="tab-emp-fichaje" hidden>
-    <div class="fich-testeo-aviso">🧪 Módulo en pruebas</div>
     <div id="emp-fichaje"></div>
   </section>
 
@@ -785,7 +800,7 @@
       <summary>Fichaje</summary>
       <div class="ajustes-bloque-body">
         <div class="panel solo-probador" id="panel-pin-empleado" hidden>
-        <h2>Mi PIN de fichaje 🧪</h2>
+        <h2>Mi PIN de fichaje</h2>
         <p class="note" id="pin-empleado-estado">…</p>
         <div id="pin-empleado" class="pin-form">
         <input type="password" id="pin-empleado-input" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="4 a 6 dígitos">

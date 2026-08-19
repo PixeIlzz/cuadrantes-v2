@@ -2203,6 +2203,19 @@ main{padding:16px;max-width:1100px;margin:0 auto}
 }
 .cons-panel-cab{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
 
+.cons-metricas{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;
+}
+.cons-metrica{
+  background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:12px 14px;display:flex;flex-direction:column;line-height:1.15;
+}
+.cons-metrica b{font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums}
+.cons-metrica span{
+  font-size:.7rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;
+}
+.cons-metrica.aviso b{color:var(--bad)}
+
 .cons-negocio{border-bottom:1px dashed var(--line)}
 .cons-negocio:last-child{border-bottom:none}
 .cons-negocio.suspendida .plat-datos{opacity:.55}
@@ -2225,6 +2238,17 @@ main{padding:16px;max-width:1100px;margin:0 auto}
   border-radius:10px;padding:10px 12px;font-size:.85rem;
 }
 .cons-aviso-acc{display:flex;gap:6px;flex-wrap:wrap}
+
+/* Resumen de fichaje en la pantalla Hoy */
+.hoy-fich-cifras{display:flex;gap:22px;flex-wrap:wrap;margin:.2rem 0 .4rem}
+.hoy-fich-cifras > div{display:flex;flex-direction:column;line-height:1.1}
+.hoy-fich-cifras b{font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums}
+.hoy-fich-cifras span{font-size:.74rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em}
+.hoy-fich-nombres{font-size:.84rem;color:var(--ink-soft);margin-bottom:.5rem}
+.hoy-alerta-mal{
+  background:var(--t-roj-bg);border-radius:10px;margin-top:.3rem;
+  padding:11px 13px;align-items:flex-start;
+}
 
 /* Selector de negocio: solo se pinta si la cuenta tiene más de uno */
 .sel-negocio{

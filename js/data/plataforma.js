@@ -60,6 +60,14 @@ export async function abrirSoporte(businessId, motivo, minutos = 60) {
   if (error) throw new Error(error.message);
 }
 
+/* Crea una empresa ficticia con equipo, cuadrante y fichajes, para
+   enseñar la app sin abrir los datos reales de nadie. */
+export async function crearDemo(nombre) {
+  const { data, error } = await sb.rpc('admin_crear_demo', { p_nombre: nombre || null });
+  if (error) throw new Error('No se pudo crear la demo: ' + error.message);
+  return data || { ok: false };
+}
+
 /* Copia completa de una empresa. Sirve de red antes de borrarla, para
    entregársela a un cliente que se va, y como copia manual mientras no
    haya plan con recuperación a un punto en el tiempo. */
