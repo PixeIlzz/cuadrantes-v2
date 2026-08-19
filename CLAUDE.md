@@ -268,8 +268,8 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 
 | Elemento | Versión |
 |---|---|
-| App (`js/version.js` → `APP_VERSION`) | v74 |
-| Service worker (`sw.js` → `VERSION`) | v74 |
+| App (`js/version.js` → `APP_VERSION`) | v75 |
+| Service worker (`sw.js` → `VERSION`) | v75 |
 | Migración SQL | 41 (la 40 y la 41 escritas, **sin ejecutar**) |
 | Baseline del esquema | `sql/000_baseline/` (volcado 2026-08-18) |
 
@@ -330,9 +330,12 @@ Lo primero al retomar:
    apagada**: escribe en un registro legal y es opt-in por negocio. Cierra con
    el fin del turno de esa persona (`turno_previsto`), con respaldo a
    `entrada + cierre_max_h` si no hay turno, marcando `estimado` y `origen='auto'`
-   y avisando al trabajador para que lo revise. Pasos: ejecutar la migración,
-   mirar con la consulta del PASO 3 qué jornadas están abiertas ahora, limpiar
-   la basura vieja a mano si la hay, y solo entonces activarlo.
+   y avisando al trabajador para que lo revise.
+   **Se enciende desde la app** (v75): Ajustes → Fichaje, con el margen de
+   cortesía y el tope al lado. Al activarlo pide confirmación, porque en la
+   siguiente pasada del cron cierra todo lo que lleve abierto y avisa a cada
+   afectado. Antes de encenderlo conviene mirar qué jornadas hay abiertas —
+   consulta en el PASO 3 del archivo— y limpiar restos de las pruebas.
    Hasta que se active sigue el problema de fondo: `fichar_worker` coge el
    último fichaje **sin filtrar por día**, así que quien olvida la salida del
    viernes convierte su entrada del sábado en la salida del viernes. Bloquea
@@ -343,6 +346,7 @@ Lo primero al retomar:
    invocables sin sesión. Y casi todas son `SECURITY DEFINER`. La peor,
    `avisar_gestores()`: sin control de quién llama, inserta una notificación con
    texto arbitrario en cualquier negocio, y eso dispara push real al gestor.
+   **Requiere la 40 ejecutada** (hace `revoke` sobre `cerrar_jornadas_olvidadas`).
    [041_permisos_funciones.sql](sql/041_permisos_funciones.sql) cierra en bloque
    y reabre solo lo justo (kiosco e `invite_owner` para `anon`), y añade
    `mi_turno_previsto()` para que el cliente no pueda pedir el horario de un

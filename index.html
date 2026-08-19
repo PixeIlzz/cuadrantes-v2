@@ -451,6 +451,23 @@
             </span>
             <small>desde que fichó la entrada. 0 = desactivado.</small>
           </label>
+          <label class="check">
+            <input type="checkbox" id="fichaje-cierre-auto">
+            <b>Cerrar automáticamente las jornadas que se queden abiertas</b>
+          </label>
+          <p class="note">Si alguien olvida fichar la salida, se le anota una <b>salida estimada</b> a la hora de fin de su turno y le llega un aviso para que la revise y la corrija si no cuadra. La entrada original no se toca y todo queda registrado en la auditoría. Sin esto, su siguiente entrada se convierte en la salida que falta y quedan jornadas de veinte horas en el registro que hay que entregar a inspección.</p>
+          <label>Esperar antes de cerrar
+            <span class="fich-cfg-in">
+              <input type="number" id="fichaje-cierre-margen" min="0" max="24" step="1"> horas
+            </span>
+            <small>de cortesía tras la hora de fin del turno, por si se queda recogiendo.</small>
+          </label>
+          <label>Si ese día no tenía turno asignado, cerrar pasadas
+            <span class="fich-cfg-in">
+              <input type="number" id="fichaje-cierre-max" min="1" max="24" step="1"> horas
+            </span>
+            <small>desde que fichó la entrada.</small>
+          </label>
         </div>
         <button class="btn primary" id="btn-guardar-fichaje" type="button">Guardar ajustes de fichaje</button>
         </div>

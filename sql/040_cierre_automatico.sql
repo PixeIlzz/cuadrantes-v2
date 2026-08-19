@@ -22,7 +22,12 @@
 --  original NUNCA se toca.
 --
 --  OPT-IN POR NEGOCIO. Nace apagado: esto escribe en un registro legal, y
---  no se activa solo en la casa de nadie. Ver el PASO 3.
+--  no se activa solo en la casa de nadie.
+--
+--  DESDE v75 SE ENCIENDE DESDE LA APP: Ajustes → Fichaje → «Cerrar
+--  automáticamente las jornadas que se queden abiertas», con sus dos
+--  parámetros al lado. El gestor no necesita tocar SQL. El PASO 3 de abajo
+--  se conserva solo por si hay que hacerlo a mano o revisar el estado.
 --
 --  Ajustes en businesses.config.fichaje:
 --    cierre_auto_activo  bool  ¿activar?           (por defecto false)

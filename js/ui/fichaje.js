@@ -515,6 +515,17 @@ export function pintarAjustesFichaje() {
   if ($('fichaje-av-sal'))   $('fichaje-av-sal').value = sal.v;
   if ($('fichaje-av-sal-u')) $('fichaje-av-sal-u').value = sal.u;
 
+  // --- Cierre automático de jornadas olvidadas (migración 40) ---
+  // Lo ejecuta el cron cada media hora; aquí solo se enciende y se afina.
+  const swCierre = $('fichaje-cierre-auto');
+  if (swCierre) swCierre.checked = (cfg.cierre_auto_activo === true);
+  if ($('fichaje-cierre-margen')) {
+    $('fichaje-cierre-margen').value = (cfg.cierre_margen_h != null) ? cfg.cierre_margen_h : 2;
+  }
+  if ($('fichaje-cierre-max')) {
+    $('fichaje-cierre-max').value = (cfg.cierre_max_h != null) ? cfg.cierre_max_h : 12;
+  }
+
   // Guardar
   const guardar = $('btn-guardar-fichaje');
   if (guardar) {
@@ -536,6 +547,25 @@ export function pintarAjustesFichaje() {
         cfg.recordar_salida_seg  = aSeg(($('fichaje-av-sal') || {}).value,
                                         ($('fichaje-av-sal-u') || {}).value);
         delete cfg.recordar_h;   // migrado al nuevo campo en segundos
+
+        // Cierre automático. Al encenderlo se avisa de lo que implica: en la
+        // siguiente pasada del cron se cierra TODO lo que lleve abierto, y a
+        // cada trabajador afectado le llega un aviso.
+        const quiereCierre = !!($('fichaje-cierre-auto') || {}).checked;
+        if (quiereCierre && cfg.cierre_auto_activo !== true) {
+          const ok = await confirmar(
+            'Se cerrarán las jornadas que ya estén abiertas, incluidas las de días '
+            + 'pasados, y cada persona afectada recibirá un aviso. Si hay jornadas '
+            + 'viejas sin cerrar, revísalas antes en el registro. ¿Activar igualmente?',
+            { textoOk: 'Activar', textoNo: 'Ahora no' });
+          if (!ok) { guardar.disabled = false; return; }
+        }
+        cfg.cierre_auto_activo = quiereCierre;
+
+        const cMar = parseInt(($('fichaje-cierre-margen') || {}).value, 10);
+        cfg.cierre_margen_h = (cMar >= 0 && cMar <= 24) ? cMar : 2;
+        const cMax = parseInt(($('fichaje-cierre-max') || {}).value, 10);
+        cfg.cierre_max_h = (cMax >= 1 && cMax <= 24) ? cMax : 12;
 
         await guardarHorarioFichaje(cfg);
         toast('Ajustes de fichaje guardados');
