@@ -269,6 +269,17 @@ medianoche. En el cliente, la zona sale de `zonaNegocio()`
 que está deslogueado, la manda `kiosco_estado()`. `Atlantic/Canary` solo se usa
 como respaldo cuando el negocio no la tiene configurada.
 
+**Emparejar entradas y salidas NO se hace día a día** (v84). Un turno que cruza
+medianoche tiene la entrada en un día y la salida en otro; emparejando dentro de
+cada día, la entrada quedaba abierta y se le sumaba el tiempo **hasta ahora**.
+En el primer PDF real eso pintó **264:13:00 en un solo día** —once jornadas— y
+contaminó el total del periodo. Se recorre la lista entera en orden y el tiempo
+se imputa al día en que **empezó** la jornada. Una entrada sin cerrar de un día
+pasado vale 0 y se marca «sin salida»; solo la de hoy cuenta en vivo. El
+emparejamiento se calcula **una vez** en `pintarArbolRegistro` y lo reutilizan
+el PDF y el CSV: si lo recalcularan sobre el trozo exportado, un turno nocturno
+volvería a quedar partido.
+
 **`toISOString()` nunca para sacar "hoy".** Devuelve UTC, así que entre las 00:00
 y la 01:00 (horario de verano canario) da la fecha de ayer. Volvió a morder en
 v73: el árbol del registro pedía el rango `hasta = hoy.toISOString()` y los
@@ -329,9 +340,9 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 
 | Elemento | Versión |
 |---|---|
-| App (`js/version.js` → `APP_VERSION`) | v82 |
-| Service worker (`sw.js` → `VERSION`) | v82 |
-| Migración SQL | 48 (ejecutadas hasta la 47; la **48 pendiente**) |
+| App (`js/version.js` → `APP_VERSION`) | v84 |
+| Service worker (`sw.js` → `VERSION`) | v84 |
+| Migración SQL | 48 |
 | Baseline del esquema | `sql/000_baseline/` (volcado 2026-08-18) |
 
 Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en real.
@@ -370,10 +381,13 @@ Lo primero al retomar:
 
 ## 8. Pendiente
 
-1. **Validar la exportación legal con datos reales** — el árbol del registro estuvo
-   roto hasta la migración 33, así que el PDF y el CSV **nunca se han ejecutado con
-   datos de verdad**. Es el documento que hay que entregar a inspección: comprobar
-   razón social, CIF, NIF, entradas/salidas y totales antes de nada.
+1. **Volver a validar la exportación legal** — hecho por primera vez el
+   2026-08-19 y **salió mal**: los turnos que cruzan medianoche se emparejaban
+   dentro de cada día, así que una entrada sin su salida sumaba el tiempo hasta
+   ahora (264 h en un día). Arreglado en la v84. Los datos de cabecera —razón
+   social, CIF, nombre legal, NIF, NSS— sí salían bien. **Falta reexportar y
+   comprobar los totales nuevos**, en particular el 8 de agosto (debe dar
+   17:12:54) y el total del periodo (31:16:12 con los datos de ese día).
 2. **Sacar el fichaje de beta** — el mecanismo ya está (migración 44 + v78): la
    puerta pasó de `soy_probador()` —marca global de la cuenta— a un ajuste **del
    negocio**, `config.fichaje.activo`, con su interruptor en Ajustes → Registro

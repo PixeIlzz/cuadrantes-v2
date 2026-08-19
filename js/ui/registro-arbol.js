@@ -13,14 +13,63 @@ function hora(iso) {
   return new Date(iso).toLocaleTimeString('es-ES',
     { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: zonaNegocio() });
 }
-function segDe(fichajes) {
-  let s = 0, e = null;
-  for (const f of fichajes) {
-    if (f.tipo === 'entrada') e = new Date(f.momento);
-    else if (f.tipo === 'salida' && e) { s += Math.round((new Date(f.momento) - e) / 1000); e = null; }
+/* Emparejamiento de entradas y salidas.
+ *
+ * Se recorre TODA la lista en orden, no día a día. Un turno que cruza
+ * medianoche tiene la entrada en un día y la salida en otro: emparejando
+ * dentro de cada día, la entrada se quedaba "sin cerrar" y se le sumaba el
+ * tiempo hasta AHORA. En el registro real eso pintó 264:13:00 en un solo
+ * día —once jornadas— y contaminó el total del periodo. En un documento
+ * que se entrega a inspección, eso no es un detalle.
+ *
+ * El tiempo de cada jornada se imputa al día en que EMPEZÓ, que es lo que
+ * ya hace dia_laboral() en el servidor.
+ *
+ * Devuelve, por día: { seg, abierta, huerfanas }
+ *   abierta   → hay una entrada sin su salida (jornada incompleta)
+ *   huerfanas → salidas sin entrada previa (registro incoherente)
+ * Las dos se marcan en pantalla y en el PDF: una jornada sin cerrar tiene
+ * que verse, no convertirse en un cero silencioso. */
+let DIAS = {};
+
+function emparejar(fichajes) {
+  const orden = [...fichajes].sort((a, b) => new Date(a.momento) - new Date(b.momento));
+  const dias = {};
+  const dia = (iso) => (dias[iso] ||= { seg: 0, abierta: false, huerfanas: 0 });
+  const hoy = diaDe(new Date());
+  let ent = null;
+
+  for (const f of orden) {
+    const iso = f.dia || diaDe(f.momento);
+    dia(iso);
+    if (f.tipo === 'entrada') {
+      // Dos entradas seguidas: la anterior se quedó sin cerrar
+      if (ent) dia(ent.iso).abierta = true;
+      ent = { momento: f.momento, iso };
+    } else if (ent) {
+      dia(ent.iso).seg += Math.round((new Date(f.momento) - new Date(ent.momento)) / 1000);
+      ent = null;
+    } else {
+      dia(iso).huerfanas += 1;
+    }
   }
-  if (e) s += Math.round((Date.now() - e) / 1000);
-  return s;
+
+  if (ent) {
+    // Solo la jornada de HOY sigue contando en vivo. Una entrada sin cerrar
+    // de un día pasado no son horas trabajadas: es un registro incompleto.
+    if (ent.iso === hoy) {
+      dia(ent.iso).seg += Math.round((Date.now() - new Date(ent.momento)) / 1000);
+    }
+    dia(ent.iso).abierta = true;
+  }
+
+  return dias;
+}
+
+/* Datos de un día ya emparejado, con respaldo por si se pide uno que no
+   estaba en la última carga */
+function datosDia(iso) {
+  return DIAS[iso] || { seg: 0, abierta: false, huerfanas: 0 };
 }
 function hms(seg) {
   const t = Math.max(0, Math.floor(seg));
@@ -123,7 +172,8 @@ function construirArbol(fichajes, previstos, margenMin) {
   const anios = new Map();
   for (const iso of Object.keys(porDia).sort()) {
     const items = porDia[iso];
-    const seg = segDe(items);
+    const dd = datosDia(iso);
+    const seg = dd.seg;
     const tramos = previstos[iso] || [];
     const est = minDeTramos(tramos) * 60;          // previsto en segundos
     const ret = minRetraso(items, tramos, margenMin);
@@ -142,7 +192,7 @@ function construirArbol(fichajes, previstos, margenMin) {
     if (!M.semanas.has(lun)) M.semanas.set(lun, { lunes: lun, seg: 0, est: 0, ret: 0, retDias: 0, dias: [] });
     const S = M.semanas.get(lun);
     S.seg += seg; S.est += est; S.ret += ret; if (ret) S.retDias += 1;
-    S.dias.push({ iso, seg, est, ret, items });
+    S.dias.push({ iso, seg, est, ret, items, abierta: dd.abierta, huerfanas: dd.huerfanas });
   }
 
   return [...anios.values()].sort((a, b) => b.anio.localeCompare(a.anio)).map((A) => ({
@@ -241,9 +291,14 @@ function exportarPDF(worker, titulo, fichajes) {
         + '<td class="hora">' + hora(f.momento) + '</td>'
         + '<td class="obs">' + esc(marcaDe(f)) + '</td></tr>';
     });
-    const s = segDe(items); total += s;
+    const dd = datosDia(iso);
+    total += dd.seg;
+    // Una jornada sin cerrar tiene que constar como tal en el documento
+    const nota = dd.abierta ? 'Jornada sin salida registrada'
+               : (dd.huerfanas ? 'Salida sin entrada registrada' : '');
     filas += '<tr class="dia-tot"><td class="ev">Total del día</td>'
-      + '<td class="hora">' + hms(s) + '</td><td class="obs"></td></tr>';
+      + '<td class="hora">' + hms(dd.seg) + '</td>'
+      + '<td class="obs">' + esc(nota) + '</td></tr>';
     cuerpo += '<tbody class="dia">' + filas + '</tbody>';
   }
 
@@ -316,8 +371,11 @@ function exportarCSV(worker, titulo, fichajes) {
     for (const f of porDia[iso]) {
       L.push([iso, f.tipo, hora(f.momento), f.origen || ''].join(sep));
     }
-    const s = segDe(porDia[iso]); total += s;
-    L.push(['', 'Total del día', hms(s), ''].join(sep));
+    const dd = datosDia(iso);
+    total += dd.seg;
+    const nota = dd.abierta ? 'Jornada sin salida registrada'
+               : (dd.huerfanas ? 'Salida sin entrada registrada' : '');
+    L.push(['', 'Total del día', hms(dd.seg), nota].join(sep));
   }
   L.push('');
   L.push(['', 'TOTAL PERIODO', hms(total), ''].join(sep));
@@ -366,6 +424,11 @@ export async function pintarArbolRegistro(cont, workerId, opciones = {}) {
   }
 
   const margenMin = Math.round((Number(horarioNegocio().margen_seg) || 300) / 60);
+
+  // El emparejamiento se hace UNA vez sobre todos los fichajes y se guarda:
+  // los exportadores tienen que usar el mismo, porque si se recalculara
+  // sobre el trozo exportado, un turno nocturno volvería a quedar partido.
+  DIAS = emparejar(fich);
 
   const arbol = construirArbol(fich, previstos, margenMin);
   cont.innerHTML = '';
@@ -485,9 +548,11 @@ function nodoDia(D, worker, exportar, onCorregir) {
   const det = document.createElement('details');
   det.className = 'arb-nodo arb-nivel-dia';
   const entradas = D.items.filter((f) => f.tipo === 'entrada').length;
+  // Un día incompleto se marca: en el registro legal no puede pasar callado
+  const sub = (D.abierta ? '⚠ sin salida · ' : (D.huerfanas ? '⚠ sin entrada · ' : ''))
+    + entradas + (entradas === 1 ? ' jornada' : ' jornadas');
   det.appendChild(cabecera('dia', fmtDia(D.iso), { ...D, retDias: D.ret ? 1 : 0 },
-    entradas + (entradas === 1 ? ' jornada' : ' jornadas'),
-    worker, exportar, D.items));
+    sub, worker, exportar, D.items));
 
   const body = document.createElement('div');
   body.className = 'arb-body arb-fichajes';
