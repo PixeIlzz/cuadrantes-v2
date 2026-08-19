@@ -103,6 +103,20 @@ negocio puede ver quién ha entrado: tiene política de SELECT sobre esa tabla.
 actividad— y **deliberadamente no devuelve NIF, NSS ni pin_hash**: para
 diagnosticar no hacen falta y son datos de gente que no es cliente tuya.
 
+**Tres estados de empresa** (migración 48), sobre el `activo` que ya existía
+para no volver a tocar `is_manager()`:
+`activo` · `suspendida` (impago, temporal, vuelve al reactivar) ·
+`archivada` (el cliente se fue; datos conservados, fuera de la lista).
+Eliminar existe pero pide el nombre exacto escrito a mano y, **si hay
+fichajes, una segunda confirmación**: borrarlos destruye un registro de
+jornada que hay obligación de conservar cuatro años. `time_entry_audit` no
+tiene clave ajena, así que su rastro sobrevive al borrado.
+
+**Reinicio de PIN** (migración 48): `resetear_pin()` lo **borra** en vez de
+fijar uno nuevo, para que no lo conozca nadie más; el trabajador elige otro
+desde su app y recibe aviso. Antes no existía y quien olvidaba el PIN se
+quedaba sin poder fichar.
+
 ---
 
 ## 4. Modelo de datos (Supabase)
@@ -315,9 +329,9 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 
 | Elemento | Versión |
 |---|---|
-| App (`js/version.js` → `APP_VERSION`) | v81 |
-| Service worker (`sw.js` → `VERSION`) | v81 |
-| Migración SQL | 47 (**44 a 47 pendientes**) |
+| App (`js/version.js` → `APP_VERSION`) | v82 |
+| Service worker (`sw.js` → `VERSION`) | v82 |
+| Migración SQL | 48 (ejecutadas hasta la 47; la **48 pendiente**) |
 | Baseline del esquema | `sql/000_baseline/` (volcado 2026-08-18) |
 
 Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en real.

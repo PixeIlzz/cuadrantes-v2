@@ -2,7 +2,7 @@
 import { toast } from './toast.js';
 import {
   listarEquipo, crearTrabajador, actualizarTrabajador, borrarTrabajador,
-  crearVacacion, actualizarVacacion, borrarVacacion,
+  crearVacacion, actualizarVacacion, borrarVacacion, resetearPin,
 } from '../data/equipo.js';
 import { generarCodigo, codigoVivo } from '../data/invitaciones.js';
 import { confirmar, pedirDatos } from './confirmar.js';
@@ -160,9 +160,31 @@ function filaTrabajador(w) {
   invBtn.title = 'Código de acceso para el empleado';
   invBtn.addEventListener('click', () => mostrarInvitacion(w, invPanel));
 
+  /* Reiniciar el PIN del kiosco. Faltaba y dejaba tirado a quien lo
+     olvidaba: solo lo podía poner el propio empleado. No se pone uno
+     nuevo desde aquí —se borra el que había— para que nadie más lo
+     conozca; el trabajador elige otro desde su app. */
+  const pinBtn = document.createElement('button');
+  pinBtn.type = 'button';
+  pinBtn.className = 'btn small';
+  pinBtn.textContent = '🔢 PIN';
+  pinBtn.title = 'Reiniciar el PIN del kiosco';
+  pinBtn.addEventListener('click', async () => {
+    const ok = await confirmar(
+      'Se borrará el PIN de ' + w.name + ' y se levantará cualquier bloqueo por '
+      + 'intentos fallidos. Tendrá que elegir uno nuevo desde su app antes de '
+      + 'poder fichar en el kiosco. ¿Reiniciar?',
+      { textoOk: 'Reiniciar PIN', textoNo: 'Cancelar' });
+    if (!ok) return;
+    try {
+      await resetearPin(w.id);
+      toast('PIN reiniciado. ' + w.name + ' tiene que poner uno nuevo.');
+    } catch (err) { toast(err.message); }
+  });
+
   const acciones = document.createElement('div');
   acciones.className = 'worker-acc';
-  acciones.append(hoursIn, lbl, datosBtn, vacBtn, invBtn, del);
+  acciones.append(hoursIn, lbl, datosBtn, vacBtn, invBtn, pinBtn, del);
   row.append(nameIn, acciones);
 
   // Panel de vacaciones

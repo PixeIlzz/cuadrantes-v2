@@ -62,6 +62,14 @@ export async function actualizarTrabajador(id, campos) {
   if (error) throw new Error('No se pudo guardar: ' + error.message);
 }
 
+/* Reinicia el PIN del kiosco: lo BORRA para que el trabajador ponga otro.
+   No se fija uno nuevo desde fuera, así nadie más llega a conocerlo.
+   Levanta también el bloqueo por intentos fallidos (migración 48). */
+export async function resetearPin(workerId) {
+  const { error } = await sb.rpc('resetear_pin', { p_worker_id: workerId });
+  if (error) throw new Error('No se pudo reiniciar el PIN: ' + error.message);
+}
+
 export async function borrarTrabajador(id) {
   const { error } = await sb.from('workers').delete().eq('id', id);
   if (error) throw new Error('No se pudo eliminar: ' + error.message);

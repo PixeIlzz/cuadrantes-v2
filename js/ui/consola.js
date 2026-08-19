@@ -10,9 +10,10 @@
 import {
   listarNegocios, cambiarEstadoNegocio, crearCodigoAlta, listarCodigosAlta,
   detalleNegocio, abrirSoporte, cerrarSoporte, misSesionesSoporte,
+  archivarNegocio, eliminarNegocio,
 } from '../data/plataforma.js';
 import { toast } from './toast.js';
-import { confirmar, pedirDatos } from './confirmar.js';
+import { confirmar, pedirDatos, pedirTexto } from './confirmar.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -116,7 +117,7 @@ export async function pintarNegocios() {
 
 function filaNegocio(n) {
   const caja = document.createElement('div');
-  caja.className = 'cons-negocio' + (n.activo ? '' : ' suspendida');
+  caja.className = 'cons-negocio' + (n.activo && !n.archivado ? '' : ' suspendida');
 
   const fila = document.createElement('div');
   fila.className = 'plat-fila';
@@ -125,7 +126,8 @@ function filaNegocio(n) {
   datos.className = 'plat-datos';
   datos.innerHTML =
     '<div class="plat-nombre">' + esc(n.nombre)
-    + (n.activo ? '' : ' <span class="plat-tag">suspendida</span>')
+    + (n.archivado ? ' <span class="plat-tag">archivada</span>'
+                   : (n.activo ? '' : ' <span class="plat-tag">suspendida</span>'))
     + (n.fichaje_activo ? ' <span class="plat-tag ok">fichaje</span>' : '')
     + '</div>'
     + '<div class="plat-meta">'
@@ -167,7 +169,32 @@ function filaNegocio(n) {
     } catch (err) { toast(err.message); bEst.disabled = false; }
   });
 
-  acc.append(bDet, bSop, bEst);
+  const bArch = document.createElement('button');
+  bArch.type = 'button'; bArch.className = 'btn small';
+  bArch.textContent = n.archivado ? 'Desarchivar' : 'Archivar';
+  bArch.addEventListener('click', async () => {
+    if (!n.archivado) {
+      const ok = await confirmar(
+        'Archivar ' + n.nombre + ' es para cuando el cliente se va: los datos se '
+        + 'conservan pero la empresa sale de la lista operativa y pierde el acceso. '
+        + 'Para un impago temporal usa Suspender. ¿Archivar?',
+        { textoOk: 'Archivar', textoNo: 'Cancelar' });
+      if (!ok) return;
+    }
+    bArch.disabled = true;
+    try {
+      await archivarNegocio(n.id, !n.archivado);
+      toast(n.archivado ? 'Empresa desarchivada' : 'Empresa archivada');
+      pintarNegocios();
+    } catch (err) { toast(err.message); bArch.disabled = false; }
+  });
+
+  const bDel = document.createElement('button');
+  bDel.type = 'button'; bDel.className = 'btn small danger';
+  bDel.textContent = 'Eliminar';
+  bDel.addEventListener('click', () => pedirEliminar(n));
+
+  acc.append(bDet, bSop, bEst, bArch, bDel);
   fila.append(datos, acc);
   caja.appendChild(fila);
 
@@ -256,6 +283,44 @@ function pintarFicha(d) {
 
   return '<div class="cons-ficha-grid">'
     + config + actividad + cuentas + equipo + kioscos + soporte + '</div>';
+}
+
+/* ============ ELIMINAR ============ */
+/* Dos puertas a propósito: escribir el nombre exacto, y si hay fichajes,
+   una segunda confirmación. Borrar un registro de jornada no debería poder
+   hacerse de un clic distraído. */
+async function pedirEliminar(n) {
+  const seguir = await confirmar(
+    'Eliminar ' + n.nombre + ' borra la empresa y todo lo suyo: equipo, '
+    + 'cuadrantes, vacaciones, solicitudes y fichajes. No se puede deshacer. '
+    + 'Si el cliente simplemente se ha ido, lo correcto es Archivar.',
+    { textoOk: 'Continuar', textoNo: 'Cancelar', peligro: true });
+  if (!seguir) return;
+
+  const nombre = await pedirTexto(
+    'Escribe el nombre exacto para confirmar: ' + n.nombre,
+    '',
+    { textoOk: 'Eliminar', placeholder: n.nombre, maxLength: 60 });
+  if (nombre === null) return;
+
+  try {
+    let r = await eliminarNegocio(n.id, nombre, false);
+
+    if (!r.ok && r.fichajes) {
+      const ok = await confirmar(
+        'Esa empresa tiene ' + r.fichajes + ' fichajes. Son registro de jornada y '
+        + 'la ley obliga a conservarlo cuatro años. Si los borras, desaparecen. '
+        + '¿Seguro que quieres destruirlos?',
+        { textoOk: 'Sí, borrar todo', textoNo: 'Mejor archivar', peligro: true });
+      if (!ok) return;
+      r = await eliminarNegocio(n.id, nombre, true);
+    }
+
+    if (!r.ok) { toast(r.error || 'No se pudo eliminar.'); return; }
+    toast('Empresa eliminada');
+    pintarNegocios();
+    pintarCodigos();
+  } catch (err) { toast(err.message); }
 }
 
 /* ============ SOPORTE ============ */

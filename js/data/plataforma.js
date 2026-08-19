@@ -65,6 +65,24 @@ export async function cerrarSoporte(businessId) {
   if (error) throw new Error(error.message);
 }
 
+/* Archivar: el cliente se fue. Conserva datos, sale de la lista operativa. */
+export async function archivarNegocio(businessId, archivar) {
+  const { error } = await sb.rpc('admin_archivar_negocio', {
+    p_business_id: businessId, p_archivar: archivar,
+  });
+  if (error) throw new Error('No se pudo archivar: ' + error.message);
+}
+
+/* Eliminar de verdad. Devuelve {ok, error, fichajes} — los errores vienen
+   como dato, no como excepción, para poder pedir la confirmación extra. */
+export async function eliminarNegocio(businessId, confirmacion, forzar = false) {
+  const { data, error } = await sb.rpc('admin_eliminar_negocio', {
+    p_business_id: businessId, p_confirmacion: confirmacion, p_forzar: forzar,
+  });
+  if (error) throw new Error(error.message);
+  return data || { ok: false, error: 'Sin respuesta del servidor.' };
+}
+
 /* Sesiones de soporte mías que siguen vivas */
 export async function misSesionesSoporte() {
   const { data, error } = await sb.rpc('soporte_mis_sesiones');
