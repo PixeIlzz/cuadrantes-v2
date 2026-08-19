@@ -2,7 +2,7 @@
 // Todo son desplegables. En el gestor cada nivel lleva botones PDF/CSV.
 // Lo usan la vista del gestor y la del empleado (esta sin botones). v1
 import { ctx } from '../auth.js';
-import { registroArbol, diaDe, datosLegales, horarioNegocio } from '../data/fichaje.js';
+import { registroArbol, diaDe, datosLegales, horarioNegocio, zonaNegocio } from '../data/fichaje.js';
 import { toast } from './toast.js';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -11,7 +11,7 @@ const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
 /* ================= utilidades de tiempo ================= */
 function hora(iso) {
   return new Date(iso).toLocaleTimeString('es-ES',
-    { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Atlantic/Canary' });
+    { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: zonaNegocio() });
 }
 function segDe(fichajes) {
   let s = 0, e = null;
@@ -34,7 +34,7 @@ function hhmmAMin(hhmm) {
 }
 function minutosDelDia(iso) {
   const t = new Date(iso).toLocaleTimeString('es-ES',
-    { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Atlantic/Canary' });
+    { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: zonaNegocio() });
   const [h, m] = t.split(':').map(Number);
   return h * 60 + m;
 }
@@ -249,7 +249,7 @@ function exportarPDF(worker, titulo, fichajes) {
 
   const win = window.open('', '_blank');
   if (!win) { toast('Permite las ventanas emergentes para exportar'); return; }
-  const generado = new Date().toLocaleString('es-ES', { timeZone: 'Atlantic/Canary' });
+  const generado = new Date().toLocaleString('es-ES', { timeZone: zonaNegocio() });
 
   win.document.write(
     '<!doctype html><html lang="es"><head><meta charset="utf-8">'

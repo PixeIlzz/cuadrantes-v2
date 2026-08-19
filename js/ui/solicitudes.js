@@ -4,6 +4,7 @@ import { confirmar } from './confirmar.js';
 import { ctx } from '../auth.js';
 import { plantilla } from '../data/empleado.js';
 import { etiquetaSemana, fmtCorto } from '../data/semanas.js';
+import { zonaNegocio } from '../data/fichaje.js';
 import {
   crearSolicitud, misSolicitudes, retirarSolicitud,
   solicitudesDelNegocio, contarPendientes, resolverSolicitud, semanasAfectadas,
@@ -26,7 +27,7 @@ const esCorreccion = (s) => s.type === 'timefix';
 function horaDe(iso) {
   return new Date(iso).toLocaleString('es-ES', {
     day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
-    hour12: false, timeZone: 'Atlantic/Canary',
+    hour12: false, timeZone: zonaNegocio(),
   });
 }
 

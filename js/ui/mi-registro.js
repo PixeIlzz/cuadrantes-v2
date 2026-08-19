@@ -5,7 +5,7 @@
 import { ctx } from '../auth.js';
 import {
   fichajesDe, horarioNegocio, miEstado, misFichajesHoy,
-  suscribirFichajes, cerrarCanal, miTurnoPrevisto, diaDe,
+  suscribirFichajes, cerrarCanal, miTurnoPrevisto, diaDe, zonaNegocio,
 } from '../data/fichaje.js';
 import { pintarArbolRegistro } from './registro-arbol.js';
 import { pedirCorreccion } from './correccion.js';
@@ -254,7 +254,7 @@ async function pintarCorrecciones(cont) {
 function textoFix(fix) {
   const f = fix || {};
   const m = f.momento ? new Date(f.momento).toLocaleTimeString('es-ES',
-    { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Atlantic/Canary' }) : '?';
+    { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: zonaNegocio() }) : '?';
   if (f.accion === 'editar') return 'cambiar una hora a las ' + m;
   if (f.accion === 'anadir') return 'añadir la ' + (f.tipo === 'entrada' ? 'entrada' : 'salida') + ' de las ' + m;
   if (f.accion === 'borrar') return 'borrar un fichaje que sobra';
@@ -279,11 +279,11 @@ function filaFichaje(f, tramos, cfg) {
 
 function hora(iso) {
   return new Date(iso).toLocaleTimeString('es-ES',
-    { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Atlantic/Canary' });
+    { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: zonaNegocio() });
 }
 function minutosDelDia(iso) {
   const s = new Date(iso).toLocaleTimeString('es-ES',
-    { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Atlantic/Canary' });
+    { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: zonaNegocio() });
   const [h, m] = s.split(':').map(Number);
   return h * 60 + m;
 }

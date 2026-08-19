@@ -7,12 +7,21 @@ export async function listarEquipo() {
 
   const { data: workers, error: e1 } = await sb
     .from('workers')
-    .select('id, name, weekly_shifts, sort_order, nif, full_name, nss')
+    .select('id, name, weekly_shifts, sort_order, full_name')
     .eq('business_id', biz)
     .eq('active', true)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true });
   if (e1) throw new Error('Equipo: ' + e1.message);
+
+  /* NIF y nº de Seguridad Social van aparte: desde la migración 42 esas
+     columnas están cerradas al cliente, porque la RLS es por fila y no
+     limitaba columnas —cualquier empleado podía leerlas, y también el
+     pin_hash—. La RPC comprueba is_manager, así que al empleado le llega
+     un error que aquí se ignora y se queda sin esos campos. */
+  const legales = {};
+  const { data: dl } = await sb.rpc('equipo_datos_legales', { p_business_id: biz });
+  for (const d of (dl || [])) legales[d.worker_id] = d;
 
   const { data: vacs, error: e2 } = await sb
     .from('vacations')
@@ -25,7 +34,12 @@ export async function listarEquipo() {
   for (const v of vacs || []) {
     (porTrabajador[v.worker_id] ||= []).push(v);
   }
-  return (workers || []).map((w) => ({ ...w, vacs: porTrabajador[w.id] || [] }));
+  return (workers || []).map((w) => ({
+    ...w,
+    nif: (legales[w.id] || {}).nif || null,
+    nss: (legales[w.id] || {}).nss || null,
+    vacs: porTrabajador[w.id] || [],
+  }));
 }
 
 export async function crearTrabajador(name, weeklyShifts, sortOrder) {

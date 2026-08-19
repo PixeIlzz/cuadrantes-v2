@@ -1,6 +1,7 @@
 // Tablón de avisos del negocio. v18
 import { sb } from '../supabase.js';
 import { ctx } from '../auth.js';
+import { isoDe } from './semanas.js';
 
 /* Avisos visibles (RLS ya filtra activos y no caducados para el empleado) */
 export async function avisosVisibles() {
@@ -12,7 +13,9 @@ export async function avisosVisibles() {
     .order('pinned', { ascending: false })
     .order('created_at', { ascending: false });
   if (error) throw new Error('Avisos: ' + error.message);
-  const hoy = new Date().toISOString().slice(0, 10);
+  // isoDe(), no toISOString(): ese devuelve UTC y entre las 00:00 y la 01:00
+  // daba la fecha de ayer, así que un aviso caducado se seguía viendo.
+  const hoy = isoDe(new Date());
   return (data || []).filter((a) => !a.expires_at || a.expires_at >= hoy);
 }
 

@@ -5,6 +5,7 @@ import { ctx } from '../auth.js';
 import {
   avisosVisibles, todosLosAvisos, crearAviso, actualizarAviso, borrarAviso,
 } from '../data/avisos.js';
+import { isoDe } from '../data/semanas.js';
 
 const $ = (id) => document.getElementById(id);
 const fmtFecha = (iso) => new Date(iso).toLocaleDateString('es-ES',
@@ -83,7 +84,8 @@ export async function abrirAvisos() {
 }
 
 function fila(a) {
-  const hoy = new Date().toISOString().slice(0, 10);
+  // isoDe(), no toISOString(): ese devuelve UTC (ver data/avisos.js)
+  const hoy = isoDe(new Date());
   const caducado = a.expires_at && a.expires_at < hoy;
   const visible = a.active && !caducado;
 

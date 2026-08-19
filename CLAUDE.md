@@ -205,8 +205,12 @@ notificaciones push configurables.
 
 ## 6. Decisiones y aprendizajes (no repetir errores)
 
-**Zona horaria.** Todo cálculo de fechas se hace en `Atlantic/Canary` **en el
-servidor**. Comparar cadenas en UTC provocó un bug real de medianoche.
+**Zona horaria.** Todo cálculo de fechas se hace **en el servidor**, en la zona
+del negocio (`config.fichaje.tz`). Comparar cadenas en UTC provocó un bug real de
+medianoche. En el cliente, la zona sale de `zonaNegocio()`
+([data/fichaje.js](js/data/fichaje.js)) — nunca de una constante — y en el kiosco,
+que está deslogueado, la manda `kiosco_estado()`. `Atlantic/Canary` solo se usa
+como respaldo cuando el negocio no la tiene configurada.
 
 **`toISOString()` nunca para sacar "hoy".** Devuelve UTC, así que entre las 00:00
 y la 01:00 (horario de verano canario) da la fecha de ayer. Volvió a morder en
@@ -268,47 +272,34 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 
 | Elemento | Versión |
 |---|---|
-| App (`js/version.js` → `APP_VERSION`) | v75 |
-| Service worker (`sw.js` → `VERSION`) | v75 |
-| Migración SQL | 41 (la 40 y la 41 escritas, **sin ejecutar**) |
+| App (`js/version.js` → `APP_VERSION`) | v76 (en producción la v75) |
+| Service worker (`sw.js` → `VERSION`) | v76 |
+| Migración SQL | 43 (ejecutadas hasta la 41; **42 y 43 pendientes**) |
 | Baseline del esquema | `sql/000_baseline/` (volcado 2026-08-18) |
 
 Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en real.
 
-### Dónde nos quedamos (2026-08-19, 00:45)
+### Dónde nos quedamos (2026-08-19)
 
-**Todo commiteado y subido**: `origin/main` en `eb2e8e2 fix v73`. Como GitHub
-Pages sirve el repo, la v73 ya está en producción.
+En producción y funcionando: **v75**, migraciones hasta la **41** ejecutadas.
+Push rotado y con la Edge Function validando cabecera. Árbol del registro en una
+sola petición. Cierre automático activado y en observación.
 
-Hecho y probado en real:
-
-- Migraciones **38** (`registro_arbol`) y **39** (secreto del push) aplicadas en
-  Supabase.
-- **Push rotado y funcionando.** `PUSH_SECRET` creado, Edge Function desplegada
-  con validación de cabecera, `app_config` relleno. El endpoint ya no está
-  abierto a cualquiera.
-- El árbol del registro carga con **una sola petición** y se ve bien.
-
-Escrito pero **sin ejecutar ni desplegar** (v74 en los archivos, v73 en producción):
-
-- **Migración 40**, cierre automático de jornada. Nace apagada; hay que
-  activarla por negocio a mano tras revisar qué jornadas hay abiertas.
-- **Migración 41**, permisos. Va **junto con la v74**: la app ya llama a
-  `mi_turno_previsto()`, que crea esa migración. Si se sube la v74 sin ejecutar
-  la 41, *Mi registro* no encuentra la función; si se ejecuta la 41 sin subir la
-  v74, el cliente sigue llamando a `turno_previsto` y recibe permission denied.
-  **Las dos cosas a la vez.**
+**Sin ejecutar ni desplegar: las migraciones 42 y 43, y la v76.** Salen de la
+revisión de seguridad del 2026-08-19 y **van las tres juntas**: la app deja de
+leer `nif`/`nss` como columnas y los pide por `equipo_datos_legales()` (42),
+manda el negocio al fichar (43) y lee la zona horaria del kiosco de
+`kiosco_estado()` (43).
 
 Lo primero al retomar:
 
-- **Comprobar el arreglo de fechas de la v73.** Está desplegado pero sin
-  verificar. El síntoma era que desaparecía la semana del 17 de agosto: el rango
-  se pedía con `toISOString()` (UTC) y los fichajes de madrugada se caían fuera.
-  Ahora usa `diaDe()`. **Solo se reproduce entre las 00:00 y la 01:00** en
-  horario de verano canario; fuera de esa franja no se distingue si está bien.
-  La otra mitad —la cabecera de semana, que pintaba "Semana 10/08 – 10/08" en vez
-  de la semana natural— se ve a cualquier hora.
-- El PDF y el CSV con datos reales (pendiente 1), que siguen sin ejecutarse nunca.
+- Ejecutar la **42** y la **43** y desplegar la **v76**, y probar después con las
+  dos cuentas: gestor (Equipo, diálogo de NIF, exportar PDF) y empleado (fichar,
+  Mi registro, proponer una corrección), más el kiosco. Si algo dice
+  `permission denied for column X`, esa columna falta en un `grant` de la 42.
+- **El PDF y el CSV con datos reales** (pendiente 1). Sigue sin hacerse nunca y es
+  lo que desbloquea sacar el fichaje de beta.
+- Mirar qué hizo el cierre automático la primera noche.
 
 > En v68 se unificaron las dos versiones (la app iba por v67 y el SW por v50) en un
 > único número visible en pantalla. Antes la versión de app no constaba en ningún
@@ -325,49 +316,34 @@ Lo primero al retomar:
 2. **Sacar el fichaje de beta** — quitar el flag de probador y activarlo para toda la
    plantilla, una vez validada la exportación legal (punto 1) y probadas en real las
    correcciones (apartado 5).
-3. **Activar el cierre automático de jornada** — la migración 40 ya está escrita
-   ([040_cierre_automatico.sql](sql/040_cierre_automatico.sql)) pero **nace
-   apagada**: escribe en un registro legal y es opt-in por negocio. Cierra con
-   el fin del turno de esa persona (`turno_previsto`), con respaldo a
-   `entrada + cierre_max_h` si no hay turno, marcando `estimado` y `origen='auto'`
-   y avisando al trabajador para que lo revise.
-   **Se enciende desde la app** (v75): Ajustes → Fichaje, con el margen de
-   cortesía y el tope al lado. Al activarlo pide confirmación, porque en la
-   siguiente pasada del cron cierra todo lo que lleve abierto y avisa a cada
-   afectado. Antes de encenderlo conviene mirar qué jornadas hay abiertas —
-   consulta en el PASO 3 del archivo— y limpiar restos de las pruebas.
-   Hasta que se active sigue el problema de fondo: `fichar_worker` coge el
-   último fichaje **sin filtrar por día**, así que quien olvida la salida del
-   viernes convierte su entrada del sábado en la salida del viernes. Bloquea
-   de hecho el punto 1.
-4. **Ejecutar la migración 41 (permisos)** — revisado el 2026-08-19 con
-   [sql/tools/revisar_permisos.sql](sql/tools/revisar_permisos.sql): **casi todas
-   las funciones tenían `=X/postgres`**, es decir EXECUTE para PUBLIC, o sea
-   invocables sin sesión. Y casi todas son `SECURITY DEFINER`. La peor,
-   `avisar_gestores()`: sin control de quién llama, inserta una notificación con
-   texto arbitrario en cualquier negocio, y eso dispara push real al gestor.
-   **Requiere la 40 ejecutada** (hace `revoke` sobre `cerrar_jornadas_olvidadas`).
-   [041_permisos_funciones.sql](sql/041_permisos_funciones.sql) cierra en bloque
-   y reabre solo lo justo (kiosco e `invite_owner` para `anon`), y añade
-   `mi_turno_previsto()` para que el cliente no pueda pedir el horario de un
-   trabajador ajeno. **Escrita, sin ejecutar.** Va junto con la v74, que ya usa
-   la función nueva.
-5. **Multi-tenancy en `fichar()`** — lleva `'Atlantic/Canary'` escrito a fuego
-   (el resto del módulo lee `config->'fichaje'->>'tz'`) y busca la ficha con
-   `where w.profile_id = auth.uid() limit 1`, sin filtrar por negocio: quien
-   tenga ficha en dos, ficha en uno arbitrario. En el cliente, lo mismo:
-   [js/data/fichaje.js](js/data/fichaje.js) exporta `const TZ = 'Atlantic/Canary'`,
-   así que el árbol, los totales y el PDF se pintan en hora canaria sea cual sea
-   el negocio.
-6. **Limpieza** — eliminar el respaldo de "horario general del negocio" cuando todas
+3. **Resto de la revisión de seguridad (2026-08-19)** — lo que no arreglan la 42
+   ni la 43:
+   - **Dependencias por CDN sin fijar por hash.** `supabase-js` viene de jsdelivr
+     ([supabase.js:2](js/supabase.js:2)) y `jsQR` de esm.sh
+     ([kiosco.js:5](js/ui/kiosco.js:5)). Un CDN comprometido serviría código con
+     acceso total a la sesión. SRI no aplica a `import` de módulos ES: la
+     solución es **auto-alojar** los dos archivos en `js/vendor/`. De paso la PWA
+     funcionaría offline de verdad.
+   - **Backups.** El plan gratuito de Supabase guarda copias diarias con 7 días
+     de retención y sin point-in-time recovery. El registro de jornada hay que
+     conservarlo **4 años**. Hace falta plan de pago con PITR o una exportación
+     periódica a un sitio duradero.
+   - **Sin separación desarrollo/producción.** Cada migración se ejecuta directa
+     contra los datos reales de la plantilla. Para vender esto hace falta un
+     proyecto de staging donde probarlas antes.
+   - **Sin rate limiting.** `redeem_invite` acepta intentos ilimitados (códigos de
+     6 caracteres sobre alfabeto de 28 = 481M, no trivial pero tampoco infinito) e
+     `invite_owner` filtra un nombre por código válido. El kiosco sí está
+     protegido: 5 intentos y bloqueo de 5 minutos.
+4. **Limpieza** — eliminar el respaldo de "horario general del negocio" cuando todas
    las semanas publicadas lleven horas por columna. Y retirar
    `fichajes_por_jornada()`, que desde la migración 38 ya no la usa nadie.
-7. **Comandero** (futuro, arquitectura ya diseñada) — comandas desde el móvil del
+5. **Comandero** (futuro, arquitectura ya diseñada) — comandas desde el móvil del
    camarero, pantallas de cocina por estación (parrilla, cocina) y vista de caja no
    fiscal. Se mantiene como **herramienta interna**, emitiendo los tickets por el TPV
    existente, para no entrar en las obligaciones de VeriFactu (enero 2027 sociedades,
    julio 2027 autónomos).
-8. **Comercial** — piloto gratuito con un negocio vecino antes de invertir en la
+6. **Comercial** — piloto gratuito con un negocio vecino antes de invertir en la
    migración multicliente.
 
 ---

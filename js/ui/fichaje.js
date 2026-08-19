@@ -6,7 +6,7 @@ import {
   fichar, misFichajesHoy, miEstado, fichajesHoyEquipo, fichajesDe,
   horarioNegocio, guardarHorarioFichaje, corregirFichaje, borrarFichaje,
   datosLegales, guardarDatosLegales, estadoDeWorker,
-  suscribirFichajes, jornadaHoy,
+  suscribirFichajes, jornadaHoy, zonaNegocio,
 } from '../data/fichaje.js';
 import { listarEquipo } from '../data/equipo.js';
 import { pintarArbolRegistro } from './registro-arbol.js';
@@ -21,12 +21,12 @@ let relojTimer = null;
 /* Hora legible desde un timestamp */
 function hora(iso) {
   return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit',
-    timeZone: 'Atlantic/Canary' });
+    timeZone: zonaNegocio() });
 }
 function minutosDelDia(iso) {
   const d = new Date(iso);
   const s = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false,
-    timeZone: 'Atlantic/Canary' });
+    timeZone: zonaNegocio() });
   const [h, m] = s.split(':').map(Number);
   return h * 60 + m;
 }
@@ -46,7 +46,7 @@ export async function abrirFichajeEmpleado() {
   try {
     await pintarFichajeEmpleado(cont);
   } catch (err) {
-    cont.innerHTML = '<span class="empty-note">' + err.message + '</span>';
+    cont.innerHTML = '<span class="empty-note">' + esc(err.message) + '</span>';
   }
 }
 
@@ -97,7 +97,7 @@ async function pintarFichajeEmpleado(cont) {
   // Reloj en vivo
   const tick = () => {
     reloj.textContent = new Date().toLocaleTimeString('es-ES',
-      { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Atlantic/Canary' });
+      { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: zonaNegocio() });
   };
   tick();
   if (relojTimer) clearInterval(relojTimer);
@@ -171,14 +171,14 @@ export async function abrirFichajeGestor() {
     equipoCache = await listarEquipo();
     await pintarEquipoHoy(cont);
   } catch (err) {
-    cont.innerHTML = '<span class="empty-note">' + err.message + '</span>';
+    cont.innerHTML = '<span class="empty-note">' + esc(err.message) + '</span>';
   }
 }
 
 async function pintarEquipoHoy(cont) {
   let estado;
   try { estado = await jornadaHoy(); }
-  catch (e) { cont.innerHTML = '<span class="empty-note">' + e.message + '</span>'; return; }
+  catch (e) { cont.innerHTML = '<span class="empty-note">' + esc(e.message) + '</span>'; return; }
   cont.innerHTML = '';
 
   const h = document.createElement('h2');

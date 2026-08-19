@@ -2,9 +2,11 @@
 import { sb } from '../supabase.js';
 import { ctx } from '../auth.js';
 
-/* Fichar (alterna entrada/salida). Devuelve {tipo, momento}. */
+/* Fichar (alterna entrada/salida). Devuelve {tipo, momento}.
+   Se manda el negocio: sin él, quien tenga ficha en dos ficharía en uno
+   arbitrario (migración 43). */
 export async function fichar() {
-  const { data, error } = await sb.rpc('fichar');
+  const { data, error } = await sb.rpc('fichar', { p_business_id: ctx.business.id });
   if (error) throw new Error(error.message);
   return data;
 }
@@ -174,9 +176,18 @@ export async function guardarHorarioFichaje(fichajeConfig) {
   ctx.business.config = cfg;
 }
 
-export const TZ = 'Atlantic/Canary';
+/* Zona horaria DEL NEGOCIO, para pintar horas en el cliente. La fuente es
+   config.fichaje.tz, la misma que lee el servidor; Canarias es solo el
+   respaldo de quien no la tenga configurada. Antes era una constante, y eso
+   pintaba el árbol, los totales y el PDF en hora canaria fuese cual fuese
+   el negocio. */
+export function zonaNegocio() {
+  return (ctx.business && ctx.business.config && ctx.business.config.fichaje
+    && ctx.business.config.fichaje.tz) || 'Atlantic/Canary';
+}
+
 /* Fecha yyyy-mm-dd de un instante, en la zona del negocio (no del dispositivo). */
 export function diaDe(iso) {
-  return new Date(iso).toLocaleDateString('en-CA', { timeZone: TZ });
+  return new Date(iso).toLocaleDateString('en-CA', { timeZone: zonaNegocio() });
 }
 function hoyIso() { return diaDe(new Date()); }

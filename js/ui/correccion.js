@@ -6,28 +6,32 @@
 //    en el árbol —se construye a partir de los fichajes—, así que necesita
 //    su propia puerta y propone la jornada entera de una vez.
 import { crearCorreccion } from '../data/solicitudes.js';
+import { zonaNegocio } from '../data/fichaje.js';
 import { toast } from './toast.js';
 
-const TZ = 'Atlantic/Canary';
+/* La zona sale de la config del negocio, no de una constante: ver
+   zonaNegocio() en data/fichaje.js. Es función y no valor porque el
+   módulo se carga antes de que haya negocio en sesión. */
+const TZ = () => zonaNegocio();
 
 function hhmm(iso) {
   return new Date(iso).toLocaleTimeString('es-ES',
-    { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: TZ });
+    { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: TZ() });
 }
 function hora(iso) {
   return new Date(iso).toLocaleTimeString('es-ES',
-    { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: TZ });
+    { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: TZ() });
 }
 function fmtDia(iso) {
   return new Date(iso + 'T12:00:00').toLocaleDateString('es-ES',
     { weekday: 'long', day: 'numeric', month: 'long' });
 }
 function hoyIso() {
-  return new Date().toLocaleDateString('en-CA', { timeZone: TZ });
+  return new Date().toLocaleDateString('en-CA', { timeZone: TZ() });
 }
 /* Valor para un <input type="datetime-local"> a partir de un fichaje */
 function valorLocal(iso) {
-  return new Date(iso).toLocaleDateString('en-CA', { timeZone: TZ }) + 'T' + hhmm(iso);
+  return new Date(iso).toLocaleDateString('en-CA', { timeZone: TZ() }) + 'T' + hhmm(iso);
 }
 
 /* Campo con etiqueta, reutilizado en todo el diálogo */

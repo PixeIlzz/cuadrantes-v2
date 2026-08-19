@@ -14,6 +14,11 @@ import {
 const $ = (id) => document.getElementById(id);
 const CLAVE_TOKEN = 'staffpoint-kiosco-token';
 
+/* Zona horaria del local. La tablet está deslogueada, así que no puede leer
+   la config del negocio: la manda kiosco_estado() (migración 43). Canarias
+   solo es el respaldo mientras no llega la primera respuesta. */
+let tzKiosco = 'Atlantic/Canary';
+
 let pollTimer = null;
 let relojTimer = null;
 let contadorTimer = null;
@@ -72,7 +77,7 @@ function iniciales(nombre) {
 }
 function horaCanaria(iso) {
   return new Date(iso).toLocaleTimeString('es-ES',
-    { hour: '2-digit', minute: '2-digit', timeZone: 'Atlantic/Canary' });
+    { hour: '2-digit', minute: '2-digit', timeZone: tzKiosco });
 }
 function ocultarPantallas() {
   ['cargando', 'vista-login', 'vista-app', 'vista-kiosco', 'vista-kiosco-emparejar']
@@ -302,7 +307,7 @@ function arrancarReloj() {
   if (!reloj) return;
   const tick = () => {
     reloj.textContent = new Date().toLocaleTimeString('es-ES',
-      { hour: '2-digit', minute: '2-digit', timeZone: 'Atlantic/Canary' });
+      { hour: '2-digit', minute: '2-digit', timeZone: tzKiosco });
   };
   tick();
   if (relojTimer) clearInterval(relojTimer);
@@ -330,6 +335,7 @@ async function pintarRejilla(token, silencioso) {
     return;
   }
 
+  if (estado.tz) tzKiosco = estado.tz;
   calcularHorarioHoy(estado.horarios, estado.margen_seg);
   const equipo = estado.workers || [];
 
@@ -346,7 +352,6 @@ async function pintarRejilla(token, silencioso) {
     card.dataset.desde = w.desde || '';
     card.dataset.tarde = (w.dentro && llegoTarde(w.desde, w.tramos)) ? '1' : '';
     card.dataset.max = String(minDeTramos(w.tramos));
-    card.dataset.seghoy = String(Number(w.seg_hoy) || 0);
     card.dataset.seghoy = String(Number(w.seg_hoy) || 0);
     card.innerHTML = '<span class="ke-avatar">' + iniciales(w.name) + '</span>'
       + '<span class="ke-nombre"></span>'
