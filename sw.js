@@ -5,7 +5,7 @@
    IMPORTANTE: este número y APP_VERSION en js/version.js son el mismo
    número y se suben juntos. Si divergen, Ajustes avisa de que el
    navegador está sirviendo código viejo. */
-const VERSION = 'v88';
+const VERSION = 'v89';
 const CACHE = 'cuadrantes-' + VERSION;
 
 const ARCHIVOS = [
@@ -61,6 +61,8 @@ const ARCHIVOS = [
   './js/data/kiosco.js',
   './js/data/plataforma.js',
   './js/ui/consola.js',
+  './js/data/onboarding.js',
+  './js/ui/onboarding.js',
   './js/ui/kiosco.js',
   './js/ui/registro-arbol.js',
   './js/ui/mi-registro.js',

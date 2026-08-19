@@ -26,6 +26,11 @@ import { arrancarKiosco, mostrarEmparejamiento, revisarVinculacionPendiente, pin
 import { canjearCodigo, nombreDelCodigo } from './data/invitaciones.js';
 import { soyAdmin, cerrarSoporte, soporteActivo } from './data/plataforma.js';
 import { initConsola, CLAVE_ENTRAR } from './ui/consola.js';
+import { misNegocios, guiaGestorVista, guiaEmpleadoVista } from './data/onboarding.js';
+import { guiaGestor, guiaEmpleado } from './ui/onboarding.js';
+
+/* Negocio elegido en el selector, para cuentas con más de uno */
+const CLAVE_NEGOCIO = 'staffpoint-negocio';
 import {
 
   initSolicitudes, abrirSolicitudes, refrescarContador,
@@ -295,7 +300,19 @@ async function cargarNegocio(session) {
      el SQL Editor. Ahora se ofrece crear uno o entrar con un código. */
   if ((!mem || mem.length === 0) && !entrarEn) { mostrarAltaNegocio(); return; }
 
-  const bizId = entrarEn || mem[0].business_id;
+  /* Qué negocio se carga. `memberships` siempre fue de muchos a muchos,
+     pero esto cogía mem[0]: la primera fila que devolviera Postgres, sin
+     orden garantizado. Con una sola membresía daba igual; desde que
+     cualquiera puede crear un segundo negocio, entraba en uno arbitrario
+     que además podía cambiar entre recargas. Ahora se recuerda el elegido. */
+  let elegido = null;
+  try { elegido = sessionStorage.getItem(CLAVE_NEGOCIO); } catch (_) {}
+  const esMio = (id) => (mem || []).some((m) => m.business_id === id);
+
+  const bizId = entrarEn
+    || (elegido && esMio(elegido) ? elegido : null)
+    || mem[0].business_id;
+
   const propia = (mem || []).find((m) => m.business_id === bizId);
   // En soporte no hay membresía: se entra con permisos de gestor, que es lo
   // que concede la sesión, y con un aviso visible en pantalla.
@@ -344,6 +361,48 @@ async function cargarNegocio(session) {
 
   mostrarApp(session, rol, biz);
   if (ctx.enSoporte) avisoSoporte(biz.name, biz.id);
+
+  await pintarSelectorNegocio(bizId);
+  await ofrecerGuia(rol);
+}
+
+/* Selector de negocio en la cabecera. Solo se ve si hay más de uno: nadie
+   necesita un desplegable con una sola opción. */
+async function pintarSelectorNegocio(actual) {
+  const sel = $('selector-negocio');
+  if (!sel) return;
+
+  let lista = [];
+  try { lista = await misNegocios(); } catch (_) { return; }
+  if (lista.length < 2) { sel.hidden = true; return; }
+
+  sel.innerHTML = '';
+  for (const n of lista) {
+    const o = document.createElement('option');
+    o.value = n.id;
+    o.textContent = n.nombre + (n.rol === 'employee' ? ' · empleado' : '');
+    if (n.id === actual) o.selected = true;
+    sel.appendChild(o);
+  }
+  sel.hidden = false;
+
+  sel.addEventListener('change', () => {
+    try { sessionStorage.setItem(CLAVE_NEGOCIO, sel.value); } catch (_) {}
+    location.reload();
+  });
+}
+
+/* La guía sale sola la primera vez y no vuelve a molestar. Nunca durante
+   una sesión de soporte: ahí estás mirando la cuenta de otro. */
+async function ofrecerGuia(rol) {
+  if (ctx.enSoporte) return;
+  try {
+    if (rol === 'manager') {
+      if (!guiaGestorVista()) await guiaGestor((tab) => cambiarPestana(tab));
+    } else {
+      if (!(await guiaEmpleadoVista())) await guiaEmpleado(!!ctx.fichajeActivo);
+    }
+  } catch (_) { /* una guía que falla no puede impedir usar la app */ }
 }
 
 /* Consola del dueño de la plataforma */
@@ -403,6 +462,14 @@ function avisoSoporte(nombre, businessId) {
   caja.append(et, cerrar, volver);
   if (salir && salir.parentNode) destino.insertBefore(caja, salir);
   else destino.appendChild(caja);
+}
+
+/* Releer las guías cuando uno quiera, desde Ajustes */
+if ($('btn-guia-gestor')) {
+  $('btn-guia-gestor').addEventListener('click', () => guiaGestor((t) => cambiarPestana(t)));
+}
+if ($('btn-guia-empleado')) {
+  $('btn-guia-empleado').addEventListener('click', () => guiaEmpleado(!!ctx.fichajeActivo));
 }
 
 document.addEventListener('staffpoint:salir', async () => {

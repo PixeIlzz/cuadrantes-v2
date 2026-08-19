@@ -75,10 +75,30 @@ sql/                Migraciones numeradas. Ver aviso abajo: las 1–32 NO
 `data/`: `avisos`, `empleado`, `equipo`, `fichaje`, `invitaciones`, `kiosco`,
 `migracion`, `notificaciones`, `semanas`, `solicitudes`, `tareas`
 
-`ui/`: `ajustes`, `ajustes-empleado`, `avisos`, `confirmar`, `correccion`, `cuadrante`,
-`empleado`, `equipo`, `exportar`, `fichaje`, `hoy`, `kiosco`, `mi-registro`, `migracion`,
-`notificaciones`, `plataforma`, `privacidad`, `programadas`, `push`, `push-bienvenida`,
-`registro-arbol`, `solicitudes`, `tareas`, `tema`, `toast`, `version`
+`ui/`: `ajustes`, `ajustes-empleado`, `avisos`, `confirmar`, `consola`, `correccion`,
+`cuadrante`, `empleado`, `equipo`, `exportar`, `fichaje`, `hoy`, `kiosco`, `mi-registro`,
+`migracion`, `notificaciones`, `onboarding`, `privacidad`, `programadas`, `push`,
+`push-bienvenida`, `registro-arbol`, `solicitudes`, `tareas`, `tema`, `toast`, `version`
+
+### Varios negocios por cuenta (v89)
+`memberships` siempre fue de muchos a muchos, pero el arranque cogía
+`mem[0].business_id` — la primera fila que devolviera Postgres, sin orden
+garantizado. Con un solo negocio daba igual; desde que cualquiera puede crear
+otro, entraba en uno arbitrario que podía cambiar entre recargas. Ahora hay
+selector en la cabecera (oculto si solo hay uno) y el elegido se recuerda en
+`sessionStorage`.
+
+### Guías de bienvenida (v89)
+Salen solas la primera vez y se pueden releer desde Ajustes. La del gestor se
+apunta en `businesses.config.onboarding` —es del negocio, no de la persona— y
+la del empleado en `profiles.onboarding` (migración 51), **no en el navegador**,
+para no repetírsela al cambiar de móvil.
+
+Son guías, no asistentes que rellenan datos: cada paso explica y lleva a la
+pantalla donde ya se hace. Reimplementar aquí los editores de puestos, días y
+equipo habría duplicado código que se desincroniza. La excepción son razón
+social y CIF, que se piden en el paso 2 porque si no se piden al principio no
+se rellenan nunca y el PDF legal sale incompleto.
 
 ### Tres niveles de permiso, no dos
 
@@ -341,9 +361,9 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 
 | Elemento | Versión |
 |---|---|
-| App (`js/version.js` → `APP_VERSION`) | v88 |
-| Service worker (`sw.js` → `VERSION`) | v88 |
-| Migración SQL | 50 (la **50 pendiente**, con pasos manuales) |
+| App (`js/version.js` → `APP_VERSION`) | v89 |
+| Service worker (`sw.js` → `VERSION`) | v89 |
+| Migración SQL | 51 (la **51 pendiente**) |
 | Baseline del esquema | `sql/000_baseline/` (volcado 2026-08-18) |
 
 Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en real.
