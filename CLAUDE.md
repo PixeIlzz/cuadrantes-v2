@@ -82,12 +82,26 @@ sql/                Migraciones numeradas. Ver aviso abajo: las 1–32 NO
 ### Tres niveles de permiso, no dos
 
 - `profiles.es_admin` — **dueño de la plataforma**. Emite códigos de alta, ve
-  todas las empresas y las suspende. No le da acceso a los datos de nadie.
+  todas las empresas y las suspende. **No le da acceso a los datos de nadie.**
 - `memberships.role = 'manager'` — dueño de **un** negocio.
 - `memberships.role = 'employee'` — trabajador de un negocio.
 
-El primero es nuevo (migración 45) y es lo que permite gestionar clientes sin
-entrar a Supabase. Panel en Ajustes → Plataforma, oculto salvo para admins.
+### Consola de plataforma (v81)
+El admin **no entra en la app de gestor**: aterriza en `#vista-admin`, una
+pantalla propia con las empresas, sus fichas y los códigos de alta. Nada de
+cuadrante ni fichaje, que no son asunto suyo. Desde ahí entra en su propio
+negocio o en el de un cliente, y eso marca `sessionStorage` y recarga.
+
+**Soporte con caducidad y registro** (migración 47). Ser admin no te hace gestor
+de nada: lo que da acceso es una sesión abierta en `soporte_sesiones`, con
+motivo, caducidad (5–240 min) y aviso automático al gestor del cliente. La
+excepción vive en `is_manager()`/`is_member()` como `or soporte_activo(biz)`.
+Mientras dura, una franja roja fija recuerda en qué cuenta estás. El gestor del
+negocio puede ver quién ha entrado: tiene política de SELECT sobre esa tabla.
+
+`admin_negocio_detalle()` devuelve lo operativo —cuentas, equipo, kioscos,
+actividad— y **deliberadamente no devuelve NIF, NSS ni pin_hash**: para
+diagnosticar no hacen falta y son datos de gente que no es cliente tuya.
 
 ---
 
@@ -301,9 +315,9 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 
 | Elemento | Versión |
 |---|---|
-| App (`js/version.js` → `APP_VERSION`) | v80 |
-| Service worker (`sw.js` → `VERSION`) | v80 |
-| Migración SQL | 46 (**44, 45 y 46 pendientes**) |
+| App (`js/version.js` → `APP_VERSION`) | v81 |
+| Service worker (`sw.js` → `VERSION`) | v81 |
+| Migración SQL | 47 (**44 a 47 pendientes**) |
 | Baseline del esquema | `sql/000_baseline/` (volcado 2026-08-18) |
 
 Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en real.

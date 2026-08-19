@@ -25,7 +25,7 @@ import { initAjustesEmpleado, abrirAjustesEmpleado } from './ui/ajustes-empleado
 import { arrancarKiosco, mostrarEmparejamiento, revisarVinculacionPendiente, pintarPinEmpleado, escanearYVincular, pintarKioscos } from './ui/kiosco.js';
 import { canjearCodigo, nombreDelCodigo } from './data/invitaciones.js';
 import { soyAdmin } from './data/plataforma.js';
-import { initPlataforma } from './ui/plataforma.js';
+import { initConsola, CLAVE_ENTRAR } from './ui/consola.js';
 import {
 
   initSolicitudes, abrirSolicitudes, refrescarContador,
@@ -170,9 +170,6 @@ function mostrarApp(session, role, biz) {
     e.hidden = !ctx.fichajeActivo || ocultarPorRol;
   });
 
-  // Panel de plataforma: solo el dueño del servicio
-  document.querySelectorAll('.solo-admin').forEach((e) => { e.hidden = !ctx.esAdmin; });
-  if (ctx.esAdmin && esGestor) initPlataforma();
 
   if (esGestor) {
     initEquipo();
@@ -284,11 +281,33 @@ async function cargarNegocio(session) {
      el SQL Editor. Ahora se ofrece crear uno o entrar con un código. */
   if (!mem || mem.length === 0) { mostrarAltaNegocio(); return; }
 
+  /* El administrador de la plataforma aterriza en la CONSOLA, no en la app
+     de gestor: no gestiona turnos, gestiona empresas. Solo entra en un
+     negocio si lo ha elegido expresamente desde allí (el suyo, o uno de un
+     cliente con sesión de soporte abierta). */
+  ctx.esAdmin = await soyAdmin();
+  let entrarEn = null;
+  try { entrarEn = sessionStorage.getItem(CLAVE_ENTRAR); } catch (_) {}
+
+  if (ctx.esAdmin && !entrarEn) { mostrarConsola(session, mem); return; }
+
+  if ((!mem || mem.length === 0) && !entrarEn) { mostrarAltaNegocio(); return; }
+
+  const bizId = entrarEn || mem[0].business_id;
+  const propia = (mem || []).find((m) => m.business_id === bizId);
+  // En soporte no hay membresía: se entra con permisos de gestor, que es lo
+  // que concede la sesión, y con un aviso visible en pantalla.
+  const rol = propia ? propia.role : 'manager';
+  ctx.enSoporte = !propia;
+
   const { data: biz, error: e2 } = await sb
     .from('businesses').select('id, name, config')
-    .eq('id', mem[0].business_id).maybeSingle();
+    .eq('id', bizId).maybeSingle();
   if (e2) throw new Error('businesses: ' + e2.message);
-  if (!biz) throw new Error('No se pudo cargar el negocio.');
+  if (!biz) {
+    try { sessionStorage.removeItem(CLAVE_ENTRAR); } catch (_) {}
+    throw new Error('No se pudo cargar el negocio. Si era una sesión de soporte, puede haber caducado.');
+  }
 
   /* ¿Se ve el módulo de fichaje? Desde la migración 44 la puerta es un
      ajuste DEL NEGOCIO (config.fichaje.activo). La marca de probador se
@@ -303,13 +322,8 @@ async function cargarNegocio(session) {
     && biz.config.fichaje.activo === true);
   ctx.fichajeActivo = fichajeDelNegocio || ctx.esProbador;
 
-  /* ¿Dueño de la plataforma? Distinto de gestor: gestor lo eres DE un
-     negocio, admin lo eres DEL servicio. Ocultar el panel es comodidad;
-     el permiso lo comprueba el servidor en cada RPC. */
-  ctx.esAdmin = await soyAdmin();
-
   ctx.workerId = null;
-  if (mem[0].role === 'employee') {
+  if (rol === 'employee') {
     const { data: w } = await sb
       .from('workers').select('id')
       .eq('business_id', biz.id)
@@ -318,8 +332,43 @@ async function cargarNegocio(session) {
     ctx.workerId = w ? w.id : null;
   }
 
-  mostrarApp(session, mem[0].role, biz);
+  mostrarApp(session, rol, biz);
+  if (ctx.enSoporte) avisoSoporte(biz.name);
 }
+
+/* Consola del dueño de la plataforma */
+function mostrarConsola(session, mem) {
+  $('vista-login').hidden = true;
+  $('vista-app').hidden = true;
+  $('vista-admin').hidden = false;
+  $('cargando').hidden = true;
+  pinta('', '#5a6478');
+  const propio = (mem || []).find((m) => m.role === 'manager');
+  initConsola(session.user.email, !!propio, propio ? propio.business_id : null);
+}
+
+/* Franja fija mientras se está dentro de la empresa de un cliente. Que no
+   se pueda olvidar en qué cuenta estás es media seguridad del asunto. */
+function avisoSoporte(nombre) {
+  const b = document.createElement('div');
+  b.className = 'soporte-banda';
+  b.innerHTML = '<span>🛟 Modo soporte · <b>' + (nombre || '') + '</b></span>';
+  const volver = document.createElement('button');
+  volver.type = 'button'; volver.className = 'btn small';
+  volver.textContent = 'Volver a la consola';
+  volver.addEventListener('click', () => {
+    try { sessionStorage.removeItem(CLAVE_ENTRAR); } catch (_) {}
+    location.reload();
+  });
+  b.appendChild(volver);
+  document.body.appendChild(b);
+  document.body.classList.add('con-soporte');
+}
+
+document.addEventListener('staffpoint:salir', async () => {
+  await signOut();
+  location.reload();
+});
 
 /* ---------- Eventos ---------- */
 $('form-login').addEventListener('submit', async (e) => {

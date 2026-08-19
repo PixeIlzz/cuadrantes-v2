@@ -2178,6 +2178,61 @@ main{padding:16px;max-width:1100px;margin:0 auto}
   border-radius:8px;padding:.45rem .6rem;margin:.4rem 0;
 }
 
+/* =========================================================
+   CONSOLA DE PLATAFORMA
+   Pantalla propia del dueño del servicio. No comparte layout con la app
+   de gestor a propósito: son dos trabajos distintos.
+   ========================================================= */
+#vista-admin{min-height:100dvh;background:var(--paper)}
+.cons-cab{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px 18px;border-bottom:1px solid var(--line);background:var(--card);
+  position:sticky;top:0;z-index:5;flex-wrap:wrap;
+}
+.cons-marca{display:flex;align-items:center;gap:10px}
+.cons-logo{width:34px;height:34px;border-radius:8px}
+.cons-tit{font-weight:800;font-size:1rem;letter-spacing:.01em}
+.cons-sub{font-size:.74rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em}
+.cons-cuenta{display:flex;align-items:center;gap:10px}
+.cons-email{font-size:.8rem;color:var(--ink-soft)}
+.cons-cuerpo{
+  max-width:900px;margin:0 auto;padding:18px 14px 60px;
+  display:flex;flex-direction:column;gap:14px;
+}
+.cons-panel-cab{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+
+.cons-negocio{border-bottom:1px dashed var(--line)}
+.cons-negocio:last-child{border-bottom:none}
+.cons-negocio.suspendida .plat-datos{opacity:.55}
+.cons-acc{display:flex;gap:6px;flex-wrap:wrap;flex:0 0 auto}
+
+.cons-ficha{padding:2px 0 12px}
+.cons-ficha-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.cons-bloque{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.cons-bloque h3{
+  font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--ink-soft);margin:0 0 7px;font-weight:700;
+}
+.cons-dato{display:flex;justify-content:space-between;gap:8px;font-size:.8rem;padding:2px 0}
+.cons-dato span{color:var(--ink-soft)}
+.cons-item{font-size:.8rem;padding:3px 0;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+
+.cons-aviso{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  background:var(--t-azu-bg);border:1px solid var(--t-azu-brd);
+  border-radius:10px;padding:10px 12px;font-size:.85rem;
+}
+.cons-aviso-acc{display:flex;gap:6px;flex-wrap:wrap}
+
+/* Franja de modo soporte, siempre visible mientras dure */
+.soporte-banda{
+  position:fixed;left:0;right:0;bottom:0;z-index:60;
+  display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;
+  background:#7a2e2e;color:#fff;padding:8px 14px;font-size:.82rem;
+}
+.soporte-banda .btn{background:#fff;color:#7a2e2e;border-color:#fff}
+body.con-soporte{padding-bottom:46px}
+
 /* Panel de plataforma: empresas y códigos de alta (solo administrador) */
 .plat-lista{display:flex;flex-direction:column;gap:2px;margin-top:8px}
 .plat-fila{

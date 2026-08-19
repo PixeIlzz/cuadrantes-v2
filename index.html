@@ -156,6 +156,55 @@
   </form>
 </section>
 
+<!-- ============ CONSOLA DE PLATAFORMA ============
+     Pantalla propia del dueño del servicio. No es la app de gestor con
+     añadidos: aquí no hay cuadrante, ni fichaje, ni tareas, porque nada de
+     eso es asunto suyo. Solo las empresas y su gobierno. -->
+<div id="vista-admin" hidden>
+  <header class="cons-cab">
+    <div class="cons-marca">
+      <img src="icon-192.png" alt="" class="cons-logo">
+      <div>
+        <div class="cons-tit">StaffPoint</div>
+        <div class="cons-sub">Consola de plataforma</div>
+      </div>
+    </div>
+    <div class="cons-cuenta">
+      <span id="cons-email" class="cons-email"></span>
+      <button class="btn small" id="cons-salir" type="button">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="cons-cuerpo">
+    <div id="cons-soporte-vivo"></div>
+
+    <section class="panel">
+      <div class="cons-panel-cab">
+        <h2>Empresas</h2>
+        <span id="cons-resumen" class="note"></span>
+      </div>
+      <p class="note">Suspender corta el acceso pero <b>no borra nada</b>. Entrar en soporte abre una sesión que caduca sola, queda registrada y avisa al gestor.</p>
+      <div id="cons-negocios" class="plat-lista"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Códigos de alta</h2>
+      <p class="note">Sin código no se puede crear una empresa. Uno por cliente vendido; sirve una sola vez.</p>
+      <div class="setting-row">
+        <input type="text" id="cons-nota" maxlength="80" placeholder="Para quién es. Ej.: Bar Manolo, Telde">
+        <button class="btn primary" id="cons-nuevo-codigo" type="button">Emitir código</button>
+      </div>
+      <div id="cons-codigos" class="plat-lista"></div>
+    </section>
+
+    <section class="panel" id="cons-mi-negocio-panel" hidden>
+      <h2>Mi propio negocio</h2>
+      <p class="note">Tu cuenta también gestiona un negocio. Desde aquí entras en la aplicación normal.</p>
+      <button class="btn primary" id="cons-entrar-mio" type="button">Entrar en mi negocio</button>
+    </section>
+  </main>
+</div>
+
 <!-- ============ APP ============ -->
 <div id="vista-app" hidden>
 <header>
@@ -565,27 +614,6 @@
         </div>
       </div>
     </details>
-    <details class="ajustes-bloque solo-admin" hidden>
-      <summary>Plataforma</summary>
-      <div class="ajustes-bloque-body">
-        <div class="panel">
-        <h2>Empresas</h2>
-        <p class="note">Todas las empresas dadas de alta en StaffPoint. Suspender corta el acceso pero <b>no borra nada</b>: al reactivar vuelve todo.</p>
-        <div id="plat-negocios" class="plat-lista"></div>
-        </div>
-
-        <div class="panel">
-        <h2>Códigos de alta</h2>
-        <p class="note">Sin un código no se puede crear una empresa. Genera uno por cada cliente al que vendas: sirve una sola vez.</p>
-        <div class="setting-row">
-          <input type="text" id="plat-nota" maxlength="80" placeholder="Para quién es. Ej.: Bar Manolo, Telde">
-          <button class="btn primary" id="btn-nuevo-codigo" type="button">Emitir código</button>
-        </div>
-        <div id="plat-codigos" class="plat-lista"></div>
-        </div>
-      </div>
-    </details>
-
     <details class="ajustes-bloque">
       <summary>Datos y privacidad</summary>
       <div class="ajustes-bloque-body">

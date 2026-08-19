@@ -40,3 +40,34 @@ export async function listarCodigosAlta() {
   if (error) throw new Error('Códigos: ' + error.message);
   return data || [];
 }
+
+/* Ficha completa de una empresa: cuentas, equipo, kioscos, actividad y el
+   historial de soporte. Sin NIF, sin NSS y sin PIN: para diagnosticar no
+   hacen falta, y son datos personales de gente que no es cliente tuya. */
+export async function detalleNegocio(businessId) {
+  const { data, error } = await sb.rpc('admin_negocio_detalle', {
+    p_business_id: businessId,
+  });
+  if (error) throw new Error('Detalle: ' + error.message);
+  return data || null;
+}
+
+/* Abre una sesión de soporte. Caduca sola y avisa al gestor. */
+export async function abrirSoporte(businessId, motivo, minutos = 60) {
+  const { error } = await sb.rpc('soporte_abrir', {
+    p_business_id: businessId, p_motivo: motivo, p_minutos: minutos,
+  });
+  if (error) throw new Error(error.message);
+}
+
+export async function cerrarSoporte(businessId) {
+  const { error } = await sb.rpc('soporte_cerrar', { p_business_id: businessId });
+  if (error) throw new Error(error.message);
+}
+
+/* Sesiones de soporte mías que siguen vivas */
+export async function misSesionesSoporte() {
+  const { data, error } = await sb.rpc('soporte_mis_sesiones');
+  if (error) return [];
+  return data || [];
+}
