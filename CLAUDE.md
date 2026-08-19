@@ -4,7 +4,7 @@
 > **Actualizar al cerrar cada tanda de trabajo**: versiones, migración SQL, módulos
 > tocados y la lista de pendientes.
 
-**Última actualización:** 2026-08-19 · v72 · migración SQL 39
+**Última actualización:** 2026-08-19 · v73 · migración SQL 39
 
 ---
 
@@ -259,10 +259,35 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 |---|---|
 | App (`js/version.js` → `APP_VERSION`) | v73 |
 | Service worker (`sw.js` → `VERSION`) | v73 |
-| Migración SQL | 39 (la 39 requiere pasos manuales: ver pendiente 3) |
+| Migración SQL | 39 (aplicadas en Supabase la 38 y la 39) |
 | Baseline del esquema | `sql/000_baseline/` (volcado 2026-08-18) |
 
 Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en real.
+
+### Dónde nos quedamos (2026-08-19, 00:45)
+
+**Todo commiteado y subido**: `origin/main` en `eb2e8e2 fix v73`. Como GitHub
+Pages sirve el repo, la v73 ya está en producción.
+
+Hecho y probado en real:
+
+- Migraciones **38** (`registro_arbol`) y **39** (secreto del push) aplicadas en
+  Supabase.
+- **Push rotado y funcionando.** `PUSH_SECRET` creado, Edge Function desplegada
+  con validación de cabecera, `app_config` relleno. El endpoint ya no está
+  abierto a cualquiera.
+- El árbol del registro carga con **una sola petición** y se ve bien.
+
+Lo primero al retomar:
+
+- **Comprobar el arreglo de fechas de la v73.** Está desplegado pero sin
+  verificar. El síntoma era que desaparecía la semana del 17 de agosto: el rango
+  se pedía con `toISOString()` (UTC) y los fichajes de madrugada se caían fuera.
+  Ahora usa `diaDe()`. **Solo se reproduce entre las 00:00 y la 01:00** en
+  horario de verano canario; fuera de esa franja no se distingue si está bien.
+  La otra mitad —la cabecera de semana, que pintaba "Semana 10/08 – 10/08" en vez
+  de la semana natural— se ve a cualquier hora.
+- El PDF y el CSV con datos reales (pendiente 1), que siguen sin ejecutarse nunca.
 
 > En v68 se unificaron las dos versiones (la app iba por v67 y el SW por v50) en un
 > único número visible en pantalla. Antes la versión de app no constaba en ningún
@@ -279,19 +304,7 @@ Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en rea
 2. **Sacar el fichaje de beta** — quitar el flag de probador y activarlo para toda la
    plantilla, una vez validada la exportación legal (punto 1) y probadas en real las
    correcciones (apartado 5).
-3. **[URGENTE · te toca a ti] Rotar el secreto del push** — el código ya está
-   listo (migración 39 + `edge/enviar-push/index.ts`), pero los pasos que
-   necesitan el panel de Supabase están sin hacer y hasta entonces
-   **`enviar-push` sigue siendo un endpoint público sin autenticar**.
-   El diagnóstico real: `trg_enviar_push()` mandaba un token escrito en su
-   cuerpo que la Edge Function **nunca comprobaba**. O sea, no era una
-   credencial (no abría nada), pero el endpoint no tenía puerta. Ahora la
-   función valida la cabecera y el secreto vive en `app_config`.
-   Pasos, en este orden: crear el secreto `PUSH_SECRET` en Edge Functions →
-   Secrets, desplegar la función, ejecutar la migración 39, rellenar el PASO 3
-   con el mismo valor y comprobar con el PASO 4. Si se hace al revés, el push
-   deja de llegar entre medias.
-4. **No existe el cierre automático de jornada** — el esquema lo da por hecho
+3. **No existe el cierre automático de jornada** — el esquema lo da por hecho
    (`origen = 'auto'`, columna `estimado`, acción `cierre_auto` en la auditoría,
    ajuste `config.fichaje.cierre_auto`, y el comentario de `fichar_worker`),
    pero no hay ninguna función que lo haga ni ningún job de `pg_cron` salvo
@@ -299,7 +312,7 @@ Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en rea
    filtrar por día**, quien olvida fichar la salida el viernes convierte su
    entrada del sábado en la salida del viernes: una jornada de veinte horas en
    el registro legal. Bloquea de hecho el punto 1.
-5. **Revisar los permisos de las funciones** — el volcado no daba las ACL.
+4. **Revisar los permisos de las funciones** — el volcado no daba las ACL.
    `avisar_gestores()` y `crear_notif()` son `SECURITY DEFINER`, no comprueban
    quién llama e insertan notificaciones con título y cuerpo arbitrarios: si
    están concedidas a `authenticated` (el defecto de Postgres es `public`),
@@ -308,22 +321,22 @@ Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en rea
    y filtran horarios de cualquier trabajador. La sección de permisos de
    [03_funciones.sql](sql/000_baseline/03_funciones.sql) tiene la consulta para
    verificarlo y los `revoke` propuestos.
-6. **Multi-tenancy en `fichar()`** — lleva `'Atlantic/Canary'` escrito a fuego
+5. **Multi-tenancy en `fichar()`** — lleva `'Atlantic/Canary'` escrito a fuego
    (el resto del módulo lee `config->'fichaje'->>'tz'`) y busca la ficha con
    `where w.profile_id = auth.uid() limit 1`, sin filtrar por negocio: quien
    tenga ficha en dos, ficha en uno arbitrario. En el cliente, lo mismo:
    [js/data/fichaje.js](js/data/fichaje.js) exporta `const TZ = 'Atlantic/Canary'`,
    así que el árbol, los totales y el PDF se pintan en hora canaria sea cual sea
    el negocio.
-7. **Limpieza** — eliminar el respaldo de "horario general del negocio" cuando todas
+6. **Limpieza** — eliminar el respaldo de "horario general del negocio" cuando todas
    las semanas publicadas lleven horas por columna. Y retirar
    `fichajes_por_jornada()`, que desde la migración 38 ya no la usa nadie.
-8. **Comandero** (futuro, arquitectura ya diseñada) — comandas desde el móvil del
+7. **Comandero** (futuro, arquitectura ya diseñada) — comandas desde el móvil del
    camarero, pantallas de cocina por estación (parrilla, cocina) y vista de caja no
    fiscal. Se mantiene como **herramienta interna**, emitiendo los tickets por el TPV
    existente, para no entrar en las obligaciones de VeriFactu (enero 2027 sociedades,
    julio 2027 autónomos).
-9. **Comercial** — piloto gratuito con un negocio vecino antes de invertir en la
+8. **Comercial** — piloto gratuito con un negocio vecino antes de invertir en la
    migración multicliente.
 
 ---
