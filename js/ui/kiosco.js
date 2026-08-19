@@ -1,8 +1,8 @@
 // Modo Kiosco: emparejamiento (QR), pantalla de fichaje presencial,
 // vinculación desde el gestor y "configurar mi PIN" del empleado.
 // El emparejamiento y la pantalla de fichaje corren SIN sesión. v1
-import QRCode from 'https://esm.sh/qrcode@1.5.4';
-import jsQR from 'https://esm.sh/jsqr@1.4.0';
+import QRCode from '../vendor/qrcode-1.5.4.js';
+import jsQR from '../vendor/jsqr-1.4.0.js';
 import { toast } from './toast.js';
 import { confirmar } from './confirmar.js';
 import {

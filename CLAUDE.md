@@ -55,6 +55,10 @@ js/version.js       APP_VERSION — fuente única de la versión
 js/data/*.js        Acceso a datos — una función por operación
 js/ui/*.js          Interfaz por módulo
 
+js/vendor/          Librerías de terceros alojadas aquí, NO por CDN.
+                    Ver su README: supabase-js va en UMD por <script> porque su
+                    build ESM se trae seis paquetes más de internet.
+
 edge/enviar-push/   Edge Function de push (VAPID)
 sql/                Migraciones numeradas. Ver aviso abajo: las 1–32 NO
                     están aquí, solo viven en Supabase.
@@ -318,12 +322,6 @@ Lo primero al retomar:
    correcciones (apartado 5).
 3. **Resto de la revisión de seguridad (2026-08-19)** — lo que no arreglan la 42
    ni la 43:
-   - **Dependencias por CDN sin fijar por hash.** `supabase-js` viene de jsdelivr
-     ([supabase.js:2](js/supabase.js:2)) y `jsQR` de esm.sh
-     ([kiosco.js:5](js/ui/kiosco.js:5)). Un CDN comprometido serviría código con
-     acceso total a la sesión. SRI no aplica a `import` de módulos ES: la
-     solución es **auto-alojar** los dos archivos en `js/vendor/`. De paso la PWA
-     funcionaría offline de verdad.
    - **Backups.** El plan gratuito de Supabase guarda copias diarias con 7 días
      de retención y sin point-in-time recovery. El registro de jornada hay que
      conservarlo **4 años**. Hace falta plan de pago con PITR o una exportación

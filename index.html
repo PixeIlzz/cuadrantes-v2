@@ -779,6 +779,9 @@
 
 <div id="toast"></div>
 
+<!-- supabase-js va aquí y no como import: su build ESM se trae seis paquetes
+     más del CDN y no se puede alojar. Ver js/vendor/README.md. -->
+<script src="js/vendor/supabase-js-2.45.4.umd.js"></script>
 <script type="module" src="js/app.js"></script>
 </body>
 </html>

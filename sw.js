@@ -5,7 +5,7 @@
    IMPORTANTE: este número y APP_VERSION en js/version.js son el mismo
    número y se suben juntos. Si divergen, Ajustes avisa de que el
    navegador está sirviendo código viejo. */
-const VERSION = 'v76';
+const VERSION = 'v77';
 const CACHE = 'cuadrantes-' + VERSION;
 
 const ARCHIVOS = [
@@ -17,6 +17,11 @@ const ARCHIVOS = [
   './icon-512.png',
   './icon-180.png',
   './icon-maskable-512.png',
+  // Librerías propias, no del CDN: sin esto la app no arranca sin conexión
+  './js/vendor/supabase-js-2.45.4.umd.js',
+  './js/vendor/jsqr-1.4.0.js',
+  './js/vendor/qrcode-1.5.4.js',
+  './js/vendor/dijkstrajs-1.0.3.js',
   './js/app.js',
   './js/auth.js',
   './js/supabase.js',
