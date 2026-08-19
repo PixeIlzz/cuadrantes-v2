@@ -117,7 +117,8 @@ window.addEventListener('solicitudes-desactivadas', () => {
 });
 
 function soloFormulario(id) {
-  for (const f of ['form-login','form-registro','form-recuperar','form-nueva-pass']) {
+  for (const f of ['form-login','form-registro','form-recuperar','form-nueva-pass',
+                   'form-alta','form-negocio','form-canjear']) {
     const el = $(f);
     if (el) el.hidden = (f !== id);
   }
@@ -129,6 +130,15 @@ function mostrarLogin() {
   $('vista-app').hidden = true;
   $('cargando').hidden = true;
   pinta('', '#5a6478');
+}
+
+/* Pantalla de "tienes cuenta pero todavía no tienes negocio" */
+function mostrarAltaNegocio() {
+  $('vista-login').hidden = false;
+  $('vista-app').hidden = true;
+  $('cargando').hidden = true;
+  pinta('', '#5a6478');
+  soloFormulario('form-negocio');
 }
 
 function mostrarApp(session, role, biz) {
@@ -263,8 +273,10 @@ async function cargarNegocio(session) {
   const { data: mem, error: e1 } = await sb
     .from('memberships').select('role, business_id');
   if (e1) throw new Error('memberships: ' + e1.message);
-  if (!mem || mem.length === 0)
-    throw new Error('Tu cuenta no está asociada a ningún negocio.');
+  /* Sesión iniciada pero sin negocio. Antes esto era un callejón sin salida
+     ("Tu cuenta no está asociada a ningún negocio") y solo se arreglaba desde
+     el SQL Editor. Ahora se ofrece crear uno o entrar con un código. */
+  if (!mem || mem.length === 0) { mostrarAltaNegocio(); return; }
 
   const { data: biz, error: e2 } = await sb
     .from('businesses').select('id, name, config')
@@ -411,6 +423,82 @@ $('link-volver-login').addEventListener('click', (e) => {
   e.preventDefault();
   $('form-registro').hidden = true;
   $('form-login').hidden = false;
+});
+
+/* ================= ALTA DE UN NEGOCIO NUEVO =================
+   Hasta ahora create_business() existía en la base de datos pero no la
+   llamaba nadie: dar de alta un cliente exigía entrar al SQL Editor. Estas
+   pantallas cierran ese hueco, que era lo último que impedía que un negocio
+   pudiera empezar a usar StaffPoint por su cuenta.
+
+   El recorrido: crear cuenta sin código -> ponerle nombre al negocio ->
+   dentro como gestor. Y desde la pantalla del nombre se puede saltar a
+   canjear un código, por si quien llega ahí era en realidad un empleado. */
+
+$('link-alta-negocio').addEventListener('click', (e) => {
+  e.preventDefault();
+  soloFormulario('form-alta');
+});
+$('link-volver-login3').addEventListener('click', (e) => {
+  e.preventDefault();
+  soloFormulario('form-login');
+});
+
+$('form-alta').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = $('btn-alta'); const msg = $('alta-error');
+  msg.textContent = ''; btn.disabled = true;
+  try {
+    // Sin código: la cuenta nace sin negocio y el paso siguiente lo crea
+    await signUp($('a-email').value, $('a-pass').value, null, null);
+    soloFormulario('form-negocio');
+  } catch (err) {
+    msg.textContent = err.message || 'No se pudo crear la cuenta.';
+  } finally { btn.disabled = false; }
+});
+
+$('form-negocio').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = $('btn-crear-negocio'); const msg = $('negocio-error');
+  const nombre = $('n-nombre').value.trim();
+  if (!nombre) return;
+  msg.textContent = ''; btn.disabled = true;
+  try {
+    const { error } = await sb.rpc('create_business', { p_name: nombre });
+    if (error) throw new Error(error.message);
+    location.reload();          // se recarga ya con negocio y rol de gestor
+  } catch (err) {
+    msg.textContent = err.message || 'No se pudo crear el negocio.';
+    btn.disabled = false;
+  }
+});
+
+$('link-canjear').addEventListener('click', (e) => {
+  e.preventDefault();
+  soloFormulario('form-canjear');
+});
+$('link-volver-negocio').addEventListener('click', (e) => {
+  e.preventDefault();
+  soloFormulario('form-negocio');
+});
+
+$('form-canjear').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = $('btn-canjear'); const msg = $('canjear-error');
+  msg.textContent = ''; btn.disabled = true;
+  try {
+    await canjearCodigo($('c-codigo').value.trim().toUpperCase());
+    location.reload();
+  } catch (err) {
+    msg.textContent = err.message || 'No se pudo usar ese código.';
+    btn.disabled = false;
+  }
+});
+
+$('link-salir-alta').addEventListener('click', async (e) => {
+  e.preventDefault();
+  await signOut();
+  location.reload();
 });
 
 /* Al escribir el código completo, se muestra a quién pertenece */

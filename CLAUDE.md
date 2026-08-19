@@ -132,6 +132,14 @@ NIF por diálogo modal.
 Su cuadrante, "hoy", mis turnos, próximos turnos, solicitudes (cambios, vacaciones),
 notificaciones push configurables.
 
+### Alta de negocios (v78)
+Desde la pantalla de acceso: «¿Vas a dar de alta tu negocio?» → cuenta de
+responsable sin código → nombre del negocio → dentro como gestor, llamando a
+`create_business()`. Esa función existía desde la migración 1 pero **no la
+llamaba nadie**: dar de alta un cliente exigía entrar al SQL Editor.
+Quien inicia sesión y no tiene negocio ya no ve un error sin salida, sino esa
+misma pantalla, con un atajo para canjear un código si en realidad era empleado.
+
 ### Fichaje — el módulo más reciente, completo (en beta tras flag)
 
 - **Kiosco sin GPS.** Una tablet del local se empareja mostrando un QR que el gestor
@@ -276,8 +284,8 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 
 | Elemento | Versión |
 |---|---|
-| App (`js/version.js` → `APP_VERSION`) | v78 (en producción la v77) |
-| Service worker (`sw.js` → `VERSION`) | v78 |
+| App (`js/version.js` → `APP_VERSION`) | v79 |
+| Service worker (`sw.js` → `VERSION`) | v79 |
 | Migración SQL | 44 (ejecutadas hasta la 43; la **44 pendiente**) |
 | Baseline del esquema | `sql/000_baseline/` (volcado 2026-08-18) |
 
@@ -304,6 +312,9 @@ Lo primero al retomar:
   limpio por primera vez. Es lo que desbloquea todo lo demás.
 - Ejecutar la **44** y desplegar la **v78**. Después, y solo después del PDF,
   encender el interruptor de Ajustes → Registro de jornada.
+- **Probar el alta de negocio de punta a punta** con un email de prueba: crear
+  cuenta, poner nombre, entrar como gestor, invitar a alguien. Es el recorrido
+  que hará cada cliente nuevo y nunca se ha ejecutado.
 - Comprobar qué hizo el cierre automático (`where origen = 'auto'`).
 
 > En v68 se unificaron las dos versiones (la app iba por v67 y el SW por v50) en un

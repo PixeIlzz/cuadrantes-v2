@@ -67,6 +67,7 @@
     <p id="login-error" class="login-msg" role="alert"></p>
     <p class="login-alt"><a href="#" id="link-olvide">He olvidado mi contraseña</a></p>
     <p class="login-alt">¿Eres empleado y tienes un código? <a href="#" id="link-registro">Crear mi cuenta</a></p>
+    <p class="login-alt">¿Vas a dar de alta tu negocio? <a href="#" id="link-alta-negocio">Empezar aquí</a></p>
     <p class="login-alt"><a href="#" class="link-privacidad">Privacidad y datos</a></p>
     <div class="login-instalar">
       <button class="btn small" id="btn-instalar-login" type="button" hidden>📲 Instalar la app</button>
@@ -111,6 +112,45 @@
     <button id="btn-registrar" class="btn primary" type="submit">Crear cuenta</button>
     <p id="registro-error" class="login-msg" role="alert"></p>
     <p class="login-alt">¿Ya tienes cuenta? <a href="#" id="link-volver-login">Iniciar sesión</a></p>
+  </form>
+
+  <!-- Alta de un negocio nuevo: la cuenta del responsable, sin código -->
+  <form id="form-alta" class="login-card" hidden>
+    <img src="icon-192.png" alt="" class="logo">
+    <h1>Dar de alta un negocio</h1>
+    <p class="login-claim">Crea tu cuenta de responsable. Después le pondrás nombre al negocio e invitarás a tu equipo.</p>
+    <label for="a-email">Email</label>
+    <input id="a-email" type="email" autocomplete="username" required>
+    <label for="a-pass">Contraseña</label>
+    <input id="a-pass" type="password" autocomplete="new-password" minlength="6" required>
+    <button id="btn-alta" class="btn primary" type="submit">Crear cuenta</button>
+    <p id="alta-error" class="login-msg" role="alert"></p>
+    <p class="login-alt">¿Ya tienes cuenta? <a href="#" id="link-volver-login3">Iniciar sesión</a></p>
+  </form>
+
+  <!-- Sesión iniciada pero sin negocio: o lo crea, o entra con un código -->
+  <form id="form-negocio" class="login-card" hidden>
+    <img src="icon-192.png" alt="" class="logo">
+    <h1>Tu negocio</h1>
+    <p class="login-claim">Ponle nombre para empezar. Podrás cambiarlo luego en Ajustes.</p>
+    <label for="n-nombre">Nombre del negocio</label>
+    <input id="n-nombre" type="text" maxlength="60" placeholder="Ej.: Asadero Las Brasas" required>
+    <button id="btn-crear-negocio" class="btn primary" type="submit">Crear negocio</button>
+    <p id="negocio-error" class="login-msg" role="alert"></p>
+    <p class="login-alt">¿Te han dado un código de empresa? <a href="#" id="link-canjear">Únete con él</a></p>
+    <p class="login-alt"><a href="#" id="link-salir-alta">Cerrar sesión</a></p>
+  </form>
+
+  <!-- Canjear un código estando ya dentro (empleado que se registró sin él) -->
+  <form id="form-canjear" class="login-card" hidden>
+    <img src="icon-192.png" alt="" class="logo">
+    <h1>Unirme a una empresa</h1>
+    <p class="login-claim">Escribe el código que te ha dado tu responsable.</p>
+    <label for="c-codigo">Código de la empresa</label>
+    <input id="c-codigo" type="text" autocomplete="one-time-code" maxlength="8" placeholder="Ej.: KQ7MTP" required>
+    <button id="btn-canjear" class="btn primary" type="submit">Unirme</button>
+    <p id="canjear-error" class="login-msg" role="alert"></p>
+    <p class="login-alt"><a href="#" id="link-volver-negocio">Volver</a></p>
   </form>
 </section>
 
