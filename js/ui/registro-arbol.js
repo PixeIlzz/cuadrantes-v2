@@ -89,6 +89,11 @@ function notaFichaje(f) {
   const p = [];
   if (f.estimado) p.push('Estimado');
   if (f.id && CRUCES.has(f.id)) p.push('Entrada del día anterior');
+  // La nota explica POR QUÉ un fichaje tiene esa hora: el cierre automático
+  // deja escrito si sale del turno previsto o del tope, y una corrección
+  // deja el motivo del trabajador. En un documento legal eso vale más que
+  // la etiqueta escueta.
+  if (f.nota) p.push(f.nota);
   return p.join(' · ');
 }
 
@@ -280,7 +285,8 @@ table.reg .fecha{border-right:1px solid #dde2ea;white-space:nowrap;width:24%}
 table.reg .fecha .dow{color:#5a6478;font-size:9px;text-transform:capitalize;display:block}
 table.reg .fecha .num{font-weight:700}
 table.reg .hora{font-variant-numeric:tabular-nums;white-space:nowrap;width:16%}
-table.reg .obs{color:#5a6478;font-size:9px;width:20%}
+table.reg .obs{color:#5a6478;font-size:9px;width:22%}
+table.reg .obs-nota{display:block;font-size:8px;line-height:1.3;margin-top:1px}
 table.reg .ev{width:18%}
 table.reg .ev b{font-weight:600}
 table.reg tr.dia-tot td{background:#f7f9fc;font-weight:700;border-bottom:1px solid #dde2ea}
@@ -322,7 +328,9 @@ function exportarPDF(worker, titulo, fichajes) {
       filas += '<tr>' + fechaCel
         + '<td class="ev"><b>' + (f.tipo === 'entrada' ? 'Entrada' : 'Salida') + '</b></td>'
         + '<td class="hora">' + hora(f.momento) + '</td>'
-        + '<td class="obs">' + esc(marcaDe(f)) + '</td></tr>';
+        + '<td class="obs">' + esc(marcaDe(f))
+        + (f.nota ? '<span class="obs-nota">' + esc(f.nota) + '</span>' : '')
+        + '</td></tr>';
     });
     const dd = datosDia(iso);
     total += dd.seg;
@@ -589,6 +597,7 @@ function nodoDia(D, worker, exportar, onCorregir) {
   for (const f of D.items) {
     const fila = document.createElement('div');
     fila.className = 'arb-fila ' + f.tipo;
+    if (f.nota) fila.title = f.nota;   // el porqué, al pasar por encima
     fila.innerHTML =
       '<span class="af-tipo">' + (f.tipo === 'entrada' ? '▶ Entrada' : '⏹ Salida') + '</span>'
       + '<span class="af-hora">' + hora(f.momento) + '</span>'

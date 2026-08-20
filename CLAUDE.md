@@ -261,6 +261,14 @@ crear negocios sin código.
 - **Jornada nocturna.** `dia_laboral()` atribuye los fichajes de madrugada al día
   anterior si ese día tenía turno que cruza medianoche (viernes 20:00 → sábado 01:00
   cuenta como viernes).
+- **Cierre automático con tope duro** (migraciones 40 y 54). Cierra con el fin
+  del turno de esa persona, pero **`cierre_max_h` es un tope, no solo un
+  respaldo**: aunque el turno acabe mucho más tarde que la entrada, una jornada
+  cerrada sola nunca registra más horas que ese máximo (12 por defecto). Sin eso,
+  quien fichaba a las 08:00 en un día con turno de noche hasta la 01:00 se
+  llevaba diecisiete horas. La `nota` del fichaje deja escrito **por qué** tiene
+  esa hora —fin de turno, sin turno, o limitado al tope— y esa nota sale en el
+  PDF, en el CSV y al pasar por encima en el árbol.
 - **Correcciones propuestas por el empleado** (migración 35). El trabajador propone
   desde *Mi registro* y el gestor aprueba o deniega en Solicitudes.
   - Cuatro acciones: cambiar la hora de un fichaje, añadir el que falta, borrar uno
@@ -381,9 +389,9 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 
 | Elemento | Versión |
 |---|---|
-| App (`js/version.js` → `APP_VERSION`) | v93 |
-| Service worker (`sw.js` → `VERSION`) | v93 |
-| Migración SQL | 53 (**52 y 53 pendientes**) |
+| App (`js/version.js` → `APP_VERSION`) | v94 |
+| Service worker (`sw.js` → `VERSION`) | v94 |
+| Migración SQL | 54 (**52, 53 y 54 pendientes**) |
 | Baseline del esquema | `sql/000_baseline/` (volcado 2026-08-18) |
 
 Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en real.
