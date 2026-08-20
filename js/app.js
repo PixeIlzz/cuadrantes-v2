@@ -366,7 +366,11 @@ async function cargarNegocio(session) {
   }
 
   mostrarApp(session, rol, biz);
-  if (ctx.enSoporte) avisoSoporte(biz.name, biz.id);
+  /* Un admin siempre tiene que poder volver a su consola, esté donde esté:
+     en la demo, en su propio negocio o en el de un cliente. Antes solo
+     había salida en modo soporte, así que entrar en una demo era un
+     callejón sin más escapatoria que cerrar sesión. */
+  if (ctx.esAdmin) controlesAdmin(biz.name, biz.id, ctx.enSoporte);
 
   await pintarSelectorNegocio(bizId);
   await ofrecerGuia(rol);
@@ -424,8 +428,8 @@ function mostrarConsola(session, mem) {
 
 /* Franja fija mientras se está dentro de la empresa de un cliente. Que no
    se pueda olvidar en qué cuenta estás es media seguridad del asunto. */
-function avisoSoporte(nombre, businessId) {
-  // Va junto a "Cerrar sesión", no en una franja al pie: ahí es donde se
+function controlesAdmin(nombre, businessId, enSoporte) {
+  // Van junto a "Cerrar sesión", no en una franja al pie: ahí es donde se
   // busca cómo salir de una cuenta, y una barra fija abajo la tapaba la
   // barra de actualización de la PWA, que tiene más z-index.
   const salir = $('btn-salir');
@@ -433,21 +437,31 @@ function avisoSoporte(nombre, businessId) {
   if (!destino) return;
 
   const caja = document.createElement('div');
-  caja.className = 'soporte-caja';
+  caja.className = 'soporte-caja' + (enSoporte ? '' : ' neutra');
 
-  const et = document.createElement('span');
-  et.className = 'soporte-et';
-  et.textContent = '🛟 Soporte · ' + (nombre || '');
-
-  // Volver sin cerrar: la sesión sigue viva y se puede volver a entrar
+  // Volver a la consola. Si hay soporte, la sesión sigue viva.
   const volver = document.createElement('button');
   volver.type = 'button'; volver.className = 'btn small';
   volver.textContent = 'Consola';
-  volver.title = 'Volver a la consola sin cerrar la sesión de soporte';
+  volver.title = enSoporte
+    ? 'Volver a la consola sin cerrar la sesión de soporte'
+    : 'Volver a la consola de plataforma';
   volver.addEventListener('click', () => {
     try { sessionStorage.removeItem(CLAVE_ENTRAR); } catch (_) {}
     location.reload();
   });
+
+  if (!enSoporte) {
+    // Fuera de soporte basta con la salida: no hay nada que cerrar
+    caja.appendChild(volver);
+    if (salir && salir.parentNode) destino.insertBefore(caja, salir);
+    else destino.appendChild(caja);
+    return;
+  }
+
+  const et = document.createElement('span');
+  et.className = 'soporte-et';
+  et.textContent = '🛟 Soporte · ' + (nombre || '');
 
   // Cerrar y anular: se acaba el acceso ya, sin esperar a que caduque
   const cerrar = document.createElement('button');

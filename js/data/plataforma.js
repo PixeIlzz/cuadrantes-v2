@@ -60,6 +60,15 @@ export async function abrirSoporte(businessId, motivo, minutos = 60) {
   if (error) throw new Error(error.message);
 }
 
+/* Borra TODAS las empresas marcadas como demo. No pide nombre ni exporta:
+   son datos inventados. Solo toca las que llevan config.demo, así que no
+   puede llevarse por delante una real aunque se llame "demo". */
+export async function borrarDemos() {
+  const { data, error } = await sb.rpc('admin_borrar_demos');
+  if (error) throw new Error('No se pudieron borrar: ' + error.message);
+  return data || { ok: false, borradas: 0 };
+}
+
 /* Crea una empresa ficticia con equipo, cuadrante y fichajes, para
    enseñar la app sin abrir los datos reales de nadie. */
 export async function crearDemo(nombre) {

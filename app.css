@@ -2297,6 +2297,9 @@ main{padding:16px;max-width:1100px;margin:0 auto}
   padding:4px 6px 4px 12px;margin-right:8px;
 }
 .soporte-et{font-size:.78rem;font-weight:700;color:#7a2e2e;white-space:nowrap}
+/* Fuera de soporte solo es la salida a la consola: sin alarma de por medio */
+.soporte-caja.neutra{background:transparent;border-color:rgba(255,255,255,.35);padding:0}
+.soporte-caja.neutra .btn{background:transparent;color:var(--sobre-oscuro);border-color:transparent}
 .soporte-caja .btn{
   background:#7a2e2e;color:#fff;border-color:#7a2e2e;
   font-size:.74rem;padding:4px 10px;

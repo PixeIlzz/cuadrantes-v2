@@ -126,11 +126,19 @@ excepción vive en `is_manager()`/`is_member()` como `or soporte_activo(biz)`.
 Mientras dura, una franja roja fija recuerda en qué cuenta estás. El gestor del
 negocio puede ver quién ha entrado: tiene política de SELECT sobre esa tabla.
 
-**Negocio de demostración** (migración 52): botón en la consola que crea una
-empresa ficticia con equipo, cuadrante publicado, solicitudes y fichajes de los
-últimos días, marcada con `config.demo = true`. Para enseñar la app a un cliente
-sin abrirle los datos reales de la plantilla, que son de gente que no ha dado
-permiso para ser el escaparate. Se borra como cualquier otra empresa.
+**Negocio de demostración** (migraciones 52 y 53): botón en la consola que crea
+una empresa ficticia con equipo, cuadrante publicado, solicitudes y fichajes de
+los últimos días, marcada con `config.demo = true`. Para enseñar la app a un
+cliente sin abrirle los datos reales de la plantilla, que son de gente que no ha
+dado permiso para ser el escaparate. **Crear una demo borra antes las
+anteriores** para que no se acumulen, y hay botón aparte para borrarlas todas;
+`admin_borrar_demos()` solo toca las que llevan `config.demo`, así que no puede
+llevarse una empresa real por delante.
+
+**Un admin siempre puede volver a su consola** desde cualquier negocio, esté en
+soporte o no (`controlesAdmin()` en app.js, junto a Cerrar sesión). Antes solo
+había salida en modo soporte, así que entrar en la demo o en el propio negocio
+era un callejón sin más escapatoria que cerrar sesión.
 
 `admin_negocio_detalle()` devuelve lo operativo —cuentas, equipo, kioscos,
 actividad— y **deliberadamente no devuelve NIF, NSS ni pin_hash**: para
@@ -373,9 +381,9 @@ inmutabilidad y trazabilidad — de ahí `time_entry_audit`.
 
 | Elemento | Versión |
 |---|---|
-| App (`js/version.js` → `APP_VERSION`) | v92 |
-| Service worker (`sw.js` → `VERSION`) | v92 |
-| Migración SQL | 52 (la **52 pendiente**) |
+| App (`js/version.js` → `APP_VERSION`) | v93 |
+| Service worker (`sw.js` → `VERSION`) | v93 |
+| Migración SQL | 53 (**52 y 53 pendientes**) |
 | Baseline del esquema | `sql/000_baseline/` (volcado 2026-08-18) |
 
 Todo el módulo de fichaje está tras `soy_probador()` mientras se prueba en real.

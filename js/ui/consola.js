@@ -10,7 +10,7 @@
 import {
   listarNegocios, cambiarEstadoNegocio, crearCodigoAlta, listarCodigosAlta,
   detalleNegocio, abrirSoporte, cerrarSoporte, misSesionesSoporte,
-  archivarNegocio, eliminarNegocio, exportarNegocio, crearDemo,
+  archivarNegocio, eliminarNegocio, exportarNegocio, crearDemo, borrarDemos,
 } from '../data/plataforma.js';
 import { toast } from './toast.js';
 import { confirmar, pedirDatos, pedirTexto } from './confirmar.js';
@@ -447,19 +447,47 @@ export function initConsola(email, tieneNegocioPropio, businessIdPropio) {
     });
   }
 
+  /* Crear una demo borra antes las anteriores: se crea una por cliente al
+     que se le enseña la app, y si no se acumulan hasta ensuciar la lista. */
   if ($('cons-crear-demo')) {
     $('cons-crear-demo').addEventListener('click', async () => {
       const btn = $('cons-crear-demo');
       btn.disabled = true;
       try {
+        const previas = await borrarDemos();
         const r = await crearDemo(($('cons-demo-nombre') || {}).value || '');
         if ($('cons-demo-nombre')) $('cons-demo-nombre').value = '';
+
+        const nota = previas.borradas
+          ? ' Se han borrado ' + previas.borradas
+            + (previas.borradas === 1 ? ' demo anterior.' : ' demos anteriores.')
+          : '';
         const entrar = await confirmar(
           'Creada «' + (r.nombre || 'la demo') + '» con equipo, cuadrante publicado '
-          + 'y fichajes de los últimos días. ¿Entras a verla?',
+          + 'y fichajes de los últimos días.' + nota + ' ¿Entras a verla?',
           { textoOk: 'Entrar', textoNo: 'Ahora no' });
         pintarNegocios();
         if (entrar && r.id) entrarEn(r.id);
+      } catch (err) { toast(err.message); }
+      finally { btn.disabled = false; }
+    });
+  }
+
+  if ($('cons-borrar-demos')) {
+    $('cons-borrar-demos').addEventListener('click', async () => {
+      const btn = $('cons-borrar-demos');
+      const ok = await confirmar(
+        'Se borrarán todas las empresas de demostración y sus datos inventados. '
+        + 'Las empresas reales no se tocan. ¿Seguir?',
+        { textoOk: 'Borrar demos', textoNo: 'Cancelar', peligro: true });
+      if (!ok) return;
+      btn.disabled = true;
+      try {
+        const r = await borrarDemos();
+        toast(r.borradas
+          ? 'Borradas ' + r.borradas + (r.borradas === 1 ? ' demo' : ' demos')
+          : 'No había ninguna demo');
+        pintarNegocios();
       } catch (err) { toast(err.message); }
       finally { btn.disabled = false; }
     });
