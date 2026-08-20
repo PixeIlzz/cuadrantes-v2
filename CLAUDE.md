@@ -468,8 +468,11 @@ Lo primero al retomar:
        Eso solo lo arregla el plan Pro, y merece la pena en cuanto haya dos o
        tres clientes de pago.
    - **Sin separación desarrollo/producción.** Cada migración se ejecuta directa
-     contra los datos reales de la plantilla. Para vender esto hace falta un
-     proyecto de staging donde probarlas antes.
+     contra los datos reales de la plantilla. Guion listo en
+     [sql/tools/instalar_desde_cero.md](sql/tools/instalar_desde_cero.md), que
+     vale también como manual de recuperación ante desastre. Ejecutarlo es
+     además **la única forma de comprobar que `sql/000_baseline/` funciona**:
+     se construyó de un volcado y nunca se ha corrido contra un Postgres vacío.
    - **Sin rate limiting.** `redeem_invite` acepta intentos ilimitados (códigos de
      6 caracteres sobre alfabeto de 28 = 481M, no trivial pero tampoco infinito) e
      `invite_owner` filtra un nombre por código válido. El kiosco sí está
